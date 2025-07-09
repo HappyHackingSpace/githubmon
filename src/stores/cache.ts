@@ -11,7 +11,9 @@ interface CacheEntry<T> {
 
 interface DataCacheState {
   // Cached data
-  trendingRepos: CacheEntry<TrendingRepo[]> | null
+  trendingRepos_24h: CacheEntry<TrendingRepo[]> | null
+  trendingRepos_7d: CacheEntry<TrendingRepo[]> | null
+  trendingRepos_30d: CacheEntry<TrendingRepo[]> | null
   topLanguages: CacheEntry<TopLanguage[]> | null
   contributors: CacheEntry<TopContributor[]> | null
 
@@ -24,8 +26,8 @@ interface DataCacheState {
   } | null
 
   // Cache actions
-  setCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos' | 'topLanguages' | 'contributors'>, data: T, ttl?: number) => void
-  getCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos' | 'topLanguages' | 'contributors'>) => T | null
+  setCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos_24h' | 'trendingRepos_7d' | 'trendingRepos_30d' | 'topLanguages' | 'contributors'>, data: T, ttl?: number) => void
+  getCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos_24h' | 'trendingRepos_7d' | 'trendingRepos_30d' | 'topLanguages' | 'contributors'>) => T | null
   clearCache: () => void
   setRateLimit: (info: DataCacheState['rateLimitInfo']) => void
 }
@@ -33,12 +35,14 @@ interface DataCacheState {
 export const useDataCacheStore = create<DataCacheState>()(
   persist(
     (set, get) => ({
-      trendingRepos: null,
+      trendingRepos_24h: null,
+      trendingRepos_7d: null,
+      trendingRepos_30d: null,
       topLanguages: null,
       contributors: null,
       rateLimitInfo: null,
 
-setCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos' | 'topLanguages' | 'contributors'>, data: T, ttl = 5 * 60 * 1000) => {
+setCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos_24h' | 'trendingRepos_7d' | 'trendingRepos_30d' | 'topLanguages' | 'contributors'>, data: T, ttl = 5 * 60 * 1000) => {
    const now = Date.now()
    const entry = {
      data,
@@ -61,7 +65,9 @@ setCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos' | 'topLanguag
       },
 
       clearCache: () => set({
-        trendingRepos: null,
+        trendingRepos_24h: null,
+        trendingRepos_7d: null,
+        trendingRepos_30d: null,
         topLanguages: null,
         contributors: null
       }),

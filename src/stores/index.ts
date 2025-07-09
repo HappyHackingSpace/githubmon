@@ -137,7 +137,9 @@ export const useDataCache = () => {
 
   if (!hasHydrated) {
     return {
-      trendingRepos: null,
+      trendingRepos_24h: null,
+      trendingRepos_7d: null,
+      trendingRepos_30d: null,
       topLanguages: null,
       contributors: null,
       rateLimitInfo: null,
