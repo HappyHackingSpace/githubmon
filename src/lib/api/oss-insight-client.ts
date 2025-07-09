@@ -77,8 +77,7 @@ private baseUrl = 'https://api.github.com'
   }
 
   private getFallbackData(endpoint: string): any {
-    if (endpoint.includes('trending')) return mockTrendingRepos
-    if (endpoint.includes('languages')) return mockTopLanguages
+   
     if (endpoint.includes('events')) return []
     if (endpoint.includes('contributors')) return []
     if (endpoint.includes('collections')) return []
@@ -119,12 +118,10 @@ async getTrendingRepos(period: '24h' | '7d' | '30d' = '24h', limit = 20): Promis
         type: repo.owner.type
       },
       stars_increment: Math.floor(Math.random() * 100)
-    })) || mockTrendingRepos.slice(0, limit)
+   })) || []
   } catch (error) {
-    return mockTrendingRepos.slice(0, limit)
+    return []
   }
-
-  
 }
 
 private getDateFilter(period: string): string {
@@ -167,10 +164,10 @@ private getDateFilter(period: string): string {
         }
       }
       
-      return results.length > 0 ? results : mockTopLanguages
+      return results.length > 0 ? results : []
     } catch (error) {
       console.error('Languages fallback:', error)
-      return mockTopLanguages
+      return []
     }
   }
 
@@ -244,12 +241,7 @@ private getDateFilter(period: string): string {
       new_repos_last_month: 45000,
       trending_repos_count: 1250,
       languages_count: 200,
-      developers_count: 89000,
-      top_repo: {
-        name: 'microsoft/vscode',
-        stars: 150000,
-        language: 'TypeScript'
-      }
+      developers_count: 89000
     }
   }
 
@@ -595,63 +587,8 @@ export const categorizeRepositories = (repos: TrendingRepo[]) => {
 }
 
 
-export const mockTrendingRepos: TrendingRepo[] = [
-  {
-    id: 1,
-    full_name: 'microsoft/vscode',
-    name: 'vscode',
-    description: 'Visual Studio Code',
-    stargazers_count: 150000,
-    forks_count: 26000,
-    open_issues_count: 5000,
-    language: 'TypeScript',
-    html_url: 'https://github.com/microsoft/vscode',
-    created_at: '2015-09-03T19:54:57Z',
-    updated_at: '2024-01-15T10:30:00Z',
-    pushed_at: '2024-01-15T10:30:00Z',
-    size: 50000,
-    watchers_count: 150000,
-    archived: false,
-    fork: false,
-    topics: ['editor', 'typescript', 'electron'],
-    owner: {
-      login: 'microsoft',
-      avatar_url: 'https://avatars.githubusercontent.com/u/6154722?v=4',
-      type: 'Organization'
-    },
-    stars_increment: 1250,
-    stars_increment_percentage: 0.8,
-    contributors_count: 1800,
-    commits_last_month: 450
-  }
-]
 
-export const mockTopLanguages: TopLanguage[] = [
-  {
-    language: 'JavaScript',
-    repos_count: 2500000,
-    stars_count: 45000000,
-    developers_count: 850000,
-    percentage_of_total: 15.2,
-    trend: 'rising',
-    rank: 1,
-    rank_change: 0,
-    repos_increment: 25000,
-    stars_increment: 450000
-  },
-  {
-    language: 'Python',
-    repos_count: 2200000,
-    stars_count: 38000000,
-    developers_count: 720000,
-    percentage_of_total: 13.8,
-    trend: 'rising',
-    rank: 2,
-    rank_change: 1,
-    repos_increment: 32000,
-    stars_increment: 520000
-  }
-]
+
 
 
 

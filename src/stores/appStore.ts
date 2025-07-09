@@ -10,7 +10,7 @@ interface AuthState {
   isConnected: boolean
   orgData: OrgData | null
   tokenExpiry: string | null
-  
+
   // Actions
   setOrgData: (data: OrgData | null) => void
   setConnected: (connected: boolean) => void
@@ -25,17 +25,17 @@ export const useAuthStore = create<AuthState>()(
       isConnected: false,
       orgData: null,
       tokenExpiry: null,
-      
+
       setOrgData: (data) => set({ orgData: data }),
       setConnected: (connected) => set({ isConnected: connected }),
       setTokenExpiry: (expiry) => set({ tokenExpiry: expiry }),
-      
-      logout: () => set({ 
-        isConnected: false, 
-        orgData: null, 
-        tokenExpiry: null 
+
+      logout: () => set({
+        isConnected: false,
+        orgData: null,
+        tokenExpiry: null
       }),
-      
+
       isTokenValid: () => {
         const { tokenExpiry } = get()
         if (!tokenExpiry) return false
@@ -45,17 +45,17 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'githubmon-auth',
       storage: createJSONStorage(() => {
-      
+
         if (typeof window === 'undefined') {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           }
         }
         return localStorage
       }),
-  
+
       skipHydration: true,
     }
   )
@@ -65,25 +65,25 @@ export const useAuthStore = create<AuthState>()(
 interface UserPreferencesState {
   // Theme (sync with ThemeProvider)
   theme: 'light' | 'dark' | 'system'
-  
+
   // Search preferences
   defaultSearchType: 'all' | 'repos' | 'users'
   searchResultsPerPage: number
-  
+
   // Dashboard preferences
   defaultPeriod: '24h' | '7d' | '30d'
   favoriteLanguages: string[]
   pinnedRepos: string[] // repo full_names
-  
+
   // UI preferences
   sidebarCollapsed: boolean
   compactMode: boolean
   showTutorials: boolean
-  
+
   // Notification preferences
   enableNotifications: boolean
   notifyOnTrends: boolean
-  
+
   // Actions
   setTheme: (theme: 'light' | 'dark' | 'system') => void
   setDefaultSearchType: (type: 'all' | 'repos' | 'users') => void
@@ -115,28 +115,28 @@ export const usePreferencesStore = create<UserPreferencesState>()(
   persist(
     (set, get) => ({
       ...defaultPreferences,
-      
+
       setTheme: (theme) => set({ theme }),
       setDefaultSearchType: (defaultSearchType) => set({ defaultSearchType }),
       setDefaultPeriod: (defaultPeriod) => set({ defaultPeriod }),
-      
+
       toggleFavoriteLanguage: (language) => set((state) => ({
         favoriteLanguages: state.favoriteLanguages.includes(language)
           ? state.favoriteLanguages.filter(l => l !== language)
           : [...state.favoriteLanguages, language]
       })),
-      
+
       togglePinnedRepo: (repoFullName) => set((state) => ({
         pinnedRepos: state.pinnedRepos.includes(repoFullName)
           ? state.pinnedRepos.filter(r => r !== repoFullName)
           : [...state.pinnedRepos, repoFullName]
       })),
-      
+
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
       setCompactMode: (compactMode) => set({ compactMode }),
       setShowTutorials: (showTutorials) => set({ showTutorials }),
       setNotifications: (enableNotifications) => set({ enableNotifications }),
-      
+
       resetPreferences: () => set(defaultPreferences)
     }),
     {
@@ -145,8 +145,8 @@ export const usePreferencesStore = create<UserPreferencesState>()(
         if (typeof window === 'undefined') {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           }
         }
         return localStorage
@@ -160,7 +160,7 @@ export const usePreferencesStore = create<UserPreferencesState>()(
 interface SearchState {
   // Search modal state
   isSearchModalOpen: boolean
-  
+
   // Current search
   currentQuery: string
   currentSearchType: 'all' | 'repos' | 'users'
@@ -170,17 +170,17 @@ interface SearchState {
     loading: boolean
     error: string | null
   }
-  
+
   // Search history
   searchHistory: Array<{
     query: string
     type: 'all' | 'repos' | 'users'
     timestamp: number
   }>
-  
+
   // Recent searches (for quick access)
   recentSearches: string[]
-  
+
   // Actions
   setSearchModalOpen: (open: boolean) => void
   setCurrentQuery: (query: string) => void
@@ -205,29 +205,29 @@ export const useSearchStore = create<SearchState>()(
       },
       searchHistory: [],
       recentSearches: [],
-      
+
       setSearchModalOpen: (isSearchModalOpen) => set({ isSearchModalOpen }),
       setCurrentQuery: (currentQuery) => set({ currentQuery }),
       setCurrentSearchType: (currentSearchType) => set({ currentSearchType }),
       setSearchResults: (currentResults) => set({ currentResults }),
-      
+
       addToHistory: (query, type) => {
         if (!query.trim()) return
-        
+
         set((state) => {
           const newEntry = { query, type, timestamp: Date.now() }
           const filteredHistory = state.searchHistory.filter(h => h.query !== query)
           const newHistory = [newEntry, ...filteredHistory].slice(0, 50)
-          
+
           const newRecent = [query, ...state.recentSearches.filter(r => r !== query)].slice(0, 10)
-          
+
           return {
             searchHistory: newHistory,
             recentSearches: newRecent
           }
         })
       },
-      
+
       clearHistory: () => set({ searchHistory: [] }),
       clearRecentSearches: () => set({ recentSearches: [] })
     }),
@@ -237,8 +237,8 @@ export const useSearchStore = create<SearchState>()(
         if (typeof window === 'undefined') {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           }
         }
         return localStorage
@@ -265,7 +265,7 @@ interface DataCacheState {
   trendingRepos: CacheEntry<TrendingRepo[]> | null
   topLanguages: CacheEntry<TopLanguage[]> | null
   contributors: CacheEntry<TopContributor[]> | null
-  
+
   // Rate limit info
   rateLimitInfo: {
     remaining: number
@@ -273,10 +273,10 @@ interface DataCacheState {
     resetTime: number
     used: number
   } | null
-  
+
   // Cache actions
-  setCachedData: <T>(key: keyof Omit<DataCacheState, 'rateLimitInfo' | 'setCachedData' | 'getCachedData' | 'clearCache' | 'setRateLimit'>, data: T, ttl?: number) => void
-  getCachedData: <T>(key: keyof Omit<DataCacheState, 'rateLimitInfo' | 'setCachedData' | 'getCachedData' | 'clearCache' | 'setRateLimit'>) => T | null
+  setCachedData: <T>(key: string, data: T, ttl?: number) => void
+  getCachedData: <T>(key: string) => T | null
   clearCache: () => void
   setRateLimit: (info: DataCacheState['rateLimitInfo']) => void
 }
@@ -288,7 +288,7 @@ export const useDataCacheStore = create<DataCacheState>()(
       topLanguages: null,
       contributors: null,
       rateLimitInfo: null,
-      
+
       setCachedData: (key, data, ttl = 5 * 60 * 1000) => {
         const now = Date.now()
         const entry = {
@@ -298,25 +298,26 @@ export const useDataCacheStore = create<DataCacheState>()(
         }
         set({ [key]: entry })
       },
-      
+
       getCachedData: (key) => {
-        const entry = get()[key] as CacheEntry<any> | null
+        const state = get()
+        const entry = (state as Record<string, any>)[key] as CacheEntry<any> | null
         if (!entry) return null
-        
+
         if (Date.now() > entry.expiresAt) {
           set({ [key]: null })
           return null
         }
-        
+
         return entry.data
       },
-      
+
       clearCache: () => set({
         trendingRepos: null,
         topLanguages: null,
         contributors: null
       }),
-      
+
       setRateLimit: (rateLimitInfo) => set({ rateLimitInfo })
     }),
     {
@@ -325,8 +326,8 @@ export const useDataCacheStore = create<DataCacheState>()(
         if (typeof window === 'undefined') {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           }
         }
         return localStorage
@@ -342,13 +343,13 @@ interface AppState {
   // Loading states
   isLoading: boolean
   loadingMessage: string
-  
+
   // Error states
   globalError: string | null
-  
+
   // UI states
   sidebarOpen: boolean
-  
+
   // Notifications
   notifications: Array<{
     id: string
@@ -358,10 +359,10 @@ interface AppState {
     timestamp: number
     duration?: number
   }>
-  
+
   // Private state for cleanup
-  _notificationTimeouts: Map<string, ReturnType<typeof setTimeout>>
-  
+  _notificationTimeouts: Map<string, NodeJS.Timeout>
+
   // Actions
   setLoading: (loading: boolean, message?: string) => void
   setGlobalError: (error: string | null) => void
@@ -379,39 +380,37 @@ export const useAppStore = create<AppState>((set, get) => ({
   sidebarOpen: false,
   notifications: [],
   _notificationTimeouts: new Map(),
-  
+
   setLoading: (isLoading, loadingMessage = '') => set({ isLoading, loadingMessage }),
   setGlobalError: (globalError) => set({ globalError }),
   setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
-  
- addNotification: (notification) => {
-  
-  const id = typeof crypto?.randomUUID === 'function'
-  ? crypto.randomUUID()
- : `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
-  
-  const newNotification = {
-    ...notification,
-    id,
-    timestamp: Date.now()
-  }
-  
-  set((state) => ({
-    notifications: [...state.notifications, newNotification]
-  }))
-  
-  if (notification.duration !== 0) {
-    const timeoutId = setTimeout(() => {
-      get().removeNotification(id)
-    }, notification.duration || 5000)
-    
+
+  addNotification: (notification) => {
+
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+
+    const newNotification = {
+      ...notification,
+      id,
+      timestamp: Date.now()
+    }
 
     set((state) => ({
-      _notificationTimeouts: new Map(state._notificationTimeouts).set(id, timeoutId)
+      notifications: [...state.notifications, newNotification]
     }))
-  }
-},
-  
+
+    if (notification.duration !== 0) {
+      const timeoutId = setTimeout(() => {
+        get().removeNotification(id)
+      }, notification.duration || 5000)
+
+
+      set((state) => ({
+        _notificationTimeouts: new Map(state._notificationTimeouts).set(id, timeoutId)
+      }))
+    }
+  },
+
   removeNotification: (id) => {
     // Clear the timeout if it exists
     const timeouts = get()._notificationTimeouts
@@ -419,24 +418,24 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (timeoutId) {
       clearTimeout(timeoutId)
     }
-    
+
     set((state) => {
       const newTimeouts = new Map(state._notificationTimeouts)
       newTimeouts.delete(id)
-      
+
       return {
         notifications: state.notifications.filter(n => n.id !== id),
         _notificationTimeouts: newTimeouts
       }
     })
   },
-  
+
   clearNotifications: () => {
     // Clear all timeouts
     const timeouts = get()._notificationTimeouts
     timeouts.forEach(timeoutId => clearTimeout(timeoutId))
-    
-    set({ 
+
+    set({
       notifications: [],
       _notificationTimeouts: new Map()
     })
@@ -456,7 +455,7 @@ export const useStoreHydration = () => {
     usePreferencesStore.persist.rehydrate()
     useSearchStore.persist.rehydrate()
     useDataCacheStore.persist.rehydrate()
-    
+
     setHasHydrated(true)
   }, [])
 
@@ -467,50 +466,50 @@ export const useStoreHydration = () => {
 export const useAuth = () => {
   const hasHydrated = useStoreHydration()
   const store = useAuthStore()
-  
+
   if (!hasHydrated) {
     return {
       isConnected: false,
       orgData: null,
       tokenExpiry: null,
-      setOrgData: () => {},
-      setConnected: () => {},
-      setTokenExpiry: () => {},
-      logout: () => {},
+      setOrgData: () => { },
+      setConnected: () => { },
+      setTokenExpiry: () => { },
+      logout: () => { },
       isTokenValid: () => false
     }
   }
-  
+
   return store
 }
 
 export const usePreferences = () => {
   const hasHydrated = useStoreHydration()
   const store = usePreferencesStore()
-  
+
   if (!hasHydrated) {
     return {
       ...defaultPreferences,
-      setTheme: () => {},
-      setDefaultSearchType: () => {},
-      setDefaultPeriod: () => {},
-      toggleFavoriteLanguage: () => {},
-      togglePinnedRepo: () => {},
-      setSidebarCollapsed: () => {},
-      setCompactMode: () => {},
-      setShowTutorials: () => {},
-      setNotifications: () => {},
-      resetPreferences: () => {}
+      setTheme: () => { },
+      setDefaultSearchType: () => { },
+      setDefaultPeriod: () => { },
+      toggleFavoriteLanguage: () => { },
+      togglePinnedRepo: () => { },
+      setSidebarCollapsed: () => { },
+      setCompactMode: () => { },
+      setShowTutorials: () => { },
+      setNotifications: () => { },
+      resetPreferences: () => { }
     }
   }
-  
+
   return store
 }
 
 export const useSearch = () => {
   const hasHydrated = useStoreHydration()
   const store = useSearchStore()
-  
+
   if (!hasHydrated) {
     return {
       isSearchModalOpen: false,
@@ -519,36 +518,36 @@ export const useSearch = () => {
       currentResults: { repos: [], users: [], loading: false, error: null },
       searchHistory: [],
       recentSearches: [],
-      setSearchModalOpen: () => {},
-      setCurrentQuery: () => {},
-      setCurrentSearchType: () => {},
-      setSearchResults: () => {},
-      addToHistory: () => {},
-      clearHistory: () => {},
-      clearRecentSearches: () => {}
+      setSearchModalOpen: () => { },
+      setCurrentQuery: () => { },
+      setCurrentSearchType: () => { },
+      setSearchResults: () => { },
+      addToHistory: () => { },
+      clearHistory: () => { },
+      clearRecentSearches: () => { }
     }
   }
-  
+
   return store
 }
 
 export const useDataCache = () => {
   const hasHydrated = useStoreHydration()
   const store = useDataCacheStore()
-  
+
   if (!hasHydrated) {
     return {
       trendingRepos: null,
       topLanguages: null,
       contributors: null,
       rateLimitInfo: null,
-      setCachedData: () => {},
+      setCachedData: () => { },
       getCachedData: () => null,
-      clearCache: () => {},
-      setRateLimit: () => {}
+      clearCache: () => { },
+      setRateLimit: () => { }
     }
   }
-  
+
   return store
 }
 
