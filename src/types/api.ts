@@ -158,7 +158,7 @@ export interface GitHubEventPayload {
   push_id?: number
   size?: number
   distinct_size?: number
-  ref?: string
+
   head?: string
   before?: string
   commits?: Array<{

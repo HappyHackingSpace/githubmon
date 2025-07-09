@@ -72,7 +72,7 @@ export type {
 // Issue Types (from existing)
 export type {
   GitHubIssue
-} from './issue'
+} from './github'
 
 // Repository Types (from existing)
 export type {
