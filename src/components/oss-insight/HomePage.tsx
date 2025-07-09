@@ -6,9 +6,10 @@ import { TrendingRepos } from './TrendingRepos'
 import { TopLanguages } from './TopLanguages'
 
 import { CallToActionSection } from './CallToActionSection'
-import { usePreferencesStore, useDataCacheStore, useStoreHydration } from '@/stores/appStore'
+
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import type { TrendingRepo, TopLanguage } from '@/types/oss-insight'
+import { useStoreHydration, usePreferencesStore, useDataCacheStore } from '@/stores'
 
 export default function HomePage() {
   const [trendingRepos, setTrendingRepos] = useState<TrendingRepo[]>([])

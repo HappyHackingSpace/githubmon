@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
-import { useSidebarState } from '@/stores/appStore'
+import { useSidebarState } from '@/stores/app'
 
 interface SidebarProps {
   isOpen: boolean
