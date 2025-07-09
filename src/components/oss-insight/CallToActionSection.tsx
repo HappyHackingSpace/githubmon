@@ -10,15 +10,15 @@ export function CallToActionSection() {
     <section className="text-center py-12">
       <Card className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
         <CardContent className="p-8">
-          <h3 className="text-2xl font-bold mb-4">Daha Fazla Analiz İstiyorsanız</h3>
+          <h3 className="text-2xl font-bold mb-4">Want More Analysis?</h3>
           <p className="text-lg mb-6">
-            GitHub token'ınızla giriş yapın ve organizasyonunuzu detaylı analiz edin
+            Log in with your GitHub token to analyze your organization in detail
           </p>
           <button
             onClick={() => router.push('/login')}
             className="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
           >
-            GitHub ile Giriş Yap
+            Login with GitHub
           </button>
         </CardContent>
       </Card>
@@ -26,4 +26,4 @@ export function CallToActionSection() {
   )
 }
 
-// Global yorum: Login sayfasına yönlendiren CTA section
+// This section is a CTA that redirects to the login page

@@ -10,4 +10,4 @@ export function ThemeSection() {
   )
 }
 
-//Theme toggle section, dark/light mode switcher
+// Theme toggle section, dark/light mode switcher
