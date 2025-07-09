@@ -13,17 +13,36 @@ export { usePreferencesStore } from './preferences'
 export { useSearchStore } from './search'
 export { useDataCacheStore } from './cache'
 export { useAppStore } from './app'
+
+
 // ============ HYDRATION HOOK ============
+// Singleton hydration state
+let hydrationPromise: Promise<void> | null = null
+let isHydrated = false
+
+const hydrateStores = async () => {
+  if (hydrationPromise) return hydrationPromise
+  
+  hydrationPromise = Promise.all([
+    
+    useAuthStore.persist.rehydrate(),
+    usePreferencesStore.persist.rehydrate(),
+    useSearchStore.persist.rehydrate(),
+    useDataCacheStore.persist.rehydrate()
+  ]).then(() => {
+    isHydrated = true
+  })
+ 
+  return hydrationPromise
+}
+
 export const useStoreHydration = () => {
-  const [hasHydrated, setHasHydrated] = useState(false)
+  const [hasHydrated, setHasHydrated] = useState(isHydrated)
 
   useEffect(() => {
-    useAuthStore.persist.rehydrate()
-    usePreferencesStore.persist.rehydrate()
-    useSearchStore.persist.rehydrate()
-    useDataCacheStore.persist.rehydrate()
-
-    setHasHydrated(true)
+    if (!isHydrated) {
+      hydrateStores().then(() => setHasHydrated(true))
+    }
   }, [])
 
   return hasHydrated
@@ -137,7 +156,7 @@ export const useApp = () => useAppStore()
 // Specific selectors
 export const useIsAuthenticated = () => {
   const { isConnected, orgData, isTokenValid } = useAuth()
-  return isConnected && orgData?.token && isTokenValid()
+ return isConnected && orgData?.token && isTokenValid?.()
 }
 
 export const useTheme = () => {
@@ -146,15 +165,13 @@ export const useTheme = () => {
 }
 
 export const useSidebarState = () => {
-  const isOpen = useAppStore(state => state.sidebarOpen)
-  const setOpen = useAppStore(state => state.setSidebarOpen)
+ 
+  const { sidebarOpen: isOpen, setSidebarOpen: setOpen } = useApp()
   return { isOpen, setOpen }
 }
 
 export const useNotifications = () => {
-  const notifications = useAppStore(state => state.notifications)
-  const add = useAppStore(state => state.addNotification)
-  const remove = useAppStore(state => state.removeNotification)
-  const clear = useAppStore(state => state.clearNotifications)
+ const { notifications, addNotification: add, removeNotification: remove, clearNotifications: clear } = useApp()
+
   return { notifications, add, remove, clear }
 }

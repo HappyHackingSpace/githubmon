@@ -34,6 +34,8 @@ interface UserPreferencesState {
   setCompactMode: (compact: boolean) => void
   setShowTutorials: (show: boolean) => void
   setNotifications: (enabled: boolean) => void
+  setNotifyOnTrends: (enabled: boolean) => void
+  setSearchResultsPerPage: (resultsPerPage: number) => void
   resetPreferences: () => void
 }
 
@@ -76,7 +78,8 @@ export const usePreferencesStore = create<UserPreferencesState>()(
       setCompactMode: (compactMode) => set({ compactMode }),
       setShowTutorials: (showTutorials) => set({ showTutorials }),
       setNotifications: (enableNotifications) => set({ enableNotifications }),
-
+setSearchResultsPerPage: (searchResultsPerPage) => set({ searchResultsPerPage }),
+setNotifyOnTrends: (notifyOnTrends) => set({ notifyOnTrends }),
       resetPreferences: () => set(defaultPreferences)
     }),
     {

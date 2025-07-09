@@ -24,8 +24,8 @@ interface DataCacheState {
   } | null
 
   // Cache actions
-  setCachedData: <T>(key: string, data: T, ttl?: number) => void
-  getCachedData: <T>(key: string) => T | null
+  setCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos' | 'topLanguages' | 'contributors'>, data: T, ttl?: number) => void
+  getCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos' | 'topLanguages' | 'contributors'>) => T | null
   clearCache: () => void
   setRateLimit: (info: DataCacheState['rateLimitInfo']) => void
 }
@@ -38,19 +38,18 @@ export const useDataCacheStore = create<DataCacheState>()(
       contributors: null,
       rateLimitInfo: null,
 
-      setCachedData: (key, data, ttl = 5 * 60 * 1000) => {
-        const now = Date.now()
-        const entry = {
-          data,
-          timestamp: now,
-          expiresAt: now + ttl
-        }
-        set({ [key]: entry })
-      },
-
+setCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos' | 'topLanguages' | 'contributors'>, data: T, ttl = 5 * 60 * 1000) => {
+   const now = Date.now()
+   const entry = {
+     data,
+     timestamp: now,
+     expiresAt: now + ttl
+   }
+   set({ [key]: entry })
+ },
       getCachedData: (key) => {
         const state = get()
-        const entry = (state as Record<string, any>)[key] as CacheEntry<any> | null
+       const entry = state[key as keyof DataCacheState] as CacheEntry<any> | null
         if (!entry) return null
 
         if (Date.now() > entry.expiresAt) {

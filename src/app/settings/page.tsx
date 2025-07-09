@@ -5,7 +5,7 @@ import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useAuthStore, usePreferencesStore } from '@/stores/appStore'
+import { useAuthStore, usePreferencesStore } from '@/stores/app'
 import { ThemeSelector, ThemeToggle } from '@/components/theme/ThemeToggle'
 
 export default function SettingsPage() {

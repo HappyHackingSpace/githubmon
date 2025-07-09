@@ -1,6 +1,6 @@
 'use client'
 
-import { useStoreHydration } from '@/stores/appStore'
+import { useStoreHydration } from '@/stores/app'
 
 export function HydrationBoundary({ children }: { children: React.ReactNode }) {
   const hasHydrated = useStoreHydration()

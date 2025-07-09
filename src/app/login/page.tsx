@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { OrgData } from '@/types/auth'
-import { useAuthStore } from '@/stores/appStore'
+import { useAuthStore } from '@/stores/app'
 
 export default function LoginPage() {
   const [token, setToken] = useState('')

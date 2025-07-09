@@ -6,7 +6,7 @@ import { TrendingRepos } from './TrendingRepos'
 import { TopLanguages } from './TopLanguages'
 
 import { CallToActionSection } from './CallToActionSection'
-import { usePreferencesStore, useDataCacheStore, useStoreHydration } from '@/stores/appStore'
+import { usePreferencesStore, useDataCacheStore, useStoreHydration } from '@/stores/app'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import type { TrendingRepo, TopLanguage } from '@/types/oss-insight'
 
