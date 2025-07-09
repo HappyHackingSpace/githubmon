@@ -1,7 +1,10 @@
+import { RateLimitWarning } from "../common/RateLimitWarning";
+
 export function Header() {
   return (
     <header className="bg-white border-b border-gray-200 py-4 px-6 flex justify-between items-center">
       <div className="font-semibold">Genel Bakış</div>
+      <RateLimitWarning />
       <div className="flex items-center space-x-3">
         <input 
           type="text" 
