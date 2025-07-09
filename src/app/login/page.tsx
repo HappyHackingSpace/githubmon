@@ -8,16 +8,17 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { OrgData } from '@/types/auth'
+import { useAuthStore } from '@/stores/appStore'
 
 export default function LoginPage() {
   const [token, setToken] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-  
-  const [, setOrgData] = useLocalStorage<OrgData | null>('github-org-data', null)
-  const [, setIsConnected] = useLocalStorage('github-connected', false)
-  const [, setTokenExpiry] = useLocalStorage<string | null>('github-token-expiry', null)
+  const { setOrgData, setConnected, setTokenExpiry } = useAuthStore()
+ 
+
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,7 +26,7 @@ export default function LoginPage() {
     setError('')
 
     try {
-      // GitHub API ile token'ı doğrula
+   
       const response = await fetch('https://api.github.com/user', {
         headers: {
           'Authorization': `token ${token}`,
@@ -39,18 +40,17 @@ export default function LoginPage() {
 
       const userData = await response.json()
       
-      // Token ve kullanıcı bilgilerini kaydet
+
       const expiryDate = new Date()
-      expiryDate.setMonth(expiryDate.getMonth() + 1) // 1 ay
+      expiryDate.setMonth(expiryDate.getMonth() + 1) 
       
-      setOrgData({ 
-        orgName: userData.login, 
-        token: token.trim() 
-      })
-      setTokenExpiry(expiryDate.toISOString())
-      setIsConnected(true)
-      
-      // Ana sayfaya yönlendir
+     setOrgData({ 
+  orgName: userData.login, 
+  token: token.trim() 
+})
+setTokenExpiry(expiryDate.toISOString())
+setConnected(true)
+    
       router.push('/dashboard')
       
     } catch (err) {
@@ -60,11 +60,11 @@ export default function LoginPage() {
     }
   }
 
-  const continueWithoutToken = () => {
-    setOrgData({ orgName: 'guest', token: '' })
-    setIsConnected(true)
-    router.push('/dashboard')
-  }
+ const continueWithoutToken = () => {
+  setOrgData({ orgName: 'guest', token: '' })
+  setConnected(true)
+  router.push('/dashboard')
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">

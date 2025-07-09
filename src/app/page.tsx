@@ -8,6 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RateLimitWarning } from '@/components/common/RateLimitWarning'
 import { ossInsightClient, formatTrendingData, formatLanguageData } from '@/lib/api/oss-insight-client'
 import { useRouter } from 'next/navigation'
+import { SearchModal } from '@/components/search/SearchModal'
+import { useSearchModal } from '@/hooks/useSearch'
+import { useSearchStore } from '@/stores/appStore'
+
+
+import { ThemeToggle, ThemeToggleMinimal } from '@/components/theme/ThemeToggle'
+
 
 import type { TrendingRepo, TopLanguage } from '@/types/oss-insight'
 export default function HomePage() {
@@ -17,7 +24,9 @@ export default function HomePage() {
   const [searchType, setSearchType] = useState<'repos' | 'users' | 'orgs'>('repos')
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState<'24h' | '7d' | '30d'>('24h')
-  
+
+
+  const { setSearchModalOpen } = useSearchStore()
   const router = useRouter()
 
   useEffect(() => {
@@ -36,7 +45,7 @@ export default function HomePage() {
       setTopLanguages(languages?.slice(0, 8) || [])
     } catch (error) {
       console.error('OSS Insight verileri yüklenemedi:', error)
-      // Fallback data
+
       setTrendingRepos([])
       setTopLanguages([])
     } finally {
@@ -51,7 +60,7 @@ export default function HomePage() {
     try {
       if (searchType === 'repos') {
         const results = await ossInsightClient.searchRepositories(searchQuery)
-        // Sonuçları göstermek için yeni sayfa veya modal
+    
         console.log('Repo arama sonuçları:', results)
       } else {
         const results = await ossInsightClient.searchUsers(searchQuery, searchType === 'users' ? 'users' : 'orgs')
@@ -94,14 +103,21 @@ export default function HomePage() {
                 </SelectContent>
               </Select>
               
-              <Input
-                type="text"
-                placeholder={`${searchType === 'repos' ? 'Repository' : searchType === 'users' ? 'Kullanıcı' : 'Organizasyon'} ara...`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-              />
+             <Input
+  type="text"
+  placeholder={`${searchType === 'repos' ? 'Repository' : searchType === 'users' ? 'Kullanıcı' : 'Organizasyon'} ara...`}
+  value={searchQuery}
+  onChange={(e) => setSearchQuery(e.target.value)}
+  onClick={() => setSearchModalOpen(true)} 
+  readOnly
+  className="flex-1 cursor-pointer"
+/>
+
+
             </form>
+
+          <SearchModal />
+
             
             {/* Rate Limit Warning */}
             <div className="flex items-center space-x-3">
@@ -258,6 +274,10 @@ export default function HomePage() {
                 </Card>
               </div>
             </section>
+
+            <div className="p-4 border-t border-gray-100 dark:border-gray-800">
+  <ThemeToggleMinimal />
+</div>
 
             {/* Call to Action */}
             <section className="text-center py-12">
