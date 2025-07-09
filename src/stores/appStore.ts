@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { OrgData } from '@/types/auth'
 import type { TrendingRepo, TopLanguage, TopContributor } from '@/types/oss-insight'
+import { generateUniqueId } from '@/lib/id-generator'
 
 // ============ AUTH STORE ============
 interface AuthState {
@@ -335,6 +336,7 @@ export const useDataCacheStore = create<DataCacheState>()(
 )
 
 // ============ APP STATE STORE (Non-persisted) ============
+
 interface AppState {
   // Loading states
   isLoading: boolean
@@ -356,6 +358,9 @@ interface AppState {
     duration?: number
   }>
   
+  // Private state for cleanup
+  _notificationTimeouts: Map<string, NodeJS.Timeout>
+  
   // Actions
   setLoading: (loading: boolean, message?: string) => void
   setGlobalError: (error: string | null) => void
@@ -372,13 +377,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   globalError: null,
   sidebarOpen: false,
   notifications: [],
+  _notificationTimeouts: new Map(),
   
   setLoading: (isLoading, loadingMessage = '') => set({ isLoading, loadingMessage }),
   setGlobalError: (globalError) => set({ globalError }),
   setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
   
   addNotification: (notification) => {
-    const id = Math.random().toString(36).substr(2, 9)
+    const id = generateUniqueId()
     const newNotification = {
       ...notification,
       id,
@@ -390,17 +396,46 @@ export const useAppStore = create<AppState>((set, get) => ({
     }))
     
     if (notification.duration !== 0) {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         get().removeNotification(id)
       }, notification.duration || 5000)
+      
+      // Store the timeout reference for cleanup
+      set((state) => ({
+        _notificationTimeouts: new Map(state._notificationTimeouts).set(id, timeoutId)
+      }))
     }
   },
   
-  removeNotification: (id) => set((state) => ({
-    notifications: state.notifications.filter(n => n.id !== id)
-  })),
+  removeNotification: (id) => {
+    // Clear the timeout if it exists
+    const timeouts = get()._notificationTimeouts
+    const timeoutId = timeouts.get(id)
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
+    
+    set((state) => {
+      const newTimeouts = new Map(state._notificationTimeouts)
+      newTimeouts.delete(id)
+      
+      return {
+        notifications: state.notifications.filter(n => n.id !== id),
+        _notificationTimeouts: newTimeouts
+      }
+    })
+  },
   
-  clearNotifications: () => set({ notifications: [] })
+  clearNotifications: () => {
+    // Clear all timeouts
+    const timeouts = get()._notificationTimeouts
+    timeouts.forEach(timeoutId => clearTimeout(timeoutId))
+    
+    set({ 
+      notifications: [],
+      _notificationTimeouts: new Map()
+    })
+  }
 }))
 
 // ============ HYDRATION HOOK ============
@@ -516,8 +551,8 @@ export const useApp = () => useAppStore()
 
 // Specific selectors
 export const useIsAuthenticated = () => {
-  const { isConnected, orgData } = useAuth()
-  return isConnected && orgData?.token
+  const { isConnected, orgData, isTokenValid } = useAuth()
+  return isConnected && orgData?.token && isTokenValid()
 }
 
 export const useTheme = () => {
