@@ -1,76 +1,5 @@
-// GitHub Repository & User Types (Legacy + New Combined)
-export interface GitHubRepo {
-  id: number
-  name: string
-  description: string | null
-  html_url: string
-  stargazers_count: number
-  forks_count: number
-  open_issues_count: number
-  language: string | null
-  private: boolean
-  updated_at: string
-}
-
+// GitHub API Response Types
 export interface GitHubUser {
-  id: number
-  login: string
-  avatar_url: string
-  html_url: string
-  contributions?: number
-}
-
-export interface ContributorWithRepos extends GitHubUser {
-  repos?: string[]
-}
-
-export interface GitHubCommit {
-  sha: string
-  html_url: string
-  commit: {
-    message: string
-    author: {
-      name: string
-      email: string
-      date: string
-    }
-  }
-  author: GitHubUser | null
-}
-
-// GitHub Issues & Pull Requests
-export interface GitHubIssue {
-  id: number
-  number: number
-  title: string
-  body: string | null
-  state: 'open' | 'closed'
-  user: {
-    id: number
-    login: string
-    avatar_url: string
-    html_url: string
-  }
-  created_at: string
-  updated_at: string
-  closed_at: string | null
-  html_url: string
-  labels: Array<{
-    id: number
-    name: string
-    color: string
-  }>
-  pull_request?: {
-    url: string
-    html_url: string
-    diff_url: string
-    patch_url: string
-  }
-  repoName?: string
-}
-
-// Enhanced GitHub API Types (More Complete)
-export interface GitHubUserDetailed {
   id: number
   login: string
   node_id: string
@@ -105,13 +34,13 @@ export interface GitHubUserDetailed {
   updated_at: string
 }
 
-export interface GitHubRepositoryDetailed {
+export interface GitHubRepository {
   id: number
   node_id: string
   name: string
   full_name: string
   private: boolean
-  owner: GitHubUserDetailed
+  owner: GitHubUser
   html_url: string
   description: string | null
   fork: boolean
@@ -194,20 +123,42 @@ export interface GitHubRepositoryDetailed {
   } | null
 }
 
-// GitHub Search Responses
 export interface GitHubSearchResponse<T> {
   total_count: number
   incomplete_results: boolean
   items: T[]
 }
 
-// GitHub Events
+export interface GitHubRateLimit {
+  limit: number
+  remaining: number
+  reset: number
+  used: number
+  resource: string
+}
+
+export interface GitHubRateLimitResponse {
+  resources: {
+    core: GitHubRateLimit
+    search: GitHubRateLimit
+    graphql: GitHubRateLimit
+    integration_manifest: GitHubRateLimit
+    source_import: GitHubRateLimit
+    code_scanning_upload: GitHubRateLimit
+    actions_runner_registration: GitHubRateLimit
+    scim: GitHubRateLimit
+    dependency_snapshots: GitHubRateLimit
+  }
+  rate: GitHubRateLimit
+}
+
+// GitHub Events API Types
 export interface GitHubEventPayload {
   // PushEvent
   push_id?: number
   size?: number
   distinct_size?: number
-  ref?: string
+
   head?: string
   before?: string
   commits?: Array<{
@@ -260,21 +211,24 @@ export interface GitHubEventPayload {
     body: string
   }
   
+  // WatchEvent
+  // No additional payload
+  
   // ForkEvent
-  forkee?: GitHubRepositoryDetailed
+  forkee?: GitHubRepository
   
   // CreateEvent
-  
+  ref?: string
   ref_type?: 'repository' | 'branch' | 'tag'
   master_branch?: string
   description?: string
   pusher_type?: 'user'
 }
 
-export interface GitHubEventDetailed {
+export interface GitHubEvent {
   id: string
   type: string
-  actor: GitHubUserDetailed
+  actor: GitHubUser
   repo: {
     id: number
     name: string
@@ -283,34 +237,10 @@ export interface GitHubEventDetailed {
   payload: GitHubEventPayload
   public: boolean
   created_at: string
-  org?: GitHubUserDetailed
+  org?: GitHubUser
 }
 
-// GitHub Rate Limiting
-export interface GitHubRateLimit {
-  limit: number
-  remaining: number
-  reset: number
-  used: number
-  resource: string
-}
-
-export interface GitHubRateLimitResponse {
-  resources: {
-    core: GitHubRateLimit
-    search: GitHubRateLimit
-    graphql: GitHubRateLimit
-    integration_manifest: GitHubRateLimit
-    source_import: GitHubRateLimit
-    code_scanning_upload: GitHubRateLimit
-    actions_runner_registration: GitHubRateLimit
-    scim: GitHubRateLimit
-    dependency_snapshots: GitHubRateLimit
-  }
-  rate: GitHubRateLimit
-}
-
-// API Headers
+// Request/Response Headers
 export interface GitHubAPIHeaders {
   'Authorization'?: string
   'Accept': string
@@ -329,20 +259,109 @@ export interface GitHubResponseHeaders {
   'etag'?: string
 }
 
-// Utility Types
-export type GitHubEventType = 
-  | 'PushEvent' 
-  | 'PullRequestEvent' 
-  | 'IssuesEvent' 
-  | 'ForkEvent' 
-  | 'WatchEvent' 
-  | 'CreateEvent'
-  | 'DeleteEvent'
-  | 'ReleaseEvent'
-  | 'PublicEvent'
-  | 'MemberEvent'
+// Client Configuration
+export interface GitHubClientConfig {
+  token?: string
+  baseUrl?: string
+  timeout?: number
+  retries?: number
+  userAgent?: string
+}
 
-export type GitHubUserType = 'User' | 'Organization'
-export type GitHubRepoVisibility = 'public' | 'private'
-export type GitHubIssueState = 'open' | 'closed'
-export type GitHubPRState = 'open' | 'closed' | 'merged'
+export interface OSSInsightClientConfig {
+  baseUrl?: string
+  timeout?: number
+  retries?: number
+  cacheTimeout?: number
+}
+
+// Generic API Types
+export interface APIClient {
+  get<T>(endpoint: string, config?: RequestConfig): Promise<T>
+  post<T>(endpoint: string, data?: any, config?: RequestConfig): Promise<T>
+  put<T>(endpoint: string, data?: any, config?: RequestConfig): Promise<T>
+  delete<T>(endpoint: string, config?: RequestConfig): Promise<T>
+}
+
+export interface RequestConfig {
+  headers?: Record<string, string>
+  params?: Record<string, string | number | boolean>
+  timeout?: number
+  retries?: number
+  cache?: boolean
+}
+
+export interface APIResponse<T> {
+  data: T
+  status: number
+  statusText: string
+  headers: Record<string, string>
+  config: RequestConfig
+}
+
+export interface APIError {
+  message: string
+  status?: number
+  code?: string
+  details?: any
+}
+
+// Pagination Types
+export interface PaginationParams {
+  page?: number
+  per_page?: number
+  since?: string
+  until?: string
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  pagination: {
+    page: number
+    per_page: number
+    total_count?: number
+    has_next: boolean
+    has_prev: boolean
+    next_page?: number
+    prev_page?: number
+  }
+  links?: {
+    first?: string
+    prev?: string
+    next?: string
+    last?: string
+  }
+}
+
+// Cache Types
+export interface CacheStrategy {
+  get<T>(key: string): Promise<T | null>
+  set<T>(key: string, value: T, ttl?: number): Promise<void>
+  delete(key: string): Promise<void>
+  clear(): Promise<void>
+  has(key: string): Promise<boolean>
+}
+
+export interface MemoryCacheEntry<T> {
+  value: T
+  expiresAt: number
+  createdAt: number
+}
+
+export interface CacheStats {
+  hits: number
+  misses: number
+  entries: number
+  size: number
+}
+
+// Utility Types
+export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+export type ResponseFormat = 'json' | 'text' | 'blob' | 'arrayBuffer'
+
+export interface RetryConfig {
+  attempts: number
+  delay: number
+  backoff: 'linear' | 'exponential'
+  retryCondition: (error: APIError) => boolean
+}
