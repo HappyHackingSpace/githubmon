@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RateLimitWarning } from '@/components/common/RateLimitWarning'
 import { SearchModal } from '@/components/search/SearchModal'
-import { useSearchStore } from '@/stores/app'
+import { useSearchStore } from '@/stores'
+
 
 export function SearchHeader() {
   const {

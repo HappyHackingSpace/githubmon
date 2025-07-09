@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
-import { useSearchStore, usePreferencesStore, useNotifications } from '@/stores/app'
+import { useSearchStore, usePreferencesStore, useNotifications } from '@/stores'
 import type { TrendingRepo, TopContributor } from '@/types/oss-insight'
 
 

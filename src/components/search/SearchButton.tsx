@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { useSearchStore } from '@/stores/app'
+import { useSearchStore } from '@/stores'
 import { Search } from 'lucide-react'
 
 interface SearchButtonProps {

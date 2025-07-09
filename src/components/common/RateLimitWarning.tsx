@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useDataCacheStore, useAuthStore } from '@/stores/app'
+import { useDataCacheStore, useAuthStore } from '@/stores'
+
 
 export function RateLimitWarning() {
   const { rateLimitInfo, setRateLimit } = useDataCacheStore()

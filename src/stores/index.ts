@@ -148,10 +148,25 @@ export const useDataCache = () => {
     }
   }
 
+  return store}
+
+export const useApp = () => {
+  const hasHydrated = useStoreHydration()
+  const store = useAppStore()
+  
+  if (!hasHydrated) {
+    return {
+      sidebarOpen: false,
+     notifications: [],
+      setSidebarOpen: () => {},
+      addNotification: () => {},
+      removeNotification: () => {},
+      clearNotifications: () => {}
+    }
+  }
+  
   return store
 }
-
-export const useApp = () => useAppStore()
 
 // Specific selectors
 export const useIsAuthenticated = () => {

@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { usePreferencesStore } from '@/stores/app'
+import { usePreferencesStore } from '@/stores'
 
 type Theme = 'dark' | 'light' | 'system'
 
