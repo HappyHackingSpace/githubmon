@@ -360,7 +360,7 @@ interface AppState {
   }>
   
   // Private state for cleanup
-  _notificationTimeouts: Map<string, NodeJS.Timeout>
+  _notificationTimeouts: Map<string, ReturnType<typeof setTimeout>>
   
   // Actions
   setLoading: (loading: boolean, message?: string) => void
@@ -386,7 +386,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   
  addNotification: (notification) => {
   
-  const id = `${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+  const id = crypto.randomUUID()
   
   const newNotification = {
     ...notification,
