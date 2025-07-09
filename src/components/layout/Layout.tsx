@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import { Sidebar, SidebarToggle } from './Sidebar'
-
+import { useSidebarState } from '@/stores/appStore'
 export function Layout({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { isOpen, setOpen } = useSidebarState()
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <SidebarToggle onClick={() => setSidebarOpen(true)} />
+      <Sidebar />
+      <SidebarToggle onClick={() => setOpen(true)} />
       
       <main className="flex-1 overflow-y-auto lg:ml-0">
         {children}

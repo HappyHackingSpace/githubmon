@@ -5,24 +5,19 @@ import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useLocalStorage } from '@/hooks/useLocalStorage'
-import { OrgData } from '@/types/auth'
+import { useAuthStore, usePreferencesStore } from '@/stores/appStore'
+import { ThemeSelector, ThemeToggle } from '@/components/theme/ThemeToggle'
 
 export default function SettingsPage() {
-  const [orgData, setOrgData] = useLocalStorage<OrgData | null>('github-org-data', null)
+  const { orgData, setOrgData } = useAuthStore()
+  const { resetPreferences } = usePreferencesStore()
   const [tempOrgName, setTempOrgName] = useState(orgData?.orgName || '')
   const [tempToken, setTempToken] = useState('')
 
-  const handleSave = () => {
-    setOrgData({
-      orgName: tempOrgName,
-      token: tempToken || orgData?.token || ''
-    })
-    setTempToken('')
-  }
-
   const handleClearData = () => {
     if (confirm('Tüm veriler silinecek. Emin misiniz?')) {
+      resetPreferences()
+  
       localStorage.clear()
       window.location.reload()
     }
@@ -61,11 +56,26 @@ export default function SettingsPage() {
                 </p>
               </div>
               
-              <Button onClick={handleSave}>
+              <Button>
                 Kaydet
               </Button>
             </CardContent>
           </Card>
+
+          <Card>
+  <CardHeader>
+    <CardTitle>🎨 Görünüm</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    <div>
+      <label className="block text-sm font-medium mb-2">Tema</label>
+      <ThemeSelector />
+      <p className="text-xs text-gray-500 mt-1">
+        Sistem temasını takip edebilir veya manuel seçim yapabilirsiniz.
+      </p>
+    </div>
+  </CardContent>
+</Card>
           
           <Card>
             <CardHeader>

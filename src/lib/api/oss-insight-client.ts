@@ -51,7 +51,7 @@ private baseUrl = 'https://api.github.com'
     } catch (error) {
       console.error(`API request failed for ${endpoint}:`, error)
       
-      // Cache'den eski veri varsa onu döndür
+
       if (cached) {
         return cached.data
       }
@@ -88,7 +88,7 @@ private baseUrl = 'https://api.github.com'
   // Trending Repositories - Real OSS Insight endpoint
 async getTrendingRepos(period: '24h' | '7d' | '30d' = '24h', limit = 20): Promise<TrendingRepo[]> {
   try {
-    // GitHub'da popüler repoları çek
+    
     const created = this.getDateFilter(period)
     const response = await this.fetchWithCache<any>(
       `/search/repositories?q=created:>${created}&sort=stars&order=desc&per_page=${limit}`,
@@ -140,7 +140,7 @@ private getDateFilter(period: string): string {
   // GitHub API fallback for languages
   async getTopLanguages(period: '7d' | '30d' | '90d' = '30d'): Promise<TopLanguage[]> {
     try {
-      // GitHub Search API ile popüler dilleri çek
+    
       const languages = ['JavaScript', 'Python', 'Java', 'TypeScript', 'C#', 'PHP', 'C++', 'C', 'Shell', 'Ruby']
       const results: TopLanguage[] = []
       
@@ -253,7 +253,7 @@ private getDateFilter(period: string): string {
     }
   }
 
-  // GitHub Search API kullan
+
   async searchRepositories(query: string, sort: 'stars' | 'forks' | 'updated' = 'stars', limit = 20): Promise<TrendingRepo[]> {
     try {
       const response = await this.fetchWithCache<any>(
@@ -513,7 +513,7 @@ function getSpecialization(languages: string[]): string {
   return 'Full Stack'
 }
 
-// Event formatting utilities
+
 export const formatGitHubEvent = (event: GitHubEvent) => {
   const eventTypes = {
     'PushEvent': '📤 Push',
@@ -545,7 +545,7 @@ export const formatRelativeTime = (dateString: string): string => {
   return date.toLocaleDateString('tr-TR')
 }
 
-// Data aggregation utilities
+
 export const aggregateLanguageStats = (languages: TopLanguage[]) => {
   const total = languages.reduce((sum, lang) => sum + lang.repos_count, 0)
   
@@ -594,7 +594,7 @@ export const categorizeRepositories = (repos: TrendingRepo[]) => {
   return categorized
 }
 
-// Mock data for development/fallback
+
 export const mockTrendingRepos: TrendingRepo[] = [
   {
     id: 1,

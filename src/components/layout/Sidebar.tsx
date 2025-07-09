@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
+import { useSidebarState } from '@/stores/appStore'
 
 interface SidebarProps {
   isOpen: boolean
@@ -22,11 +23,12 @@ interface TrendingItem {
   type: 'repo' | 'user' | 'topic'
 }
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar() {
   const pathname = usePathname()
   const [quickTrends, setQuickTrends] = useState<TrendingItem[]>([])
   const [topTopics, setTopTopics] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const { isOpen, setOpen } = useSidebarState()
 
   useEffect(() => {
     loadSidebarData()
@@ -73,7 +75,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={onClose}
+       
         />
       )}
       
@@ -92,7 +94,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <p className="text-xs text-gray-500">OSS Analytics</p>
           </div>
           <button 
-            onClick={onClose}
+        
             className="lg:hidden text-gray-500 hover:text-gray-700"
           >
             ✕
@@ -110,7 +112,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => onClose()}
+               
                   className={`
                     flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm
                     ${isActive 
@@ -241,7 +243,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   )
 }
 
-// Sidebar Toggle Button
+
 export function SidebarToggle({ onClick }: { onClick: () => void }) {
   return (
     <button
