@@ -9,12 +9,12 @@ import { SearchModal } from '@/components/search/SearchModal'
 import { useSearchStore } from '@/stores/appStore'
 
 export function SearchHeader() {
-  const { 
-    currentQuery, 
-    currentSearchType, 
-    setSearchModalOpen, 
-    setCurrentQuery, 
-    setCurrentSearchType 
+  const {
+    currentQuery,
+    currentSearchType,
+    setSearchModalOpen,
+    setCurrentQuery,
+    setCurrentSearchType
   } = useSearchStore()
   const router = useRouter()
 
@@ -35,10 +35,10 @@ export function SearchHeader() {
             <h1 className="text-2xl font-bold text-gray-900">GitHubMon</h1>
             <Badge variant="secondary">OSS Analytics</Badge>
           </div>
-          
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="flex items-center space-x-2 flex-1 max-w-md mx-8">
-            <Select value={currentSearchType} onValueChange={(value: any) => setCurrentSearchType(value)}>
+            <Select value={currentSearchType} onValueChange={(value: 'all' | 'repos' | 'users') => setCurrentSearchType(value)}>
+
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
@@ -48,7 +48,7 @@ export function SearchHeader() {
                 <SelectItem value="users">Users</SelectItem>
               </SelectContent>
             </Select>
-            
+
             <Input
               type="text"
               placeholder={`Search ${currentSearchType}...`}
@@ -61,11 +61,11 @@ export function SearchHeader() {
           </form>
 
           <SearchModal />
-          
+
           {/* Rate Limit Warning */}
           <div className="flex items-center space-x-3">
             <RateLimitWarning />
-            <button 
+            <button
               onClick={() => router.push('/login')}
               className="text-sm text-indigo-600 hover:text-indigo-800"
             >

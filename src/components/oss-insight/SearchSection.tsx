@@ -30,11 +30,11 @@ export function SearchSection({ onSearchResults, className }: SearchSectionProps
         results = await ossInsightClient.searchUsers(searchQuery, searchType === 'users' ? 'users' : 'orgs')
       }
       
-      console.log(`${searchType} arama sonuçları:`, results)
+      console.log(`${searchType} search results:`, results)
       onSearchResults?.(results)
       
     } catch (error) {
-      console.error('Arama hatası:', error)
+      console.error('Search error:', error)
     } finally {
       setIsSearching(false)
     }
@@ -48,26 +48,26 @@ export function SearchSection({ onSearchResults, className }: SearchSectionProps
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="repos">Repolar</SelectItem>
-            <SelectItem value="users">Kullanıcılar</SelectItem>
-            <SelectItem value="orgs">Organizasyonlar</SelectItem>
+            <SelectItem value="repos">Repositories</SelectItem>
+            <SelectItem value="users">Users</SelectItem>
+            <SelectItem value="orgs">Organizations</SelectItem>
           </SelectContent>
         </Select>
         
         <Input
           type="text"
-          placeholder={`${searchType === 'repos' ? 'Repository' : searchType === 'users' ? 'Kullanıcı' : 'Organizasyon'} ara...`}
+          placeholder={`${searchType === 'repos' ? 'Search repository' : searchType === 'users' ? 'Search user' : 'Search organization'}...`}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1"
         />
         
         <Button type="submit" disabled={isSearching || !searchQuery.trim()}>
-          {isSearching ? 'Arıyor...' : 'Ara'}
+          {isSearching ? 'Searching...' : 'Search'}
         </Button>
       </form>
     </div>
   )
 }
 
-// Global yorum: Genel amaçlı arama komponenti, farklı sayfalarda kullanılabilir
+// This is a general-purpose search component, reusable on different pages

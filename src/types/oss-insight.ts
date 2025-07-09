@@ -113,11 +113,7 @@ export interface RepoStats {
   trending_repos_count: number
   languages_count: number
   developers_count: number
-  top_repo: {
-    name: string
-    stars: number
-    language: string
-  }
+  // top_repo was removed in the API—use top_repos: TrendingRepo[] instead.
 }
 
 // Formatted data types for UI components

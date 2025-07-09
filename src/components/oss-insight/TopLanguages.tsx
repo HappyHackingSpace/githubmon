@@ -48,4 +48,4 @@ export function TopLanguages({ languages }: TopLanguagesProps) {
   )
 }
 
-// Global yorum: Language istatistiklerini trend indicator'ları ile gösterir
+// This component displays language statistics with trend indicators

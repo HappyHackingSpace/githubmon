@@ -118,7 +118,7 @@ async getTrendingRepos(period: '24h' | '7d' | '30d' = '24h', limit = 20): Promis
         type: repo.owner.type
       },
       stars_increment: Math.floor(Math.random() * 100)
-    })) || []
+   })) || []
   } catch (error) {
     return []
   }
@@ -242,7 +242,7 @@ private getDateFilter(period: string): string {
       trending_repos_count: 1250,
       languages_count: 200,
       developers_count: 89000
-    } as RepoStats
+    }
   }
 
 

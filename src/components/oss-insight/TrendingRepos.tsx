@@ -16,7 +16,7 @@ export function TrendingRepos({ repos, period, setPeriod }: TrendingReposProps) 
     <section>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-2xl font-bold text-gray-900">🔥 Trending Repositories</h3>
-        <Select value={period} onValueChange={(value: any) => setPeriod(value)}>
+        <Select value={period} onValueChange={(value: '24h' | '7d' | '30d') => setPeriod(value)}>
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
@@ -27,7 +27,7 @@ export function TrendingRepos({ repos, period, setPeriod }: TrendingReposProps) 
           </SelectContent>
         </Select>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {repos.map((repo, index) => (
           <Card key={repo.full_name} className="hover:shadow-lg transition-shadow">
@@ -35,8 +35,8 @@ export function TrendingRepos({ repos, period, setPeriod }: TrendingReposProps) 
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
                   <span className="text-lg font-bold text-gray-400">#{index + 1}</span>
-                  <img 
-                    src={repo.owner.avatar_url} 
+                  <img
+                    src={repo.owner.avatar_url}
                     alt={repo.owner.login}
                     className="w-8 h-8 rounded-full"
                   />
@@ -46,9 +46,9 @@ export function TrendingRepos({ repos, period, setPeriod }: TrendingReposProps) 
                 )}
               </div>
               <CardTitle className="text-lg">
-                <a 
-                  href={repo.html_url} 
-                  target="_blank" 
+                <a
+                  href={repo.html_url}
+                  target="_blank"
                   className="text-indigo-600 hover:text-indigo-800"
                 >
                   {repo.full_name}
@@ -70,9 +70,14 @@ export function TrendingRepos({ repos, period, setPeriod }: TrendingReposProps) 
             </CardContent>
           </Card>
         ))}
+        {repos.length === 0 && (
+          <div className="py-6 text-center text-gray-500">
+            No trending repositories available.
+          </div>
+        )}
       </div>
     </section>
   )
 }
 
-// Global yorum: Bu component repo kartlarını render eder, responsive grid layout kullanır
+// This component renders repository cards using a responsive grid layout
