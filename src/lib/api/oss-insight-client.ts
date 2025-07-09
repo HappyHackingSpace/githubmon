@@ -10,7 +10,7 @@ import type {
 class OSSInsightClient {
 private baseUrl = 'https://api.github.com'
   private cache = new Map<string, { data: any; timestamp: number }>()
-  private cacheTimeout = 5 * 60 * 1000 // 5 dakika
+  private cacheTimeout = 5 * 60 * 1000 // 5 minutes
   private githubBaseUrl = 'https://api.github.com'
 
   private async fetchWithCache<T>(endpoint: string, useGithub = false): Promise<T> {

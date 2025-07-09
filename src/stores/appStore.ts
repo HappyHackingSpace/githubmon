@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { OrgData } from '@/types/auth'
 import type { TrendingRepo, TopLanguage, TopContributor } from '@/types/oss-insight'
-import { generateUniqueId } from '@/lib/id-generator'
+
+
 
 // ============ AUTH STORE ============
 interface AuthState {
@@ -383,29 +384,31 @@ export const useAppStore = create<AppState>((set, get) => ({
   setGlobalError: (globalError) => set({ globalError }),
   setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
   
-  addNotification: (notification) => {
-    const id = generateUniqueId()
-    const newNotification = {
-      ...notification,
-      id,
-      timestamp: Date.now()
-    }
+ addNotification: (notification) => {
+  
+  const id = `${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+  
+  const newNotification = {
+    ...notification,
+    id,
+    timestamp: Date.now()
+  }
+  
+  set((state) => ({
+    notifications: [...state.notifications, newNotification]
+  }))
+  
+  if (notification.duration !== 0) {
+    const timeoutId = setTimeout(() => {
+      get().removeNotification(id)
+    }, notification.duration || 5000)
     
+
     set((state) => ({
-      notifications: [...state.notifications, newNotification]
+      _notificationTimeouts: new Map(state._notificationTimeouts).set(id, timeoutId)
     }))
-    
-    if (notification.duration !== 0) {
-      const timeoutId = setTimeout(() => {
-        get().removeNotification(id)
-      }, notification.duration || 5000)
-      
-      // Store the timeout reference for cleanup
-      set((state) => ({
-        _notificationTimeouts: new Map(state._notificationTimeouts).set(id, timeoutId)
-      }))
-    }
-  },
+  }
+},
   
   removeNotification: (id) => {
     // Clear the timeout if it exists
