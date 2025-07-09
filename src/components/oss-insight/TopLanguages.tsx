@@ -38,7 +38,7 @@ export function TopLanguages({ languages }: TopLanguagesProps) {
                 variant={lang.trend === 'rising' ? 'default' : lang.trend === 'declining' ? 'destructive' : 'secondary'}
                 className="mt-2"
               >
-                {lang.trend === 'rising' ? 'Yükseliyor' : lang.trend === 'declining' ? 'Düşüyor' : 'Stabil'}
+                {lang.trend === 'rising' ? 'Rising' : lang.trend === 'declining' ? 'Declining' : 'Stable'}
               </Badge>
             </CardContent>
           </Card>

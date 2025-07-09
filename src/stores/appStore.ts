@@ -275,8 +275,8 @@ interface DataCacheState {
   } | null
   
   // Cache actions
-  setCachedData: <T>(key: keyof Omit<DataCacheState, 'rateLimitInfo' | 'setCachedData' | 'getCachedData' | 'clearCache' | 'setRateLimit'>, data: T, ttl?: number) => void
-  getCachedData: <T>(key: keyof Omit<DataCacheState, 'rateLimitInfo' | 'setCachedData' | 'getCachedData' | 'clearCache' | 'setRateLimit'>) => T | null
+  setCachedData: <T>(key: string, data: T, ttl?: number) => void
+  getCachedData: <T>(key: string) => T | null
   clearCache: () => void
   setRateLimit: (info: DataCacheState['rateLimitInfo']) => void
 }
@@ -300,7 +300,7 @@ export const useDataCacheStore = create<DataCacheState>()(
       },
       
       getCachedData: (key) => {
-        const entry = get()[key] as CacheEntry<any> | null
+        const entry = (get() as any)[key] as CacheEntry<any> | null
         if (!entry) return null
         
         if (Date.now() > entry.expiresAt) {
