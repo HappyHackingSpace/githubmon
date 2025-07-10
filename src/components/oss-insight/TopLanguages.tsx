@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { TrendingUp, TrendingDown, ArrowRight, Laptop as LaptopIcon, Star } from 'lucide-react'
 import type { TopLanguage } from '@/types/oss-insight'
 
 interface TopLanguagesProps {
@@ -11,28 +12,34 @@ interface TopLanguagesProps {
 export function TopLanguages({ languages }: TopLanguagesProps) {
   const getTrendIcon = (trend: string) => {
     switch (trend) {
-      case 'rising': return '📈'
-      case 'declining': return '📉'
-      default: return '➡️'
+      case 'rising': return <TrendingUp className="w-5 h-5 text-green-500" />
+      case 'declining': return <TrendingDown className="w-5 h-5 text-red-500" />
+      default: return <ArrowRight className="w-5 h-5 text-gray-500" />
     }
   }
 
   return (
     <section>
-      <h3 className="text-2xl font-bold text-gray-900 mb-6">💻 Top Programming Languages</h3>
+      <h3 className="flex items-center text-2xl font-bold text-gray-900 gap-2 mb-6">
+        <LaptopIcon className="w-6 h-6" />
+        Top Programming Languages
+      </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {languages.map((lang, index) => (
           <Card key={lang.language} className="text-center">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold text-gray-400">#{index + 1}</span>
-                <span className="text-lg">{getTrendIcon(lang.trend)}</span>
+                <span className="text-2xl font-bold text-muted-foreground">#{index + 1}</span>
+                <div className="flex items-center justify-center">{getTrendIcon(lang.trend)}</div>
               </div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">{lang.language}</h4>
-              <div className="space-y-1 text-sm text-gray-600">
+              <h4 className="text-lg font-semibold text-foreground mb-2">{lang.language}</h4>
+              <div className="space-y-1 text-sm text-muted-foreground">
                 <div>{lang.repos_count.toLocaleString()} repos</div>
-                <div>⭐ {lang.stars_count.toLocaleString()}</div>
+                <div className="flex items-center justify-center gap-1">
+                  <Star className="w-4 h-4 text-yellow-500" />
+                  {lang.stars_count.toLocaleString()}
+                </div>
               </div>
               <Badge
                 variant={lang.trend === 'rising' ? 'default' : lang.trend === 'declining' ? 'destructive' : 'secondary'}
