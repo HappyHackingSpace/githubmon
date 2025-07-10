@@ -61,115 +61,117 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
-
+    <div className="h-screen bg-background flex items-center justify-center p-3">
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-4 h-full max-h-[95vh]">
+        
         {/* Left Column - Token Guide */}
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">GitHubMon</h1>
-            <p className="text-muted-foreground">A powerful platform to analyze GitHub organizations</p>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle> Why is a GitHub Token Needed?</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span>Without token</span>
-                <Badge variant="destructive">60 requests/hour</Badge>
+        <Card className="shadow-xl flex flex-col overflow-hidden">
+          <CardHeader className="text-center pb-3 border-b">
+            <h1 className="text-2xl font-bold text-foreground mb-1">GitHubMon</h1>
+            <p className="text-sm text-muted-foreground">GitHub organization analytics</p>
+          </CardHeader>
+          
+          <CardContent className="flex-1 p-4 space-y-4 overflow-y-auto">
+            {/* Rate Limits */}
+            <div>
+              <h2 className="text-base font-semibold mb-2 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                Why GitHub Token?
+              </h2>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <div className="text-center p-2 border rounded">
+                  <div className="text-xs text-muted-foreground mb-1">Without</div>
+                  <Badge variant="destructive" className="text-xs">60/hour</Badge>
+                </div>
+                <div className="text-center p-2 border rounded">
+                  <div className="text-xs text-muted-foreground mb-1">With</div>
+                  <Badge variant="default" className="text-xs">5,000/hour</Badge>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span>With token</span>
-                <Badge variant="default">5,000 requests/hour</Badge>
-              </div>
-              <p className="text-sm text-gray-600">
-                Use your GitHub token to fetch more data and avoid hitting the rate limit.
-              </p>
-            </CardContent>
-          </Card>
+            </div>
 
-
-          <Card>
-            <CardHeader>
-              <CardTitle>How to Get a Token?</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-
+            {/* How to Get Token */}
+            <div>
+              <h2 className="text-base font-semibold mb-2 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                Get Token Steps
+              </h2>
               <div className="space-y-2">
-                <div className="flex items-start space-x-2">
-                  <span className="w-6 h-6 flex items-center justify-center bg-indigo-100 text-indigo-800 rounded-full text-sm font-bold">1</span>
+                <div className="flex items-start space-x-2 p-2 bg-muted/30 rounded">
+                  <div className="w-5 h-5 flex items-center justify-center bg-primary text-primary-foreground rounded-full text-xs font-bold">1</div>
                   <div>
-                    <p className="font-medium">Go to GitHub</p>
-                    <p className="text-sm text-gray-600">Settings → Developer settings → Personal access tokens</p>
+                    <p className="font-medium text-sm">GitHub Settings</p>
+                    <p className="text-xs text-muted-foreground">Developer settings</p>
                   </div>
                 </div>
-
-                <div className="flex items-start space-x-2">
-                  <span className="w-6 h-6 flex items-center justify-center bg-indigo-100 text-indigo-800 rounded-full text-sm font-bold">2</span>
+                <div className="flex items-start space-x-2 p-2 bg-muted/30 rounded">
+                  <div className="w-5 h-5 flex items-center justify-center bg-primary text-primary-foreground rounded-full text-xs font-bold">2</div>
                   <div>
-                    <p className="font-medium">Generate a new token</p>
-                    <p className="text-sm text-gray-600">Use the "Generate new token (classic)" option</p>
+                    <p className="font-medium text-sm">Generate token</p>
+                    <p className="text-xs text-muted-foreground">Use "classic" option</p>
                   </div>
                 </div>
-
-                <div className="flex items-start space-x-2">
-                  <span className="w-6 h-6 flex items-center justify-center bg-indigo-100 text-indigo-800 rounded-full text-sm font-bold">3</span>
+                <div className="flex items-start space-x-2 p-2 bg-muted/30 rounded">
+                  <div className="w-5 h-5 flex items-center justify-center bg-primary text-primary-foreground rounded-full text-xs font-bold">3</div>
                   <div>
-                    <p className="font-medium">Select required permissions</p>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <div>✅ <code className="bg-gray-100 px-1 rounded">repo</code> (for public repos)</div>
-                      <div>✅ <code className="bg-gray-100 px-1 rounded">user</code> (for user info)</div>
+                    <p className="font-medium text-sm">Select permissions</p>
+                    <div className="text-xs text-muted-foreground">
+                      ✅ <code className="bg-background px-1 rounded">repo</code> & <code className="bg-background px-1 rounded">user</code>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex items-start space-x-2">
-                  <span className="w-6 h-6 flex items-center justify-center bg-indigo-100 text-indigo-800 rounded-full text-sm font-bold">4</span>
-                  <div>
-                    <p className="font-medium">Copy your token</p>
-                    <p className="text-sm text-gray-600">Store your token in a safe place - it will only be shown once</p>
-                  </div>
-                </div>
               </div>
-
-              <div className="mt-4">
+              <div className="mt-3">
                 <a
                   href="https://github.com/settings/tokens"
                   target="_blank"
-                  className="inline-flex items-center text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                  className="inline-flex items-center gap-1 text-primary hover:underline text-sm font-medium"
                 >
-                  Create GitHub Token →
+                  Create Token →
                 </a>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>🔒 Security</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Your token is only stored in your browser</li>
-                <li>• It is not sent to our servers</li>
-                <li>• It will be automatically deleted after 1 month</li>
-                <li>• You can log out at any time</li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+
+            {/* Security */}
+            <div>
+              <h2 className="text-base font-semibold mb-2 flex items-center gap-2">
+                <span>🔒</span>
+                Security
+              </h2>
+              <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <div className="w-1 h-1 bg-primary rounded-full"></div>
+                  Browser only
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-1 h-1 bg-primary rounded-full"></div>
+                  Not sent to servers
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-1 h-1 bg-primary rounded-full"></div>
+                  Auto-delete (1 month)
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-1 h-1 bg-primary rounded-full"></div>
+                  Logout anytime
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Right Column - Login Form */}
-        <div className="flex flex-col justify-center">
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle>Login with GitHub Token</CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card className="shadow-xl flex flex-col">
+          <CardHeader className="text-center pb-3 border-b">
+            <CardTitle className="text-xl font-bold">Login with GitHub Token</CardTitle>
+            <p className="text-muted-foreground text-sm">Enter your personal access token</p>
+          </CardHeader>
+          
+          <CardContent className="flex-1 flex flex-col justify-center p-4">
+            <div className="max-w-md mx-auto w-full space-y-4">
               <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold">
                     GitHub Personal Access Token
                   </label>
                   <Input
@@ -178,48 +180,57 @@ export default function LoginPage() {
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     required
-                    className="font-mono text-sm"
+                    className="font-mono text-sm h-10"
                   />
                   {error && (
-                    <p className="text-red-600 text-sm mt-2">{error}</p>
+                    <div className="p-2 bg-destructive/10 border border-destructive/20 rounded">
+                      <p className="text-destructive text-sm">{error}</p>
+                    </div>
                   )}
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full h-10 font-semibold"
                   disabled={isLoading || !token.trim()}
                 >
-                  {isLoading ? 'Verifying...' : 'Login'}
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
+                      Verifying...
+                    </div>
+                  ) : (
+                    'Login'
+                  )}
                 </Button>
               </form>
 
-              <div className="mt-6 text-center">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">or</span>
-                  </div>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t" />
                 </div>
-
-                <Button
-                  variant="outline"
-                  onClick={continueWithoutToken}
-                  className="w-full mt-4"
-                >
-                  Continue Without Token
-                  <span className="ml-2 text-xs text-gray-500">(Limited)</span>
-                </Button>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-3 bg-background text-muted-foreground">or</span>
+                </div>
               </div>
-            </CardContent>
-          </Card>
 
-          <div className="mt-4 text-center text-sm text-gray-500">
-            <p>Already have an account? Enter your token above.</p>
-          </div>
-        </div>
+              <Button
+                variant="outline"
+                onClick={continueWithoutToken}
+                className="w-full h-10"
+              >
+                <span className="font-semibold">Continue Without Token</span>
+                <Badge variant="secondary" className="ml-2 text-xs">Limited</Badge>
+              </Button>
+
+              <div className="text-center pt-3">
+                <p className="text-sm text-muted-foreground">
+                  Already have an account? Enter your token above.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
