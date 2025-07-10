@@ -60,14 +60,14 @@ export function Sidebar() {
   }
 
   const navigationItems = [
-    { href: '/', label: '🏠 Ana Sayfa', icon: '🏠' },
-    { href: '/trending', label: '🔥 Trending', icon: '🔥' },
-    { href: '/languages', label: '💻 Diller', icon: '💻' },
-    { href: '/contributors', label: '👥 Geliştiriciler', icon: '👥' },
-    { href: '/collections', label: '📚 Koleksiyonlar', icon: '📚' },
-    { href: '/analytics', label: '📊 Analytics', icon: '📊' },
-    { href: '/dashboard', label: '⚡ Dashboard', icon: '⚡' },
-    { href: '/login', label: '🔐 Giriş Yap', icon: '🔐' }
+    { href: '/', label: ' Ana Sayfa', icon: '🏠' },
+    { href: '/trending', label: ' Trending', icon: '🔥' },
+    { href: '/languages', label: ' Diller', icon: '💻' },
+    { href: '/contributors', label: ' Geliştiriciler', icon: '👥' },
+    { href: '/collections', label: ' Koleksiyonlar', icon: '📚' },
+    { href: '/analytics', label: ' Analytics', icon: '📊' },
+    { href: '/dashboard', label: ' Dashboard', icon: '⚡' },
+    { href: '/login', label: ' Giriş Yap', icon: '🔐' }
   ]
 
   return (
