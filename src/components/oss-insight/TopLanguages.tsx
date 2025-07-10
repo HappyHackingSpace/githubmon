@@ -20,7 +20,7 @@ export function TopLanguages({ languages }: TopLanguagesProps) {
   return (
     <section>
       <h3 className="text-2xl font-bold text-gray-900 mb-6">💻 Top Programming Languages</h3>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {languages.map((lang, index) => (
           <Card key={lang.language} className="text-center">
@@ -34,7 +34,7 @@ export function TopLanguages({ languages }: TopLanguagesProps) {
                 <div>{lang.repos_count.toLocaleString()} repos</div>
                 <div>⭐ {lang.stars_count.toLocaleString()}</div>
               </div>
-              <Badge 
+              <Badge
                 variant={lang.trend === 'rising' ? 'default' : lang.trend === 'declining' ? 'destructive' : 'secondary'}
                 className="mt-2"
               >
@@ -47,5 +47,3 @@ export function TopLanguages({ languages }: TopLanguagesProps) {
     </section>
   )
 }
-
-// This component displays language statistics with trend indicators

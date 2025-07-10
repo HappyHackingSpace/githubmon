@@ -9,5 +9,3 @@ export function ThemeSection() {
     </div>
   )
 }
-
-// Theme toggle section, dark/light mode switcher

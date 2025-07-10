@@ -42,36 +42,36 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
   const [viewMode, setViewMode] = useState<'heatmap' | 'trend' | 'activity'>('heatmap')
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null)
 
-  // ❌ Sadite repo sayısı → ✅ Aktivite skorları (commit/issue/PR bazlı)
+  // Calculate activity scores (based on commits/issues/PRs)
   const enhancedLanguages = useMemo((): EnhancedLanguage[] => {
     const maxRepos = Math.max(...languages.map(l => l.repos_count))
     const maxStars = Math.max(...languages.map(l => l.stars_count))
-    
+
     return languages.map((lang, index) => {
       // Calculate activity score based on multiple factors
       const repoNormalized = (lang.repos_count / maxRepos) * 40
       const starsNormalized = (lang.stars_count / maxStars) * 30
       const developersNormalized = (lang.developers_count / 100000) * 20
       const trendBonus = lang.trend === 'rising' ? 10 : lang.trend === 'declining' ? -5 : 0
-      
+
       const activityScore = Math.min(100, Math.round(
         repoNormalized + starsNormalized + developersNormalized + trendBonus
       ))
 
       // Momentum icon based on trend and rank change
-      let momentumIcon = '➡️'
-      if (lang.trend === 'rising' && lang.rank_change > 0) momentumIcon = '🚀'
-      else if (lang.trend === 'rising') momentumIcon = '📈'
-      else if (lang.trend === 'declining') momentumIcon = '📉'
+      let momentumIcon = '\u27a1\ufe0f'
+      if (lang.trend === 'rising' && lang.rank_change > 0) momentumIcon = '\ud83d\ude80'
+      else if (lang.trend === 'rising') momentumIcon = '\ud83d\udcc8'
+      else if (lang.trend === 'declining') momentumIcon = '\ud83d\udcc9'
 
       // Growth icon based on rank change
-      let growthIcon = '→'
-      if (lang.rank_change > 2) growthIcon = '⬆⬆'
-      else if (lang.rank_change > 0) growthIcon = '⬆'
-      else if (lang.rank_change < -2) growthIcon = '⬇⬇'
-      else if (lang.rank_change < 0) growthIcon = '⬇'
+      let growthIcon = '\u2192'
+      if (lang.rank_change > 2) growthIcon = '\u2b06\u2b06'
+      else if (lang.rank_change > 0) growthIcon = '\u2b06'
+      else if (lang.rank_change < -2) growthIcon = '\u2b07\u2b07'
+      else if (lang.rank_change < 0) growthIcon = '\u2b07'
 
-      const categoryInfo = LANGUAGE_CATEGORIES[lang.language as keyof typeof LANGUAGE_CATEGORIES] || 
+      const categoryInfo = LANGUAGE_CATEGORIES[lang.language as keyof typeof LANGUAGE_CATEGORIES] ||
         { category: 'Other', color: 'bg-gray-100 text-gray-800 border-gray-200' }
 
       return {
@@ -121,7 +121,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
             💻 Programming Languages
             <Badge variant="outline">{enhancedLanguages.length} languages</Badge>
           </CardTitle>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant={viewMode === 'heatmap' ? 'default' : 'outline'}
@@ -147,19 +147,19 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent>
         {viewMode === 'heatmap' && (
           <div className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               ❌ Düz tablo → ✅ İnteraktif heatmap (intensity based on repository count)
             </p>
-            
+
             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
               {sortedLanguages.slice(0, 24).map((lang) => {
                 const intensity = lang.repos_count / maxRepos
                 const isSelected = selectedLanguage === lang.language
-                
+
                 return (
                   <div
                     key={lang.language}
@@ -176,7 +176,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
                       <div className="text-xs font-medium truncate">{lang.language}</div>
                       <div className="text-xs opacity-90">#{lang.rank}</div>
                     </div>
-                    
+
                     {/* Tooltip on hover */}
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                       {lang.repos_count.toLocaleString()} repos • {lang.trend}
@@ -185,7 +185,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
                 )
               })}
             </div>
-            
+
             {/* Color Legend */}
             <div className="flex items-center justify-center space-x-4 text-xs">
               <span className="flex items-center space-x-1">
@@ -209,7 +209,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
             <p className="text-sm text-gray-600 dark:text-gray-400">
               ❌ Statik liste → ✅ Trend analizi (📈 Rising, 📉 Declining)
             </p>
-            
+
             {sortedLanguages.slice(0, 12).map((lang, index) => (
               <div key={lang.language} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <div className="flex items-center space-x-3">
@@ -226,10 +226,10 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="text-right">
                   <div className={`font-bold ${getTrendColor(lang.trend, lang.rank_change)}`}>
-                    {lang.growthIcon} 
+                    {lang.growthIcon}
                     {lang.rank_change > 0 ? `+${lang.rank_change}` : lang.rank_change || '0'}
                   </div>
                   <div className="text-sm capitalize">
@@ -248,14 +248,14 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
             <p className="text-sm text-gray-600 dark:text-gray-400">
               ❌ Sadece repo sayısı → ✅ Aktivite skorları (repos + stars + developers + trend)
             </p>
-            
+
             {sortedLanguages.slice(0, 12).map((lang, index) => (
               <div key={lang.language} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <div className="flex items-center space-x-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-gray-400">#{index + 1}</div>
                   </div>
-                  
+
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
                       <span className="font-semibold">{lang.language}</span>
@@ -264,7 +264,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
                       </Badge>
                       <span className="text-lg">{lang.momentumIcon}</span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-4 text-sm text-gray-600">
                       <span>📦 {lang.repos_count.toLocaleString()}</span>
                       <span>⭐ {(lang.stars_count / 1000).toFixed(0)}K</span>
@@ -272,19 +272,18 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="text-right">
                   <div className="text-xl font-bold text-indigo-600 mb-1">
                     {lang.activityScore}
                   </div>
                   <div className="text-xs text-gray-500">Activity Score</div>
                   <div className="w-20 bg-gray-200 rounded-full h-2 mt-1">
-                    <div 
-                      className={`h-2 rounded-full ${
-                        lang.activityScore > 80 ? 'bg-green-500' : 
-                        lang.activityScore > 60 ? 'bg-yellow-500' : 
-                        lang.activityScore > 40 ? 'bg-orange-500' : 'bg-red-500'
-                      }`}
+                    <div
+                      className={`h-2 rounded-full ${lang.activityScore > 80 ? 'bg-green-500' :
+                          lang.activityScore > 60 ? 'bg-yellow-500' :
+                            lang.activityScore > 40 ? 'bg-orange-500' : 'bg-red-500'
+                        }`}
                       style={{ width: `${lang.activityScore}%` }}
                     ></div>
                   </div>
@@ -300,7 +299,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
             {(() => {
               const lang = enhancedLanguages.find(l => l.language === selectedLanguage)
               if (!lang) return null
-              
+
               return (
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -312,7 +311,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
                       ✕
                     </Button>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <div className="text-gray-600 dark:text-gray-400">Rank</div>
@@ -331,7 +330,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
                       <div className="font-bold">{(lang.developers_count / 1000).toFixed(0)}K</div>
                     </div>
                   </div>
-                  
+
                   <div className="mt-3 flex items-center space-x-4">
                     <Badge className={lang.categoryColor}>
                       {lang.categoryLabel}

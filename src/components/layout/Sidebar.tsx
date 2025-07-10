@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { ThemeToggleMinimal } from '@/components/theme/ThemeToggle'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import { useSidebarState } from '@/stores'
+import { Home, Flame, TrendingUp, Languages, Users, FolderOpen, BarChart2 } from 'lucide-react'
 
 interface SidebarProps {
   isOpen: boolean
@@ -41,7 +42,7 @@ export function Sidebar() {
         ossInsightClient.getTrendingRepos('24h', 8),
         ossInsightClient.getHotCollections(6)
       ])
-      
+
       setQuickTrends(trending.map(repo => ({
         name: repo.name,
         description: repo.description || '',
@@ -50,7 +51,7 @@ export function Sidebar() {
         url: repo.html_url,
         type: 'repo' as const
       })))
-      
+
       setTopTopics(collections.map(col => col.name))
     } catch (error) {
       console.error('Sidebar verileri yüklenemedi:', error)
@@ -60,26 +61,25 @@ export function Sidebar() {
   }
 
   const navigationItems = [
-    { href: '/', label: ' Ana Sayfa', icon: '🏠' },
-    { href: '/trending', label: ' Trending', icon: '🔥' },
-    { href: '/languages', label: ' Diller', icon: '💻' },
-    { href: '/contributors', label: ' Geliştiriciler', icon: '👥' },
-    { href: '/collections', label: ' Koleksiyonlar', icon: '📚' },
-    { href: '/analytics', label: ' Analytics', icon: '📊' },
-    { href: '/dashboard', label: ' Dashboard', icon: '⚡' },
-    { href: '/login', label: ' Giriş Yap', icon: '🔐' }
+    { href: '/', label: ' Ana Sayfa', icon: Home },
+    { href: '/trending', label: ' Trending', icon: TrendingUp },
+    { href: '/languages', label: ' Diller', icon: Languages },
+    { href: '/contributors', label: ' Geliştiriciler', icon: Users },
+    { href: '/collections', label: ' Koleksiyonlar', icon: FolderOpen },
+    { href: '/analytics', label: ' Analytics', icon: BarChart2 },
+    { href: '/dashboard', label: ' Dashboard', icon: Flame }
   ]
 
   return (
     <>
       {/* Overlay for mobile */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-       
+
         />
       )}
-      
+
       {/* Sidebar */}
       <aside className={`
         fixed top-0 left-0 h-full w-80 bg-sidebar border-r border-sidebar-border z-50 transform transition-transform duration-300 ease-in-out
@@ -87,15 +87,15 @@ export function Sidebar() {
         lg:translate-x-0 lg:static lg:z-auto
         flex flex-col
       `}>
-        
+
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
           <div>
             <h2 className="text-lg font-bold text-sidebar-foreground">GitHubMon</h2>
             <p className="text-xs text-muted-foreground">OSS Analytics</p>
           </div>
-          <button 
-        
+          <button
+
             className="lg:hidden text-muted-foreground hover:text-sidebar-foreground transition-colors"
           >
             ✕
@@ -104,25 +104,25 @@ export function Sidebar() {
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
-          
+
           {/* Navigation */}
           <nav className="p-4 space-y-1">
             {navigationItems.map((item) => {
               const isActive = pathname === item.href
+              const Icon = item.icon
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-               
                   className={`
                     flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm
-                    ${isActive 
-                      ? 'bg-sidebar-accent text-sidebar-primary font-medium' 
+                    ${isActive
+                      ? 'bg-sidebar-accent text-sidebar-primary font-medium'
                       : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                     }
                   `}
                 >
-                  <span>{item.icon}</span>
+                  <Icon size={18} className="text-foreground" />
                   <span>{item.label}</span>
                 </Link>
               )
@@ -131,7 +131,9 @@ export function Sidebar() {
 
           {/* Quick Trends */}
           <div className="p-4 border-t border-sidebar-border">
-            <h3 className="text-sm font-semibold text-sidebar-foreground mb-3">🚀 Hızlı Trendler</h3>
+            <h3 className="text-sm font-semibold text-sidebar-foreground mb-3 flex items-center gap-2">
+              <TrendingUp size={16} className="text-foreground" /> Hızlı Trendler
+            </h3>
             {loading ? (
               <div className="space-y-2">
                 {[...Array(4)].map((_, i) => (
@@ -178,12 +180,14 @@ export function Sidebar() {
 
           {/* Hot Topics */}
           <div className="p-4 border-t border-sidebar-border">
-            <h3 className="text-sm font-semibold text-sidebar-foreground mb-3">🔥 Popüler Konular</h3>
+            <h3 className="text-sm font-semibold text-sidebar-foreground mb-3 flex items-center gap-2">
+              <Flame size={16} className="text-foreground" /> Popüler Konular
+            </h3>
             <div className="flex flex-wrap gap-2">
               {topTopics.map((topic, index) => (
-                <Badge 
+                <Badge
                   key={index}
-                  variant="secondary" 
+                  variant="secondary"
                   className="text-xs cursor-pointer hover:bg-sidebar-accent transition-colors"
                 >
                   {topic}
@@ -196,7 +200,9 @@ export function Sidebar() {
           <div className="p-4 border-t border-sidebar-border">
             <Card className="bg-gradient-to-br from-muted/50 to-muted">
               <CardContent className="p-4">
-                <h3 className="text-sm font-semibold text-card-foreground mb-3">📈 Anlık GitHub</h3>
+                <h3 className="text-sm font-semibold text-card-foreground mb-3 flex items-center gap-2">
+                  <BarChart2 size={16} className="text-foreground" /> Anlık GitHub
+                </h3>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Aktif Repos:</span>
@@ -223,12 +229,14 @@ export function Sidebar() {
           <div className="p-4 border-t border-sidebar-border">
             <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
               <CardContent className="p-4 text-center">
-                <h3 className="text-sm font-semibold mb-2">🚀 Pro Analytics</h3>
+                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2 justify-center">
+                  <FolderOpen size={16} className="text-foreground" /> Pro Analytics
+                </h3>
                 <p className="text-xs mb-3 opacity-90">
                   Organizasyonunuzu detaylı analiz edin
                 </p>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="secondary"
                   className="w-full"
                   onClick={() => window.location.href = '/login'}

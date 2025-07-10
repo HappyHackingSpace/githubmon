@@ -25,7 +25,7 @@ export interface TrendingRepo {
     avatar_url: string
     type: string
   }
- 
+
   stars_increment?: number
   stars_increment_percentage?: number
   forks_increment?: number
