@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import type { TrendingRepo } from '@/types/oss-insight'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Star, Code2 } from 'lucide-react'
@@ -19,7 +20,7 @@ export function TrendingRepos({ repos, period, setPeriod, loading = false }: Tre
   return (
     <section>
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-bold text-gray-900">Trending Repositories</h3>
+        <h3 className="text-2xl font-bold text-foreground">Trending Repositories</h3>
         <Select value={period} onValueChange={(value: '24h' | '7d' | '30d') => setPeriod(value)}>
           <SelectTrigger className="w-40">
             <SelectValue />
@@ -42,39 +43,55 @@ export function TrendingRepos({ repos, period, setPeriod, loading = false }: Tre
           <>
             {repos.map((repo, index) => (
               <Card key={repo.full_name} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-semibold truncate">
-                    <a
-                      href={repo.html_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:text-indigo-800"
-                    >
-                      {repo.full_name}
-                    </a>
-                  </CardTitle>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="size-10 flex-shrink-0">
+                      <AvatarImage
+                        src={repo.owner?.avatar_url}
+                        alt={repo.owner?.login || 'Repository owner'}
+                      />
+                      <AvatarFallback className="text-sm font-medium">
+                        {repo.owner?.login?.charAt(0)?.toUpperCase() || repo.full_name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base font-semibold truncate">
+                        <a
+                          href={repo.html_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-foreground hover:text-primary transition-colors"
+                        >
+                          {repo.full_name}
+                        </a>
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        by {repo.owner?.login || 'Unknown'}
+                      </p>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                     {repo.description || 'No description available'}
                   </p>
-                  <div className="flex items-center gap-4 mt-2">
-                    <span className="flex items-center gap-1 text-sm text-gray-700">
+                  <div className="flex items-center gap-4 mt-3">
+                    <span className="flex items-center gap-1 text-sm text-foreground">
                       <Star size={16} className="text-yellow-500" />
                       {repo.stargazers_count.toLocaleString()}
                     </span>
                     {repo.language && (
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <Code2 size={14} />
+                      <Badge variant="secondary" className="text-xs">
+                        <Code2 size={12} className="mr-1" />
                         {repo.language}
-                      </span>
+                      </Badge>
                     )}
                   </div>
                 </CardContent>
               </Card>
             ))}
             {repos.length === 0 && (
-              <div className="py-6 text-center text-gray-500">
+              <div className="py-6 text-center text-muted-foreground">
                 No trending repositories available.
               </div>
             )}
