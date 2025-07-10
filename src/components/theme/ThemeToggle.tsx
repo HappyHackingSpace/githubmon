@@ -78,7 +78,7 @@ export function ThemeToggleMinimal() {
   return (
     <button
       onClick={() => setTheme(actualTheme === 'light' ? 'dark' : 'light')}
-      className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+      className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
     >
       {actualTheme === 'light' ? (
         <>

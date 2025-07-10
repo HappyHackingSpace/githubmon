@@ -6,9 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useLocalStorage } from '@/hooks/useLocalStorage'
-import { OrgData } from '@/types/auth'
-import { useAuthStore } from '@/stores/app'
+
+import { useAuthStore } from '@/stores'
 
 export default function LoginPage() {
   const [token, setToken] = useState('')
@@ -67,14 +66,14 @@ setConnected(true)
 }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Sol Kolon - Token Guide */}
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">GitHubMon</h1>
-            <p className="text-gray-600">GitHub organizasyonlarını analiz etmek için güçlü bir platform</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">GitHubMon</h1>
+            <p className="text-muted-foreground">GitHub organizasyonlarını analiz etmek için güçlü bir platform</p>
           </div>
 
           <Card>

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RateLimitWarning } from '@/components/common/RateLimitWarning'
 import { SearchModal } from '@/components/search/SearchModal'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { useSearchStore } from '@/stores'
 
 
@@ -29,11 +30,11 @@ export function SearchHeader() {
   }
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-background border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-gray-900">GitHubMon</h1>
+            <h1 className="text-2xl font-bold text-foreground">GitHubMon</h1>
             <Badge variant="secondary">OSS Analytics</Badge>
           </div>
           {/* Search Bar */}
@@ -66,9 +67,10 @@ export function SearchHeader() {
           {/* Rate Limit Warning */}
           <div className="flex items-center space-x-3">
             <RateLimitWarning />
+            <ThemeToggle />
             <button
               onClick={() => router.push('/login')}
-              className="text-sm text-indigo-600 hover:text-indigo-800"
+              className="text-sm text-primary hover:text-primary/80 transition-colors"
             >
               Login
             </button>

@@ -6,8 +6,9 @@ import { usePathname } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ThemeToggleMinimal } from '@/components/theme/ThemeToggle'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
-import { useSidebarState } from '@/stores/app'
+import { useSidebarState } from '@/stores'
 
 interface SidebarProps {
   isOpen: boolean
@@ -81,21 +82,21 @@ export function Sidebar() {
       
       {/* Sidebar */}
       <aside className={`
-        fixed top-0 left-0 h-full w-80 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out
+        fixed top-0 left-0 h-full w-80 bg-sidebar border-r border-sidebar-border z-50 transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:z-auto
         flex flex-col
       `}>
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">GitHubMon</h2>
-            <p className="text-xs text-gray-500">OSS Analytics</p>
+            <h2 className="text-lg font-bold text-sidebar-foreground">GitHubMon</h2>
+            <p className="text-xs text-muted-foreground">OSS Analytics</p>
           </div>
           <button 
         
-            className="lg:hidden text-gray-500 hover:text-gray-700"
+            className="lg:hidden text-muted-foreground hover:text-sidebar-foreground transition-colors"
           >
             ✕
           </button>
@@ -116,8 +117,8 @@ export function Sidebar() {
                   className={`
                     flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm
                     ${isActive 
-                      ? 'bg-indigo-50 text-indigo-700 font-medium' 
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-sidebar-accent text-sidebar-primary font-medium' 
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                     }
                   `}
                 >
@@ -129,14 +130,14 @@ export function Sidebar() {
           </nav>
 
           {/* Quick Trends */}
-          <div className="p-4 border-t border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">🚀 Hızlı Trendler</h3>
+          <div className="p-4 border-t border-sidebar-border">
+            <h3 className="text-sm font-semibold text-sidebar-foreground mb-3">🚀 Hızlı Trendler</h3>
             {loading ? (
               <div className="space-y-2">
                 {[...Array(4)].map((_, i) => (
                   <div key={i} className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded mb-1"></div>
-                    <div className="h-3 bg-gray-100 rounded w-2/3"></div>
+                    <div className="h-4 bg-muted rounded mb-1"></div>
+                    <div className="h-3 bg-muted/50 rounded w-2/3"></div>
                   </div>
                 ))}
               </div>
@@ -152,14 +153,14 @@ export function Sidebar() {
                     <Card className="p-3 hover:shadow-md transition-shadow">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-indigo-600">
+                          <h4 className="text-sm font-medium text-card-foreground truncate group-hover:text-primary">
                             {item.name}
                           </h4>
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                             {item.description.slice(0, 60)}...
                           </p>
                           <div className="flex items-center mt-2 space-x-2">
-                            <span className="text-xs text-gray-400">⭐ {item.stars}</span>
+                            <span className="text-xs text-muted-foreground">⭐ {item.stars}</span>
                             {item.language && (
                               <Badge variant="outline" className="text-xs px-1 py-0">
                                 {item.language}
@@ -176,14 +177,14 @@ export function Sidebar() {
           </div>
 
           {/* Hot Topics */}
-          <div className="p-4 border-t border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">🔥 Popüler Konular</h3>
+          <div className="p-4 border-t border-sidebar-border">
+            <h3 className="text-sm font-semibold text-sidebar-foreground mb-3">🔥 Popüler Konular</h3>
             <div className="flex flex-wrap gap-2">
               {topTopics.map((topic, index) => (
                 <Badge 
                   key={index}
                   variant="secondary" 
-                  className="text-xs cursor-pointer hover:bg-indigo-100"
+                  className="text-xs cursor-pointer hover:bg-sidebar-accent transition-colors"
                 >
                   {topic}
                 </Badge>
@@ -192,26 +193,26 @@ export function Sidebar() {
           </div>
 
           {/* GitHub Stats Widget */}
-          <div className="p-4 border-t border-gray-100">
-            <Card className="bg-gradient-to-br from-gray-50 to-gray-100">
+          <div className="p-4 border-t border-sidebar-border">
+            <Card className="bg-gradient-to-br from-muted/50 to-muted">
               <CardContent className="p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">📈 Anlık GitHub</h3>
+                <h3 className="text-sm font-semibold text-card-foreground mb-3">📈 Anlık GitHub</h3>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Aktif Repos:</span>
-                    <span className="font-medium">2.1M+</span>
+                    <span className="text-muted-foreground">Aktif Repos:</span>
+                    <span className="font-medium text-card-foreground">2.1M+</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Günlük Commits:</span>
-                    <span className="font-medium">12K+</span>
+                    <span className="text-muted-foreground">Günlük Commits:</span>
+                    <span className="font-medium text-card-foreground">12K+</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Yeni PRs:</span>
-                    <span className="font-medium">3.2K+</span>
+                    <span className="text-muted-foreground">Yeni PRs:</span>
+                    <span className="font-medium text-card-foreground">3.2K+</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Aktif Devs:</span>
-                    <span className="font-medium">89K+</span>
+                    <span className="text-muted-foreground">Aktif Devs:</span>
+                    <span className="font-medium text-card-foreground">89K+</span>
                   </div>
                 </div>
               </CardContent>
@@ -219,8 +220,8 @@ export function Sidebar() {
           </div>
 
           {/* Call to Action */}
-          <div className="p-4 border-t border-gray-100">
-            <Card className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+          <div className="p-4 border-t border-sidebar-border">
+            <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
               <CardContent className="p-4 text-center">
                 <h3 className="text-sm font-semibold mb-2">🚀 Pro Analytics</h3>
                 <p className="text-xs mb-3 opacity-90">
@@ -229,13 +230,18 @@ export function Sidebar() {
                 <Button 
                   size="sm" 
                   variant="secondary"
-                  className="w-full text-indigo-600"
+                  className="w-full"
                   onClick={() => window.location.href = '/login'}
                 >
                   Token ile Giriş
                 </Button>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Theme Toggle */}
+          <div className="p-4 border-t border-sidebar-border">
+            <ThemeToggleMinimal />
           </div>
         </div>
       </aside>
@@ -248,9 +254,9 @@ export function SidebarToggle({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="lg:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-lg shadow-lg border border-gray-200"
+      className="lg:hidden fixed top-4 left-4 z-50 bg-background p-2 rounded-lg shadow-lg border border-border hover:bg-accent transition-colors"
     >
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-6 h-6 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
       </svg>
     </button>

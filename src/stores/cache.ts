@@ -29,6 +29,7 @@ interface DataCacheState {
   setCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos_24h' | 'trendingRepos_7d' | 'trendingRepos_30d' | 'topLanguages' | 'contributors'>, data: T, ttl?: number) => void
   getCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos_24h' | 'trendingRepos_7d' | 'trendingRepos_30d' | 'topLanguages' | 'contributors'>) => T | null
   clearCache: () => void
+    clearExpiredCache: () => void
   setRateLimit: (info: DataCacheState['rateLimitInfo']) => void
 }
 
@@ -72,6 +73,25 @@ setCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos_24h' | 'trendi
         contributors: null
       }),
 
+       clearExpiredCache: () => {
+        const state = get()
+        const now = Date.now()
+        const updates: Partial<DataCacheState> = {}
+        
+        const cacheKeys = ['trendingRepos_24h', 'trendingRepos_7d', 'trendingRepos_30d', 'topLanguages', 'contributors'] as const
+        
+        cacheKeys.forEach(key => {
+          const entry = state[key]
+          if (entry && now > entry.expiresAt) {
+            updates[key] = null
+          }
+        })
+        
+        if (Object.keys(updates).length > 0) {
+          set(updates)
+        }
+      },
+
       setRateLimit: (rateLimitInfo) => set({ rateLimitInfo })
     }),
     {
@@ -90,3 +110,11 @@ setCachedData: <T>(key: keyof Pick<DataCacheState, 'trendingRepos_24h' | 'trendi
     }
   )
 )
+
+// Automatically clear expired cache entries every 5 minutes
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    useDataCacheStore.getState().clearExpiredCache()
+  }, 5 * 60 * 1000)
+}
+
