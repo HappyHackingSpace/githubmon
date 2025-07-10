@@ -15,9 +15,6 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const router = useRouter()
   const { setOrgData, setConnected, setTokenExpiry } = useAuthStore()
- 
-
-
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,7 +22,6 @@ export default function LoginPage() {
     setError('')
 
     try {
-   
       const response = await fetch('https://api.github.com/user', {
         headers: {
           'Authorization': `token ${token}`,
@@ -34,141 +30,141 @@ export default function LoginPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Geçersiz token. Lütfen token\'ınızı kontrol edin.')
+        throw new Error('Invalid token. Please check your token.')
       }
 
       const userData = await response.json()
-      
 
       const expiryDate = new Date()
-      expiryDate.setMonth(expiryDate.getMonth() + 1) 
-      
-     setOrgData({ 
-  orgName: userData.login, 
-  token: token.trim() 
-})
-setTokenExpiry(expiryDate.toISOString())
-setConnected(true)
-    
+      expiryDate.setMonth(expiryDate.getMonth() + 1)
+
+      setOrgData({
+        orgName: userData.login,
+        token: token.trim()
+      })
+      setTokenExpiry(expiryDate.toISOString())
+      setConnected(true)
+
       router.push('/dashboard')
-      
+
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Bir hata oluştu')
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsLoading(false)
     }
   }
 
- const continueWithoutToken = () => {
-  setOrgData({ orgName: 'guest', token: '' })
-  setConnected(true)
-  router.push('/dashboard')
-}
+  const continueWithoutToken = () => {
+    setOrgData({ orgName: 'guest', token: '' })
+    setConnected(true)
+    router.push('/dashboard')
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Sol Kolon - Token Guide */}
+
+        {/* Left Column - Token Guide */}
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">GitHubMon</h1>
-            <p className="text-muted-foreground">GitHub organizasyonlarını analiz etmek için güçlü bir platform</p>
+            <p className="text-muted-foreground">A powerful platform to analyze GitHub organizations</p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>🚀 GitHub Token Neden Gerekli?</CardTitle>
+              <CardTitle> Why is a GitHub Token Needed?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span>Token olmadan</span>
-                <Badge variant="destructive">60 istek/saat</Badge>
+                <span>Without token</span>
+                <Badge variant="destructive">60 requests/hour</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span>Token ile</span>
-                <Badge variant="default">5,000 istek/saat</Badge>
+                <span>With token</span>
+                <Badge variant="default">5,000 requests/hour</Badge>
               </div>
               <p className="text-sm text-gray-600">
-                Daha fazla veri çekebilmek ve rate limit'e takılmamak için GitHub token'ınızı kullanın.
+                Use your GitHub token to fetch more data and avoid hitting the rate limit.
               </p>
             </CardContent>
           </Card>
 
+
           <Card>
             <CardHeader>
-              <CardTitle>📝 Token Nasıl Alınır?</CardTitle>
+              <CardTitle>How to Get a Token?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+
               <div className="space-y-2">
                 <div className="flex items-start space-x-2">
-                  <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-sm font-medium">1</span>
+                  <span className="w-6 h-6 flex items-center justify-center bg-indigo-100 text-indigo-800 rounded-full text-sm font-bold">1</span>
                   <div>
-                    <p className="font-medium">GitHub'a git</p>
+                    <p className="font-medium">Go to GitHub</p>
                     <p className="text-sm text-gray-600">Settings → Developer settings → Personal access tokens</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-2">
-                  <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-sm font-medium">2</span>
+                  <span className="w-6 h-6 flex items-center justify-center bg-indigo-100 text-indigo-800 rounded-full text-sm font-bold">2</span>
                   <div>
-                    <p className="font-medium">Yeni token oluştur</p>
-                    <p className="text-sm text-gray-600">"Generate new token (classic)" seçeneğini kullan</p>
+                    <p className="font-medium">Generate a new token</p>
+                    <p className="text-sm text-gray-600">Use the "Generate new token (classic)" option</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-2">
-                  <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-sm font-medium">3</span>
+                  <span className="w-6 h-6 flex items-center justify-center bg-indigo-100 text-indigo-800 rounded-full text-sm font-bold">3</span>
                   <div>
-                    <p className="font-medium">Gerekli izinleri seç</p>
+                    <p className="font-medium">Select required permissions</p>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <div>✅ <code className="bg-gray-100 px-1 rounded">repo</code> (genel repolar için)</div>
-                      <div>✅ <code className="bg-gray-100 px-1 rounded">user</code> (kullanıcı bilgileri için)</div>
+                      <div>✅ <code className="bg-gray-100 px-1 rounded">repo</code> (for public repos)</div>
+                      <div>✅ <code className="bg-gray-100 px-1 rounded">user</code> (for user info)</div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-2">
-                  <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-sm font-medium">4</span>
+                  <span className="w-6 h-6 flex items-center justify-center bg-indigo-100 text-indigo-800 rounded-full text-sm font-bold">4</span>
                   <div>
-                    <p className="font-medium">Token'ı kopyala</p>
-                    <p className="text-sm text-gray-600">Token'ı güvenli bir yerde sakla - sadece bir kez gösterilir</p>
+                    <p className="font-medium">Copy your token</p>
+                    <p className="text-sm text-gray-600">Store your token in a safe place - it will only be shown once</p>
                   </div>
                 </div>
               </div>
-              
+
               <div className="mt-4">
-                <a 
-                  href="https://github.com/settings/tokens" 
+                <a
+                  href="https://github.com/settings/tokens"
                   target="_blank"
                   className="inline-flex items-center text-indigo-600 hover:text-indigo-800 text-sm font-medium"
                 >
-                  GitHub Token Oluştur →
+                  Create GitHub Token →
                 </a>
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
-              <CardTitle>🔒 Güvenlik</CardTitle>
+              <CardTitle>🔒 Security</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Token'ınız sadece tarayıcınızda saklanır</li>
-                <li>• Sunucularımıza gönderilmez</li>
-                <li>• 1 ay sonra otomatik olarak silinir</li>
-                <li>• İstediğiniz zaman çıkış yapabilirsiniz</li>
+                <li>• Your token is only stored in your browser</li>
+                <li>• It is not sent to our servers</li>
+                <li>• It will be automatically deleted after 1 month</li>
+                <li>• You can log out at any time</li>
               </ul>
             </CardContent>
           </Card>
         </div>
 
-        {/* Sağ Kolon - Login Form */}
+        {/* Right Column - Login Form */}
         <div className="flex flex-col justify-center">
           <Card className="w-full">
             <CardHeader>
-              <CardTitle>GitHub Token ile Giriş</CardTitle>
+              <CardTitle>Login with GitHub Token</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
@@ -188,40 +184,40 @@ setConnected(true)
                     <p className="text-red-600 text-sm mt-2">{error}</p>
                   )}
                 </div>
-                
-                <Button 
-                  type="submit" 
+
+                <Button
+                  type="submit"
                   className="w-full"
                   disabled={isLoading || !token.trim()}
                 >
-                  {isLoading ? 'Doğrulanıyor...' : 'Giriş Yap'}
+                  {isLoading ? 'Verifying...' : 'Login'}
                 </Button>
               </form>
-              
+
               <div className="mt-6 text-center">
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-gray-300" />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">veya</span>
+                    <span className="px-2 bg-white text-gray-500">or</span>
                   </div>
                 </div>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   onClick={continueWithoutToken}
                   className="w-full mt-4"
                 >
-                  Token Olmadan Devam Et
-                  <span className="ml-2 text-xs text-gray-500">(Sınırlı)</span>
+                  Continue Without Token
+                  <span className="ml-2 text-xs text-gray-500">(Limited)</span>
                 </Button>
               </div>
             </CardContent>
           </Card>
-          
+
           <div className="mt-4 text-center text-sm text-gray-500">
-            <p>Zaten hesabınız var mı? Token'ınızı yukarıda girin.</p>
+            <p>Already have an account? Enter your token above.</p>
           </div>
         </div>
       </div>
