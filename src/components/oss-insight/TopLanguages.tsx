@@ -20,7 +20,7 @@ export function TopLanguages({ languages }: TopLanguagesProps) {
 
   return (
     <section>
-      <h3 className="flex items-center text-2xl font-bold text-gray-900 gap-2 mb-6">
+      <h3 className="flex items-center text-2xl font-bold text-gray-900 dark:text-white gap-2 mb-6">
         <LaptopIcon className="w-6 h-6" />
         Top Programming Languages
       </h3>
