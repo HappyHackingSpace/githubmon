@@ -125,11 +125,10 @@ export default function DashboardPage() {
 
       // Cache for 10 minutes
       const cacheKeyMap = {
-        '24h': 'trendingRepos_24h',
-        '7d': 'trendingRepos_7d',
-        '30d': 'trendingRepos_30d',
+        '24h': `trendingRepos_24h_${orgData?.orgName}`,
+        '7d': `trendingRepos_7d_${orgData?.orgName}`,
+        '30d': `trendingRepos_30d_${orgData?.orgName}`,
       } as const
-      setCachedData(cacheKeyMap[period], newData, 10 * 60 * 1000)
 
     } catch (error) {
       console.error('Dashboard data loading failed:', error)
@@ -206,16 +205,14 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-white dark:bg-gray-800 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Folder className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                    <Folder className="w-5 h-5 text-black dark:text-white" />
-                    Total Repos
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Repos</p>
+                  <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
                     {dashboardData.stats.totalRepos.toLocaleString()}
                   </p>
                 </div>
@@ -223,15 +220,13 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+          <Card className="bg-white dark:bg-gray-800 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Star className="w-4 h-4 text-amber-400" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                    <Star className="w-5 h-5 text-yellow-400" />
-                    Total Stars
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Stars</p>
+                  <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
                     {(dashboardData.stats.totalStars / 1000000).toFixed(1)}M
                   </p>
                 </div>
@@ -239,15 +234,13 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+          <Card className="bg-white dark:bg-gray-800 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <GitFork className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                    <GitFork className="w-5 h-5 text-black dark:text-white" />
-                    Total Forks
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Forks</p>
+                  <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
                     {dashboardData.stats.totalForks.toLocaleString()}
                   </p>
                 </div>
@@ -333,29 +326,29 @@ export default function DashboardPage() {
             /> */}
 
             {/* Quick Actions */}
-            <Card className="border-2 border-gray-700 dark:border-gray-800 shadow-2xl bg-gradient-to-br from-gray-900/95 to-gray-800/95 dark:from-black/95 dark:to-gray-900/95">
-              <CardHeader className="pb-2 border-b border-gray-700 dark:border-gray-800">
-                <CardTitle className="text-2xl font-bold tracking-tight text-white dark:text-white flex items-center gap-2">
-                  <Folder className="w-6 h-6 text-gray-300 dark:text-gray-200" />
+            <Card>
+              <CardHeader className="pb-2 border-b">
+                <CardTitle className="text-lg font-medium flex items-center gap-2">
+                  <Folder className="w-5 h-5" />
                   Quick Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 pt-5">
-                <Button variant="ghost" className="w-full flex justify-between items-center px-6 py-4 rounded-xl border-2 border-gray-700 dark:border-gray-800 bg-gray-900/80 dark:bg-black/80 hover:bg-gray-800 dark:hover:bg-gray-900 transition-all shadow-lg text-lg font-semibold text-white dark:text-white focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600">
+              <CardContent className="space-y-3 pt-4">
+                <Button variant="outline" className="w-full flex justify-between items-center p-3">
                   View Full Analytics
-                  <span className="text-gray-300 dark:text-gray-200 font-bold text-xl">→</span>
+                  <span>→</span>
                 </Button>
-                <Button variant="ghost" className="w-full flex justify-between items-center px-6 py-4 rounded-xl border-2 border-gray-700 dark:border-gray-800 bg-gray-900/80 dark:bg-black/80 hover:bg-gray-800 dark:hover:bg-gray-900 transition-all shadow-lg text-lg font-semibold text-white dark:text-white focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600">
+                <Button variant="outline" className="w-full flex justify-between items-center p-3">
                   Advanced Search
-                  <span className="text-gray-300 dark:text-gray-200 font-bold text-xl">→</span>
+                  <span>→</span>
                 </Button>
-                <Button variant="ghost" className="w-full flex justify-between items-center px-6 py-4 rounded-xl border-2 border-gray-700 dark:border-gray-800 bg-gray-900/80 dark:bg-black/80 hover:bg-gray-800 dark:hover:bg-gray-900 transition-all shadow-lg text-lg font-semibold text-white dark:text-white focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600">
+                <Button variant="outline" className="w-full flex justify-between items-center p-3">
                   Export Report
-                  <span className="text-gray-300 dark:text-gray-200 font-bold text-xl">→</span>
+                  <span>→</span>
                 </Button>
-                <Button variant="ghost" className="w-full flex justify-between items-center px-6 py-4 rounded-xl border-2 border-gray-700 dark:border-gray-800 bg-gray-900/80 dark:bg-black/80 hover:bg-gray-800 dark:hover:bg-gray-900 transition-all shadow-lg text-lg font-semibold text-white dark:text-white focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600">
+                <Button variant="outline" className="w-full flex justify-between items-center p-3">
                   Settings
-                  <span className="text-gray-300 dark:text-gray-200 font-bold text-xl">→</span>
+                  <span>→</span>
                 </Button>
               </CardContent>
             </Card>
@@ -363,76 +356,72 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom Section - Insights */}
-        <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950">
+        <Card className="bg-white dark:bg-gray-800">
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               AI Insights
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Folder className="w-4 h-4" />
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                        <Folder className="w-4 h-4 text-black dark:text-white" />
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                         Total Repos
                       </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-xl font-semibold">
                         {dashboardData.stats.totalRepos.toLocaleString()}
                       </p>
                     </div>
-                    <div className="text-2xl"></div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4" />
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                        <Star className="w-4 h-4 text-black dark:text-white" />
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                         Total Stars
                       </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-xl font-semibold">
                         {(dashboardData.stats.totalStars / 1000000).toFixed(1)}M
                       </p>
                     </div>
-                    <div className="text-2xl"></div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <GitFork className="w-4 h-4" />
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                        <GitFork className="w-4 h-4 text-black dark:text-white" />
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                         Total Forks
                       </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-xl font-semibold">
                         {dashboardData.stats.totalForks.toLocaleString()}
                       </p>
                     </div>
-                    <div className="text-2xl"></div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <HeartPulse className="w-4 h-4" />
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                        <HeartPulse className="w-4 h-4 text-black dark:text-white" />
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                         Health Score
                       </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-xl font-semibold">
                         {getHealthScore()}%
                       </p>
                     </div>
-                    <div className="text-2xl"></div>
                   </div>
                 </CardContent>
               </Card>

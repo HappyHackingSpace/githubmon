@@ -21,6 +21,7 @@ const initialState: ThemeProviderState = {
   theme: 'system',
   setTheme: () => null,
   actualTheme: 'light'
+
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -32,7 +33,10 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const { theme: zustandTheme, setTheme: setZustandTheme } = usePreferencesStore()
-  const [theme, setTheme] = useState<Theme>(zustandTheme || defaultTheme)
+  const [theme, setTheme] = useState<Theme>(() => {
+    const stored = (typeof window !== 'undefined') ? localStorage.getItem(storageKey) as Theme | null : null
+    return zustandTheme ?? stored ?? defaultTheme
+  })
   const [actualTheme, setActualTheme] = useState<'dark' | 'light'>('light')
 
 
