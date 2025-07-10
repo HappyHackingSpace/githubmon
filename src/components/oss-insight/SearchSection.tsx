@@ -22,7 +22,7 @@ export function SearchSection({ onSearchResults, className }: SearchSectionProps
 
     setIsSearching(true)
     try {
-      let results = []
+      let results: unknown[] = []
 
       if (searchType === 'repos') {
         results = await ossInsightClient.searchRepositories(searchQuery)
@@ -30,7 +30,6 @@ export function SearchSection({ onSearchResults, className }: SearchSectionProps
         results = await ossInsightClient.searchUsers(searchQuery, searchType === 'users' ? 'users' : 'orgs')
       }
 
-      console.log(`${searchType} search results:`, results)
       onSearchResults?.(results)
 
     } catch (error) {
