@@ -21,21 +21,25 @@ const initialState: ThemeProviderState = {
   theme: 'system',
   setTheme: () => null,
   actualTheme: 'light'
+
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
-export function ThemeProvider({ 
-  children, 
-  defaultTheme = 'system', 
+export function ThemeProvider({
+  children,
+  defaultTheme = 'system',
   storageKey = 'ui-theme',
-  ...props 
+  ...props
 }: ThemeProviderProps) {
   const { theme: zustandTheme, setTheme: setZustandTheme } = usePreferencesStore()
-  const [theme, setTheme] = useState<Theme>(zustandTheme || defaultTheme)
-  const [actualTheme, setActualTheme] = useState<'dark' | 'light'>('light') 
+  const [theme, setTheme] = useState<Theme>(() => {
+    const stored = (typeof window !== 'undefined') ? localStorage.getItem(storageKey) as Theme | null : null
+    return zustandTheme ?? stored ?? defaultTheme
+  })
+  const [actualTheme, setActualTheme] = useState<'dark' | 'light'>('light')
 
- 
+
   useEffect(() => {
     setZustandTheme(theme)
   }, [theme, setZustandTheme])
@@ -59,21 +63,21 @@ export function ThemeProvider({
 
     root.classList.add(resolvedTheme)
     setActualTheme(resolvedTheme)
-    
+
 
     localStorage.setItem(storageKey, theme)
   }, [theme, storageKey])
 
- 
+
   useEffect(() => {
     if (theme !== 'system') return
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    
+
     const handleChange = (e: MediaQueryListEvent) => {
       const systemTheme = e.matches ? 'dark' : 'light'
-      setActualTheme(systemTheme) 
-      
+      setActualTheme(systemTheme)
+
       const root = window.document.documentElement
       root.classList.remove('light', 'dark')
       root.classList.add(systemTheme)
@@ -85,14 +89,14 @@ export function ThemeProvider({
 
   const value = {
     theme,
-    setTheme: (newTheme: Theme) => { 
+    setTheme: (newTheme: Theme) => {
       setTheme(newTheme)
     },
-    actualTheme 
+    actualTheme
   }
 
   return (
-    <ThemeProviderContext.Provider value={value} {...props}> 
+    <ThemeProviderContext.Provider value={value} {...props}>
       {children}
     </ThemeProviderContext.Provider>
   )

@@ -22,17 +22,16 @@ export function SearchSection({ onSearchResults, className }: SearchSectionProps
 
     setIsSearching(true)
     try {
-      let results = []
-      
+      let results: unknown[] = []
+
       if (searchType === 'repos') {
         results = await ossInsightClient.searchRepositories(searchQuery)
       } else {
         results = await ossInsightClient.searchUsers(searchQuery, searchType === 'users' ? 'users' : 'orgs')
       }
-      
-      console.log(`${searchType} search results:`, results)
+
       onSearchResults?.(results)
-      
+
     } catch (error) {
       console.error('Search error:', error)
     } finally {
@@ -53,7 +52,7 @@ export function SearchSection({ onSearchResults, className }: SearchSectionProps
             <SelectItem value="orgs">Organizations</SelectItem>
           </SelectContent>
         </Select>
-        
+
         <Input
           type="text"
           placeholder={`${searchType === 'repos' ? 'Search repository' : searchType === 'users' ? 'Search user' : 'Search organization'}...`}
@@ -61,7 +60,7 @@ export function SearchSection({ onSearchResults, className }: SearchSectionProps
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1"
         />
-        
+
         <Button type="submit" disabled={isSearching || !searchQuery.trim()}>
           {isSearching ? 'Searching...' : 'Search'}
         </Button>
@@ -69,5 +68,3 @@ export function SearchSection({ onSearchResults, className }: SearchSectionProps
     </div>
   )
 }
-
-// This is a general-purpose search component, reusable on different pages

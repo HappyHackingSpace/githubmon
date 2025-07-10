@@ -1,14 +1,15 @@
 import { useEffect, useCallback } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Search, AlertCircle, Star, Loader2, GitBranch, Users } from 'lucide-react'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import { useSearchStore, usePreferencesStore, useNotifications } from '@/stores'
 import type { TrendingRepo, TopContributor } from '@/types/oss-insight'
@@ -35,7 +36,7 @@ export function SearchModal() {
     setSearchResults,
     addToHistory
   } = useSearchStore()
-  
+
   const { defaultSearchType } = usePreferencesStore()
   const { add: addNotification } = useNotifications()
 
@@ -63,39 +64,39 @@ export function SearchModal() {
       })
 
       try {
-    
+
         const promises: [Promise<TrendingRepo[]>, Promise<TopContributor[]>] = [
-          type === 'all' || type === 'repos' 
+          type === 'all' || type === 'repos'
             ? ossInsightClient.searchRepositories(searchQuery, 'stars', 10)
             : Promise.resolve([]),
-          type === 'all' || type === 'users' 
+          type === 'all' || type === 'users'
             ? ossInsightClient.searchUsers(searchQuery, 'all', 10)
             : Promise.resolve([])
         ]
 
         const [repos, users] = await Promise.all(promises)
-        
+
         setSearchResults({
-          repos: repos || [], 
-          users: users || [],  
+          repos: repos || [],
+          users: users || [],
           loading: false,
           error: null
         })
 
-    
+
         if ((repos && repos.length > 0) || (users && users.length > 0)) {
           addToHistory(searchQuery, type)
         }
       } catch (error) {
         const errorMessage = 'An error occurred during search'
-       
+
         setSearchResults({
           repos: currentResults.repos,
           users: currentResults.users,
           loading: false,
           error: errorMessage
         })
-        
+
         addNotification({
           type: 'error',
           title: 'Search Error',
@@ -144,6 +145,7 @@ export function SearchModal() {
       <DialogContent className="max-w-4xl max-h-[80vh] p-0 overflow-y-auto">
         <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle className="flex items-center space-x-2">
+            <Search className="w-5 h-5" />
             <span>Search on GitHub</span>
           </DialogTitle>
         </DialogHeader>
@@ -157,7 +159,7 @@ export function SearchModal() {
             className="text-lg h-12 w-full overflow-x-auto"
             autoFocus
           />
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">Filter:</span>
@@ -179,14 +181,17 @@ export function SearchModal() {
         <div className="flex-1 overflow-y-auto px-6 pb-6">
           {currentResults.loading && (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
               <span className="ml-3 text-gray-600">Searching...</span>
             </div>
           )}
 
           {currentResults.error && (
             <div className="text-center py-8">
-              <div className="text-red-600 mb-2">❌ {currentResults.error}</div>
+              <div className="flex items-center justify-center mb-2 text-red-600">
+                <AlertCircle className="w-6 h-6 mr-2" />
+                {currentResults.error}
+              </div>
               <Button variant="outline" onClick={() => debounceSearch(currentQuery, currentSearchType)}>
                 Try Again
               </Button>
@@ -195,7 +200,9 @@ export function SearchModal() {
 
           {!currentResults.loading && !currentResults.error && currentQuery && !hasResults && (
             <div className="text-center py-8 text-gray-500">
-              <div className="text-4xl mb-2">🔍</div>
+              <div className="flex items-center justify-center mb-2">
+                <Search className="w-12 h-12 text-gray-300" />
+              </div>
               <div>No results found for "{currentQuery}"</div>
               <div className="text-sm mt-2">Try different keywords</div>
             </div>
@@ -205,6 +212,7 @@ export function SearchModal() {
           {currentResults.repos.length > 0 && (
             <div className="mb-8">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <GitBranch className="w-5 h-5 mr-2" />
                 Repositories ({currentResults.repos.length})
               </h3>
               <Card className="max-h-80 overflow-y-auto">
@@ -224,7 +232,10 @@ export function SearchModal() {
                         {repo.language && (
                           <Badge variant="outline" className="text-xs ml-2">{repo.language}</Badge>
                         )}
-                        <span className="block text-xs text-gray-500 mt-0.5 truncate">⭐ {repo.stargazers_count.toLocaleString()}</span>
+                        <div className="flex items-center text-xs text-gray-500 mt-0.5">
+                          <Star className="w-3 h-3 mr-1" />
+                          <span className="truncate">{repo.stargazers_count.toLocaleString()}</span>
+                        </div>
                         {repo.description && (
                           <span className="block text-xs text-gray-400 mt-0.5 truncate">{repo.description}</span>
                         )}
@@ -240,6 +251,7 @@ export function SearchModal() {
           {currentResults.users.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Users className="w-5 h-5 mr-2" />
                 Users ({currentResults.users.length})
               </h3>
               <Card className="max-h-80 overflow-y-auto">
@@ -271,7 +283,9 @@ export function SearchModal() {
           {/* Empty State with Search History */}
           {!currentQuery && (
             <div className="text-center py-12 text-gray-500">
-              <div className="text-6xl mb-4">🔍</div>
+              <div className="flex items-center justify-center mb-4">
+                <Search className="w-16 h-16 text-gray-300" />
+              </div>
               <h3 className="text-lg font-medium mb-2">Search on GitHub</h3>
               <p className="text-sm mb-6">
                 You can search for repository, user or organization
@@ -305,8 +319,8 @@ export function SearchModal() {
         <div className="border-t px-6 py-3 bg-gray-50 text-xs text-gray-500">
           <div className="flex items-center justify-between">
             <div>
-              <kbd className="px-1 py-0.5 bg-white border rounded">Ctrl</kbd> + 
-              <kbd className="px-1 py-0.5 bg-white border rounded ml-1">K</kbd> 
+              <kbd className="px-1 py-0.5 bg-white border rounded">Ctrl</kbd> +
+              <kbd className="px-1 py-0.5 bg-white border rounded ml-1">K</kbd>
               <span className="ml-2">Search</span>
             </div>
             <div>

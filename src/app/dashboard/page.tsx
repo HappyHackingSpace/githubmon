@@ -13,9 +13,7 @@ import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import type { TrendingRepo, TopLanguage, GitHubEvent, TopContributor } from '@/types/oss-insight'
 import { TrendingReposWidget } from '@/components/widget/TrendingReposWidget'
 import { LanguageHeatmapWidget } from '@/components/widget/LanguageHeatmapWidget'
-
-// Dashboard Widgets
-
+import { Star, Folder, GitFork, HeartPulse, AlertTriangle } from "lucide-react"
 
 interface DashboardStats {
   totalRepos: number
@@ -41,7 +39,7 @@ export default function DashboardPage() {
   const hasHydrated = useStoreHydration()
   const { isConnected, orgData, isTokenValid } = useAuthStore()
   const { getCachedData, setCachedData } = useDataCacheStore()
-  
+
   const [period, setPeriod] = useState<'24h' | '7d' | '30d'>('7d')
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'ai-ml' | 'web-dev' | 'devops' | 'mobile'>('all')
   const [dashboardData, setDashboardData] = useState<DashboardData>({
@@ -61,10 +59,9 @@ export default function DashboardPage() {
     error: null
   })
 
-  // Auth guard
   useEffect(() => {
     if (!hasHydrated) return
-    
+
     if (!isConnected || !orgData) {
       router.push('/login')
       return
@@ -76,7 +73,6 @@ export default function DashboardPage() {
     }
   }, [hasHydrated, isConnected, orgData, isTokenValid, router])
 
-  // Load dashboard data
   useEffect(() => {
     if (!hasHydrated || !isConnected) return
     loadDashboardData()
@@ -84,22 +80,20 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     setDashboardData(prev => ({ ...prev, loading: true, error: null }))
-    
+
     try {
-      // Try cache first
       const cacheKey = `dashboard_${period}_${orgData?.orgName}`
       const cachedData = getCachedData(cacheKey)
-      
+
       if (cachedData) {
-        setDashboardData(prev => ({ 
-          ...prev, 
+        setDashboardData(prev => ({
+          ...prev,
           ...cachedData as Partial<DashboardData>,
-          loading: false 
+          loading: false
         }))
         return
       }
 
-      // Load fresh data
       const [repoStats, trending, languages, events, contributors] = await Promise.all([
         ossInsightClient.getRepositoryStats(),
         ossInsightClient.getTrendingRepos(period, 20),
@@ -128,10 +122,14 @@ export default function DashboardPage() {
       }
 
       setDashboardData(newData)
-      
+
       // Cache for 10 minutes
-      setCachedData(cacheKey, newData, 10 * 60 * 1000)
-      
+      const cacheKeyMap = {
+        '24h': `trendingRepos_24h_${orgData?.orgName}`,
+        '7d': `trendingRepos_7d_${orgData?.orgName}`,
+        '30d': `trendingRepos_30d_${orgData?.orgName}`,
+      } as const
+
     } catch (error) {
       console.error('Dashboard data loading failed:', error)
       setDashboardData(prev => ({
@@ -146,18 +144,18 @@ export default function DashboardPage() {
     const hour = new Date().getHours()
     const timeOfDay = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
     const userName = orgData?.orgName || 'Developer'
-    return `${timeOfDay}, ${userName}! 👋`
+    return `${timeOfDay}, ${userName}! `
   }
 
   const getHealthScore = () => {
     const { stats } = dashboardData
     let score = 70 // Base score
-    
+
     if (stats.healthyReposPercentage > 80) score += 20
     else if (stats.healthyReposPercentage > 60) score += 10
-    
+
     if (stats.trendingCount > 5) score += 10
-    
+
     return Math.min(100, score)
   }
 
@@ -187,7 +185,7 @@ export default function DashboardPage() {
               Your GitHub analytics dashboard • Last updated: {new Date().toLocaleTimeString()}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <Select value={period} onValueChange={(value: '24h' | '7d' | '30d') => setPeriod(value)}>
               <SelectTrigger className="w-40">
@@ -199,7 +197,7 @@ export default function DashboardPage() {
                 <SelectItem value="30d">Last 30 Days</SelectItem>
               </SelectContent>
             </Select>
-            
+
             <Button variant="outline" onClick={loadDashboardData} disabled={dashboardData.loading}>
               {dashboardData.loading ? 'Refreshing...' : 'Refresh'}
             </Button>
@@ -207,59 +205,45 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-white dark:bg-gray-800 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Folder className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Repos</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Repos</p>
+                  <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
                     {dashboardData.stats.totalRepos.toLocaleString()}
                   </p>
                 </div>
-                <div className="text-2xl">📦</div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+          <Card className="bg-white dark:bg-gray-800 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Star className="w-4 h-4 text-amber-400" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Stars</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Stars</p>
+                  <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
                     {(dashboardData.stats.totalStars / 1000000).toFixed(1)}M
                   </p>
                 </div>
-                <div className="text-2xl">⭐</div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+          <Card className="bg-white dark:bg-gray-800 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <GitFork className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Repos</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {dashboardData.stats.activeRepos.toLocaleString()}
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Forks</p>
+                  <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                    {dashboardData.stats.totalForks.toLocaleString()}
                   </p>
                 </div>
-                <div className="text-2xl">🚀</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Health Score</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {getHealthScore()}%
-                  </p>
-                </div>
-                <div className="text-2xl">💚</div>
               </div>
             </CardContent>
           </Card>
@@ -270,7 +254,7 @@ export default function DashboardPage() {
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2 text-red-800">
-                <span>⚠️</span>
+                <AlertTriangle className="w-5 h-5 text-red-500" />
                 <span>{dashboardData.error}</span>
                 <Button size="sm" variant="outline" onClick={loadDashboardData}>
                   Retry
@@ -290,10 +274,10 @@ export default function DashboardPage() {
               size="sm"
               onClick={() => setSelectedCategory(cat)}
             >
-              {cat === 'all' ? '🌐 All' : 
-               cat === 'ai-ml' ? '🤖 AI/ML' :
-               cat === 'web-dev' ? '🌐 Web Dev' :
-               cat === 'devops' ? '⚙️ DevOps' : '📱 Mobile'}
+              {cat === 'all' ? ' All' :
+                cat === 'ai-ml' ? ' AI/ML' :
+                  cat === 'web-dev' ? ' Web Dev' :
+                    cat === 'devops' ? ' DevOps' : ' Mobile'}
             </Button>
           ))}
         </div>
@@ -302,23 +286,23 @@ export default function DashboardPage() {
 
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* Left Column - 2/3 width */}
           <div className="lg:col-span-2 space-y-6">
-            
+
             {/* Trending Repositories with Intelligence */}
-            <TrendingReposWidget 
-              repos={dashboardData.trendingRepos} 
+            <TrendingReposWidget
+              repos={dashboardData.trendingRepos}
               period={period}
               category={selectedCategory}
             />
-            
+
             {/* Language Heatmap */}
-            <LanguageHeatmapWidget 
+            <LanguageHeatmapWidget
               languages={dashboardData.topLanguages}
               period={period}
             />
-            
+
             {/* Repository Health & Momentum */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* <RepositoryHealthWidget repos={dashboardData.trendingRepos} />
@@ -328,36 +312,43 @@ export default function DashboardPage() {
 
           {/* Right Column - 1/3 width */}
           <div className="space-y-6">
-            
+
             {/* Activity Feed */}
             {/* <ActivityFeedWidget 
               events={dashboardData.recentEvents}
               maxItems={10}
             /> */}
-            
+
             {/* Top Contributors */}
             {/* <ContributorInsightsWidget 
               contributors={dashboardData.topContributors}
               maxItems={8}
             /> */}
-            
+
             {/* Quick Actions */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">🎯 Quick Actions</CardTitle>
+              <CardHeader className="pb-2 border-b">
+                <CardTitle className="text-lg font-medium flex items-center gap-2">
+                  <Folder className="w-5 h-5" />
+                  Quick Actions
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start" size="sm">
-                  📊 View Full Analytics
+              <CardContent className="space-y-3 pt-4">
+                <Button variant="outline" className="w-full flex justify-between items-center p-3">
+                  View Full Analytics
+                  <span>→</span>
                 </Button>
-                <Button variant="outline" className="w-full justify-start" size="sm">
-                  🔍 Advanced Search
+                <Button variant="outline" className="w-full flex justify-between items-center p-3">
+                  Advanced Search
+                  <span>→</span>
                 </Button>
-                <Button variant="outline" className="w-full justify-start" size="sm">
-                  📈 Export Report
+                <Button variant="outline" className="w-full flex justify-between items-center p-3">
+                  Export Report
+                  <span>→</span>
                 </Button>
-                <Button variant="outline" className="w-full justify-start" size="sm">
-                  ⚙️ Settings
+                <Button variant="outline" className="w-full flex justify-between items-center p-3">
+                  Settings
+                  <span>→</span>
                 </Button>
               </CardContent>
             </Card>
@@ -365,30 +356,75 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom Section - Insights */}
-        <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950">
+        <Card className="bg-white dark:bg-gray-800">
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
-              🧠 AI Insights
+              AI Insights
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-indigo-600 dark:text-indigo-400">Trending Focus:</span>
-                <p className="text-gray-700 dark:text-gray-300">
-                  AI/ML repositories are dominating with +{Math.floor(Math.random() * 50 + 100)}% growth
-                </p>
-              </div>
-              <div>
-                <span className="font-medium text-purple-600 dark:text-purple-400">Hot Language:</span>
-                <p className="text-gray-700 dark:text-gray-300">
-                  {dashboardData.topLanguages[0]?.language || 'TypeScript'} showing strong momentum
-                </p>
-              </div>
-              <div>
-                <span className="font-medium text-green-600 dark:text-green-400">Recommendation:</span>
-                <p className="text-gray-700 dark:text-gray-300">
-                  Consider exploring emerging repos in the {selectedCategory === 'all' ? 'AI/ML' : selectedCategory} space
-                </p>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Folder className="w-4 h-4" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        Total Repos
+                      </p>
+                      <p className="text-xl font-semibold">
+                        {dashboardData.stats.totalRepos.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        Total Stars
+                      </p>
+                      <p className="text-xl font-semibold">
+                        {(dashboardData.stats.totalStars / 1000000).toFixed(1)}M
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <GitFork className="w-4 h-4" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        Total Forks
+                      </p>
+                      <p className="text-xl font-semibold">
+                        {dashboardData.stats.totalForks.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <HeartPulse className="w-4 h-4" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        Health Score
+                      </p>
+                      <p className="text-xl font-semibold">
+                        {getHealthScore()}%
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </CardContent>
         </Card>
