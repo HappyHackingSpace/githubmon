@@ -1,3 +1,4 @@
+// src/app/dashboard/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -13,6 +14,7 @@ import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import type { TrendingRepo, TopLanguage, GitHubEvent, TopContributor } from '@/types/oss-insight'
 import { TrendingReposWidget } from '@/components/widget/TrendingReposWidget'
 import { LanguageHeatmapWidget } from '@/components/widget/LanguageHeatmapWidget'
+import { ActivityFeedWidget } from '@/components/widget/ActivityFeedWidget'
 import { Star, Folder, GitFork, HeartPulse, AlertTriangle } from "lucide-react"
 
 interface DashboardStats {
@@ -313,11 +315,11 @@ export default function DashboardPage() {
           {/* Right Column - 1/3 width */}
           <div className="space-y-6">
 
-            {/* Activity Feed */}
-            {/* <ActivityFeedWidget 
+            {/* Activity Feed - NOW ACTIVE */}
+            <ActivityFeedWidget
               events={dashboardData.recentEvents}
               maxItems={10}
-            /> */}
+            />
 
             {/* Top Contributors */}
             {/* <ContributorInsightsWidget 
