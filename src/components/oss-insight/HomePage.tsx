@@ -17,6 +17,7 @@ export default function HomePage() {
   const [reposLoading, setReposLoading] = useState(false)
   const [languagesLoading, setLanguagesLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reposError, setReposError] = useState<string | null>(null)
 
   const hasHydrated = useStoreHydration()
   const { defaultPeriod, setDefaultPeriod } = usePreferencesStore()
@@ -38,7 +39,7 @@ export default function HomePage() {
     setError(null)
     try {
       const cachedLanguages = getCachedData('topLanguages')
-      
+
       if (Array.isArray(cachedLanguages)) {
         setTopLanguages((cachedLanguages as TopLanguage[]).slice(0, 8))
       } else {
@@ -61,23 +62,40 @@ export default function HomePage() {
 
   const loadRepos = async () => {
     setReposLoading(true)
+    setReposError(null)
     try {
+      console.log(`Loading trending repos for period: ${period}`)
       const cachedRepos = getCachedData(`trendingRepos_${period}`)
 
-      if (Array.isArray(cachedRepos)) {
+      if (Array.isArray(cachedRepos) && cachedRepos.length > 0) {
+        console.log(`Using cached repos: ${cachedRepos.length} items`)
         setTrendingRepos(cachedRepos as TrendingRepo[])
       } else {
+        console.log('Fetching fresh repo data from API')
         const trending = await ossInsightClient.getTrendingRepos(period, 12)
         const repoData = trending || []
+        console.log(`Fetched ${repoData.length} repositories`)
         setTrendingRepos(repoData)
-        setCachedData(`trendingRepos_${period}`, repoData)
+        if (repoData.length > 0) {
+          setCachedData(`trendingRepos_${period}`, repoData)
+        } else {
+          setReposError('No repositories found for this period')
+        }
       }
     } catch (error) {
       console.error('Repos loading failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load trending repositories'
+      setReposError(errorMessage)
       setTrendingRepos([])
     } finally {
       setReposLoading(false)
     }
+  }
+
+  const handleRefresh = () => {
+    // Clear cache for current period and reload
+    setCachedData(`trendingRepos_${period}`, null)
+    loadRepos()
   }
 
   const handlePeriodChange = (newPeriod: '24h' | '7d' | '30d') => {
@@ -93,7 +111,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <SearchHeader />
-      
+
       {error && (
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
