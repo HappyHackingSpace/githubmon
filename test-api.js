@@ -1,5 +1,5 @@
 // Test script for trending repositories API
-import { ossInsightClient } from '../src/lib/api/oss-insight-client.js'
+import { ossInsightClient } from '../src/lib/api/oss-insight-client'
 
 async function testTrendingRepos() {
     console.log('Testing trending repositories API...')

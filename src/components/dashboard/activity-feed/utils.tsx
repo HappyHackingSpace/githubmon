@@ -51,7 +51,7 @@ export const getEventDisplay = (event: GitHubEvent): { icon: React.ReactNode, ac
                 icon: <Zap className="w-4 h-4 text-blue-600" />,
                 actionText: `pushed ${commits} commit${commits !== 1 ? 's' : ''}`
             }
-                +       }
+        }
         default:
             return { icon: <ArrowRight className="w-4 h-4 text-gray-600" />, actionText: 'performed action' }
     }
