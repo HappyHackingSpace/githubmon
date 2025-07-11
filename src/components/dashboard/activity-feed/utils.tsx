@@ -45,12 +45,13 @@ export const getEventDisplay = (event: GitHubEvent): { icon: React.ReactNode, ac
             return { icon: <GitFork className="w-4 h-4 text-orange-600" />, actionText: 'forked repository' }
         case 'WatchEvent':
             return { icon: <Star className="w-4 h-4 text-yellow-600" />, actionText: 'starred repository' }
-        case 'PushEvent':
+        case 'PushEvent': {
             const commits = event.payload.size || 0
             return {
                 icon: <Zap className="w-4 h-4 text-blue-600" />,
                 actionText: `pushed ${commits} commit${commits !== 1 ? 's' : ''}`
             }
+                +       }
         default:
             return { icon: <ArrowRight className="w-4 h-4 text-gray-600" />, actionText: 'performed action' }
     }

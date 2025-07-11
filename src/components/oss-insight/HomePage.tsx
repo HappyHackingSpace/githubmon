@@ -9,6 +9,7 @@ import { HomePageLoading, TrendingReposLoading, TopLanguagesLoading } from '@/co
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import type { TrendingRepo, TopLanguage } from '@/types/oss-insight'
 import { useStoreHydration, usePreferencesStore, useDataCacheStore } from '@/stores'
+const [reposError, setReposError] = useState<string | null>(null)
 
 export default function HomePage() {
   const [trendingRepos, setTrendingRepos] = useState<TrendingRepo[]>([])
@@ -142,6 +143,7 @@ export default function HomePage() {
               period={period}
               setPeriod={handlePeriodChange}
               loading={reposLoading}
+              error={reposError}
             />
           )}
 
