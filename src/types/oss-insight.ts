@@ -50,7 +50,7 @@ export interface TopLanguage {
 
 export interface GitHubEvent {
   id: string
-  type: 'PushEvent' | 'PullRequestEvent' | 'IssuesEvent' | 'ForkEvent' | 'WatchEvent' | 'CreateEvent'
+  type: 'PushEvent' | 'PullRequestEvent' | 'IssuesEvent' | 'ForkEvent' | 'WatchEvent' | 'CreateEvent' | 'ReleaseEvent'
   actor: {
     login: string
     display_login: string
