@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import type { TrendingRepo } from '@/types/oss-insight'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Star, Code2 } from 'lucide-react'
+import { Star, Code2, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react'
 
 
 interface TrendingReposProps {
@@ -14,24 +15,58 @@ interface TrendingReposProps {
   period: '24h' | '7d' | '30d'
   setPeriod: (period: '24h' | '7d' | '30d') => void
   loading?: boolean
+  onRefresh?: () => void
+  error?: string | null
 }
 
-export function TrendingRepos({ repos, period, setPeriod, loading = false }: TrendingReposProps) {
+export function TrendingRepos({ repos, period, setPeriod, loading = false, onRefresh, error }: TrendingReposProps) {
   return (
     <section>
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-bold text-foreground">Trending Repositories</h3>
-        <Select value={period} onValueChange={(value: '24h' | '7d' | '30d') => setPeriod(value)}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="24h">Last 24 Hours</SelectItem>
-            <SelectItem value="7d">Last 7 Days</SelectItem>
-            <SelectItem value="30d">Last 30 Days</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <h3 className="text-2xl font-bold text-foreground">Trending Repositories</h3>
+          {repos.length > 0 && (
+            <Badge variant="secondary" className="text-sm">
+              {repos.length} repositories
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={period} onValueChange={(value: '24h' | '7d' | '30d') => setPeriod(value)}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="24h">Last 24 Hours</SelectItem>
+              <SelectItem value="7d">Last 7 Days</SelectItem>
+              <SelectItem value="30d">Last 30 Days</SelectItem>
+            </SelectContent>
+          </Select>
+          {onRefresh && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRefresh}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          )}
+        </div>
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
+          <div>
+            <p className="text-destructive font-medium">Unable to load trending repositories</p>
+            <p className="text-destructive/80 text-sm">{error}</p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           [...Array(6)].map((_, i) => (
@@ -60,9 +95,10 @@ export function TrendingRepos({ repos, period, setPeriod, loading = false }: Tre
                           href={repo.html_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-foreground hover:text-primary transition-colors"
+                          className="text-foreground hover:text-primary transition-colors flex items-center gap-1"
                         >
                           {repo.full_name}
+                          <ExternalLink className="w-3 h-3" />
                         </a>
                       </CardTitle>
                       <p className="text-sm text-muted-foreground">
@@ -90,9 +126,21 @@ export function TrendingRepos({ repos, period, setPeriod, loading = false }: Tre
                 </CardContent>
               </Card>
             ))}
-            {repos.length === 0 && (
-              <div className="py-6 text-center text-muted-foreground">
-                No trending repositories available.
+            {repos.length === 0 && !loading && (
+              <div className="col-span-full py-12 text-center">
+                <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <Star className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h4 className="text-lg font-semibold text-foreground mb-2">No Trending Repositories</h4>
+                <p className="text-muted-foreground mb-4">
+                  {error ? 'Unable to fetch data from GitHub API' : 'No repositories found for the selected period'}
+                </p>
+                {onRefresh && (
+                  <Button onClick={onRefresh} variant="outline" className="flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4" />
+                    Try Again
+                  </Button>
+                )}
               </div>
             )}
           </>
