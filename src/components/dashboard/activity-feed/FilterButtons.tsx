@@ -1,7 +1,6 @@
 // src/components/dashboard/activity-feed/FilterButtons.tsx
 import React from 'react'
 import { Button } from '@/components/ui/button'
-import { Flame, TrendingUp, ArrowRight } from 'lucide-react'
 
 interface FilterButtonsProps {
     filterLevel: 'all' | 'medium' | 'high'
@@ -20,20 +19,11 @@ export function FilterButtons({ filterLevel, onFilterChange }: FilterButtonsProp
                     className="text-xs"
                 >
                     {level === 'all' ? (
-                        <>
-                            <ArrowRight className="w-3 h-3 mr-1" />
-                            All
-                        </>
+                        'All'
                     ) : level === 'medium' ? (
-                        <>
-                            <TrendingUp className="w-3 h-3 mr-1" />
-                            Key
-                        </>
+                        'Key'
                     ) : (
-                        <>
-                            <Flame className="w-3 h-3 mr-1" />
-                            Hot
-                        </>
+                        'Hot'
                     )}
                 </Button>
             ))}

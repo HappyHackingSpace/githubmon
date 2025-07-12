@@ -156,7 +156,7 @@ export function SearchModal() {
             placeholder="Search for repository, user or organization..."
             value={currentQuery}
             onChange={(e) => setCurrentQuery(e.target.value)}
-            className="text-lg h-12 w-full overflow-x-auto"
+            className="text-lg h-14 w-full overflow-x-auto px-4 font-medium"
             autoFocus
           />
 
@@ -174,6 +174,16 @@ export function SearchModal() {
                 </Button>
               ))}
             </div>
+
+            {/* Enhanced larger search button */}
+            <Button
+              onClick={() => debounceSearch(currentQuery, currentSearchType)}
+              disabled={currentResults.loading || !currentQuery.trim()}
+              size="lg"
+              className="px-6 py-2 text-base font-medium"
+            >
+              {currentResults.loading ? 'Searching...' : 'Search'}
+            </Button>
           </div>
         </div>
 

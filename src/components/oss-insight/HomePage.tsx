@@ -5,15 +5,22 @@ import { SearchHeader } from './SearchHeader'
 import { TrendingRepos } from './TrendingRepos'
 import { TopLanguages } from './TopLanguages'
 import { CallToActionSection } from './CallToActionSection'
+import { StatsOverview } from '@/components/dashboard/StatsOverview'
 import { HomePageLoading, TrendingReposLoading, TopLanguagesLoading } from '@/components/common/LoadingBoundary'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import type { TrendingRepo, TopLanguage } from '@/types/oss-insight'
 import { useStoreHydration, usePreferencesStore, useDataCacheStore } from '@/stores'
-const [reposError, setReposError] = useState<string | null>(null)
-
 export default function HomePage() {
   const [trendingRepos, setTrendingRepos] = useState<TrendingRepo[]>([])
   const [topLanguages, setTopLanguages] = useState<TopLanguage[]>([])
+  const [platformStats, setPlatformStats] = useState({
+    totalRepos: 2100000,
+    totalStars: 450000000,
+    totalForks: 89000000,
+    activeRepos: 850000,
+    trendingCount: 1250,
+    healthyReposPercentage: 85
+  })
   const [loading, setLoading] = useState(true)
   const [reposLoading, setReposLoading] = useState(false)
   const [languagesLoading, setLanguagesLoading] = useState(false)
@@ -39,6 +46,17 @@ export default function HomePage() {
     setLoading(true)
     setError(null)
     try {
+      // Load platform stats
+      const repoStats = await ossInsightClient.getRepositoryStats()
+      setPlatformStats({
+        totalRepos: repoStats.total_repos,
+        totalStars: repoStats.total_stars,
+        totalForks: repoStats.total_forks,
+        activeRepos: repoStats.active_repos_count,
+        trendingCount: repoStats.trending_repos_count,
+        healthyReposPercentage: Math.round((repoStats.active_repos_count / repoStats.total_repos) * 100)
+      })
+
       const cachedLanguages = getCachedData('topLanguages')
 
       if (Array.isArray(cachedLanguages)) {
@@ -128,9 +146,14 @@ export default function HomePage() {
           <h2 className="text-4xl font-bold text-foreground mb-4">
             Discover GitHub Trends
           </h2>
-          <p className="text-xl text-muted-foreground">
+          <p className="text-xl text-muted-foreground mb-8">
             Trending projects and real-time programming language statistics
           </p>
+        </div>
+
+        {/* Platform Statistics */}
+        <div className="mb-12">
+          <StatsOverview stats={platformStats} loading={loading} />
         </div>
 
         <div className="space-y-12">
