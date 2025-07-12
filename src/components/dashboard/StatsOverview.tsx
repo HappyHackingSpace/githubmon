@@ -43,6 +43,18 @@ interface StatCardProps {
     color?: 'blue' | 'amber' | 'green' | 'purple' | 'pink' | 'teal'
 }
 
+function getStopColor(color: string = 'blue') {
+    const colorMap: Record<string, string> = {
+        blue: '#3b82f6',
+        amber: '#f59e0b',
+        green: '#10b981',
+        purple: '#8b5cf6',
+        pink: '#ec4899',
+        teal: '#14b8a6'
+    }
+    return colorMap[color] || colorMap.blue
+}
+
 function MiniChart({ data, color = 'blue' }: { data: number[], color?: string }) {
     const max = Math.max(...data)
     const min = Math.min(...data)
@@ -73,8 +85,8 @@ function MiniChart({ data, color = 'blue' }: { data: number[], color?: string })
                 />
                 <defs>
                     <linearGradient id={`gradient-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" className={`stop-${color}-500`} stopOpacity="0.3" />
-                        <stop offset="100%" className={`stop-${color}-500`} stopOpacity="0.05" />
+                        <stop offset="0%" stopColor={getStopColor(color)} stopOpacity="0.3" />
+                        <stop offset="100%" stopColor={getStopColor(color)} stopOpacity="0.05" />
                     </linearGradient>
                 </defs>
                 <polygon
@@ -336,3 +348,4 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
         </div>
     )
 }
+

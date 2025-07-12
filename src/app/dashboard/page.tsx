@@ -9,14 +9,15 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { useAuthStore, useDataCacheStore, useStoreHydration } from '@/stores'
+import { useAuthStore, useDataCacheStore, useStoreHydration, useSearchStore } from '@/stores'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import type { TrendingRepo, TopLanguage, GitHubEvent, TopContributor } from '@/types/oss-insight'
 import { TrendingReposWidget } from '@/components/widget/TrendingReposWidget'
 import { LanguageHeatmapWidget } from '@/components/widget/LanguageHeatmapWidget'
 import { ActivityFeedWidget } from '@/components/widget/ActivityFeedWidget'
 import { StatsOverview } from '@/components/dashboard/StatsOverview'
-import { Star, Folder, GitFork, AlertTriangle } from "lucide-react"
+import { Star, Folder, GitFork, AlertTriangle, Search } from "lucide-react"
+import { SearchModal } from '@/components/search/SearchModal'
 
 interface DashboardStats {
   totalRepos: number
@@ -42,6 +43,7 @@ export default function DashboardPage() {
   const hasHydrated = useStoreHydration()
   const { isConnected, orgData, isTokenValid } = useAuthStore()
   const { getCachedData, setCachedData } = useDataCacheStore()
+  const { setSearchModalOpen } = useSearchStore()
 
   const [period, setPeriod] = useState<'24h' | '7d' | '30d'>('7d')
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'ai-ml' | 'web-dev' | 'devops' | 'mobile'>('all')
@@ -174,6 +176,16 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Button
+              variant="default"
+              onClick={() => setSearchModalOpen(true)}
+              className="px-6 py-2.5 shadow-sm hover:shadow-md transition-shadow font-medium text-base"
+              size="lg"
+            >
+              <Search className="w-6 h-6 mr-2 stroke-[1.5]" />
+              Search
+            </Button>
+
             <Select value={period} onValueChange={(value: '24h' | '7d' | '30d') => setPeriod(value)}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -300,6 +312,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Search Modal - no props needed */}
+      <SearchModal />
     </Layout>
   )
 }
