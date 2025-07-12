@@ -15,7 +15,8 @@ import type { TrendingRepo, TopLanguage, GitHubEvent, TopContributor } from '@/t
 import { TrendingReposWidget } from '@/components/widget/TrendingReposWidget'
 import { LanguageHeatmapWidget } from '@/components/widget/LanguageHeatmapWidget'
 import { ActivityFeedWidget } from '@/components/widget/ActivityFeedWidget'
-import { Star, Folder, GitFork, HeartPulse, AlertTriangle } from "lucide-react"
+import { StatsOverview } from '@/components/dashboard/StatsOverview'
+import { Star, Folder, GitFork, AlertTriangle } from "lucide-react"
 
 interface DashboardStats {
   totalRepos: number
@@ -84,7 +85,7 @@ export default function DashboardPage() {
     setDashboardData(prev => ({ ...prev, loading: true, error: null }))
 
     try {
-      const cacheKey = `dashboard_${period}_${orgData?.orgName}`
+      const cacheKey = `dashboard_${period}_${orgData?.orgName}` as any
       const cachedData = getCachedData(cacheKey)
 
       if (cachedData) {
@@ -126,11 +127,7 @@ export default function DashboardPage() {
       setDashboardData(newData)
 
       // Cache for 10 minutes
-      const cacheKeyMap = {
-        '24h': `trendingRepos_24h_${orgData?.orgName}`,
-        '7d': `trendingRepos_7d_${orgData?.orgName}`,
-        '30d': `trendingRepos_30d_${orgData?.orgName}`,
-      } as const
+      setCachedData(cacheKey, newData, 10 * 60 * 1000)
 
     } catch (error) {
       console.error('Dashboard data loading failed:', error)
@@ -147,18 +144,6 @@ export default function DashboardPage() {
     const timeOfDay = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
     const userName = orgData?.orgName || 'Developer'
     return `${timeOfDay}, ${userName}! `
-  }
-
-  const getHealthScore = () => {
-    const { stats } = dashboardData
-    let score = 70 // Base score
-
-    if (stats.healthyReposPercentage > 80) score += 20
-    else if (stats.healthyReposPercentage > 60) score += 10
-
-    if (stats.trendingCount > 5) score += 10
-
-    return Math.min(100, score)
   }
 
   if (!hasHydrated || dashboardData.loading) {
@@ -207,49 +192,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-white dark:bg-gray-800 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Folder className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Repos</p>
-                  <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                    {dashboardData.stats.totalRepos.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white dark:bg-gray-800 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Star className="w-4 h-4 text-amber-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Stars</p>
-                  <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                    {(dashboardData.stats.totalStars / 1000000).toFixed(1)}M
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white dark:bg-gray-800 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <GitFork className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Forks</p>
-                  <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                    {dashboardData.stats.totalForks.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <StatsOverview stats={dashboardData.stats} loading={dashboardData.loading} />
 
         {/* Error State */}
         {dashboardData.error && (
@@ -356,80 +299,6 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
-
-        {/* Bottom Section - Insights */}
-        <Card className="bg-white dark:bg-gray-800">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              AI Insights
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Folder className="w-4 h-4" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                        Total Repos
-                      </p>
-                      <p className="text-xl font-semibold">
-                        {dashboardData.stats.totalRepos.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                        Total Stars
-                      </p>
-                      <p className="text-xl font-semibold">
-                        {(dashboardData.stats.totalStars / 1000000).toFixed(1)}M
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <GitFork className="w-4 h-4" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                        Total Forks
-                      </p>
-                      <p className="text-xl font-semibold">
-                        {dashboardData.stats.totalForks.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <HeartPulse className="w-4 h-4" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                        Health Score
-                      </p>
-                      <p className="text-xl font-semibold">
-                        {getHealthScore()}%
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </Layout>
   )
