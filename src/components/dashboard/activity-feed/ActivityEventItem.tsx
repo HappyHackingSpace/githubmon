@@ -12,17 +12,15 @@ interface ActivityEventItemProps {
 export function ActivityEventItem({ event }: ActivityEventItemProps) {
     return (
         <div className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
-            <div className="text-lg flex-shrink-0">{event.eventIcon}</div>
-
             <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-1">
-                    <Avatar className="size-5">
+                    <Avatar className="size-6">
                         <AvatarImage src={event.actor.avatar_url} alt={event.actor.login} />
-                        <AvatarFallback className="text-xs">
+                        <AvatarFallback className="text-sm">
                             {event.actor.login.charAt(0).toUpperCase()}
                         </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium text-sm truncate">
+                    <span className="font-medium text-base truncate">
                         {event.actor.login}
                     </span>
                     <span className="text-sm text-muted-foreground">
