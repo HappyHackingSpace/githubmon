@@ -123,17 +123,11 @@ export function Sidebar() {
               )
             })}
           </nav>
+        </div>
 
-        
-
-      
-
-         
-
-          {/* Theme Toggle */}
-          <div className="p-4 border-t border-sidebar-border">
-            <ThemeToggleMinimal />
-          </div>
+        {/* Theme Toggle - Fixed at bottom */}
+        <div className="p-4 border-t border-sidebar-border">
+          <ThemeToggleMinimal />
         </div>
       </aside>
     </>
