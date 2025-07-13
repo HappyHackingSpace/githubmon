@@ -61,6 +61,12 @@ export function Sidebar() {
   }
 
   const navigationItems = [
+    { href: '/', label: ' Ana Sayfa', icon: Home },
+    { href: '/trending', label: ' Trending', icon: TrendingUp },
+    { href: '/languages', label: ' Diller', icon: Languages },
+    { href: '/contributors', label: ' Geliştiriciler', icon: Users },
+    { href: '/collections', label: ' Koleksiyonlar', icon: FolderOpen },
+    { href: '/analytics', label: ' Analytics', icon: BarChart2 },
     { href: '/dashboard', label: ' Dashboard', icon: Flame }
   ]
 
@@ -123,11 +129,101 @@ export function Sidebar() {
             })}
           </nav>
 
-         
+          {/* Quick Trends */}
+          <div className="p-4 border-t border-sidebar-border">
+            <h3 className="text-sm font-semibold text-sidebar-foreground mb-3 flex items-center gap-2">
+              <TrendingUp size={16} className="text-foreground" /> Hızlı Trendler
+            </h3>
+            {loading ? (
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="h-4 bg-muted rounded mb-1"></div>
+                    <div className="h-3 bg-muted/50 rounded w-2/3"></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {quickTrends.slice(0, 6).map((item, index) => (
+                  <a
+                    key={index}
+                    href={item.url}
+                    target="_blank"
+                    className="block group"
+                  >
+                    <Card className="p-3 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-card-foreground truncate group-hover:text-primary">
+                            {item.name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {item.description.slice(0, 60)}...
+                          </p>
+                          <div className="flex items-center mt-2 space-x-2">
+                            <span className="text-xs text-muted-foreground">⭐ {item.stars}</span>
+                            {item.language && (
+                              <Badge variant="outline" className="text-xs px-1 py-0">
+                                {item.language}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
 
-        
+          {/* Hot Topics */}
+          <div className="p-4 border-t border-sidebar-border">
+            <h3 className="text-sm font-semibold text-sidebar-foreground mb-3 flex items-center gap-2">
+              <Flame size={16} className="text-foreground" /> Popüler Konular
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {topTopics.map((topic, index) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="text-xs cursor-pointer hover:bg-sidebar-accent transition-colors"
+                >
+                  {topic}
+                </Badge>
+              ))}
+            </div>
+          </div>
 
-         
+          {/* GitHub Stats Widget */}
+          <div className="p-4 border-t border-sidebar-border">
+            <Card className="bg-gradient-to-br from-muted/50 to-muted">
+              <CardContent className="p-4">
+                <h3 className="text-sm font-semibold text-card-foreground mb-3 flex items-center gap-2">
+                  <BarChart2 size={16} className="text-foreground" /> Anlık GitHub
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Aktif Repos:</span>
+                    <span className="font-medium text-card-foreground">2.1M+</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Günlük Commits:</span>
+                    <span className="font-medium text-card-foreground">12K+</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Yeni PRs:</span>
+                    <span className="font-medium text-card-foreground">3.2K+</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Aktif Devs:</span>
+                    <span className="font-medium text-card-foreground">89K+</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Theme Toggle */}
           <div className="p-4 border-t border-sidebar-border">

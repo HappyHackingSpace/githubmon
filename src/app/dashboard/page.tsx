@@ -93,7 +93,7 @@ export default function DashboardPage() {
       try {
 
         if (cacheKey && typeof getCachedData === 'function') {
-          cachedData = getCachedData(cacheKey)
+          cachedData = getCachedData(cacheKey as any)
           // Ensure the returned data is valid
           if (cachedData && typeof cachedData !== 'object') {
             console.warn('Invalid cache data format, ignoring cache')
@@ -146,7 +146,7 @@ export default function DashboardPage() {
       setDashboardData(newData)
 
       // Cache for 10 minutes
-      setCachedData(cacheKey, newData, 10 * 60 * 1000)
+      setCachedData(cacheKey as any, newData, 10 * 60 * 1000)
 
     } catch (error) {
       console.error('Dashboard data loading failed:', error)
@@ -213,10 +213,6 @@ export default function DashboardPage() {
                 <SelectItem value="30d">Last 30 Days</SelectItem>
               </SelectContent>
             </Select>
-
-            <Button variant="outline" onClick={loadDashboardData} disabled={dashboardData.loading}>
-              {dashboardData.loading ? 'Refreshing...' : 'Refresh'}
-            </Button>
           </div>
         </div>
 
@@ -299,33 +295,6 @@ export default function DashboardPage() {
               maxItems={8}
             /> */}
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader className="pb-2 border-b">
-                <CardTitle className="text-lg font-medium flex items-center gap-2">
-                  <Folder className="w-5 h-5" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-4">
-                <Button variant="outline" className="w-full flex justify-between items-center p-3">
-                  View Full Analytics
-                  <span>→</span>
-                </Button>
-                <Button variant="outline" className="w-full flex justify-between items-center p-3">
-                  Advanced Search
-                  <span>→</span>
-                </Button>
-                <Button variant="outline" className="w-full flex justify-between items-center p-3">
-                  Export Report
-                  <span>→</span>
-                </Button>
-                <Button variant="outline" className="w-full flex justify-between items-center p-3">
-                  Settings
-                  <span>→</span>
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>

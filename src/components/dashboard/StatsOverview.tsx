@@ -67,7 +67,7 @@ function MiniChart({ data, color = 'blue' }: {
     color?: 'blue' | 'amber' | 'green' | 'purple' | 'pink' | 'teal'
 }) {
     if (!data || data.length === 0) {
-        return <div className="h-8 w-full" />
+        return <div className="h-4 w-full" />
     }
 
     const max = Math.max(...data)
@@ -84,7 +84,7 @@ function MiniChart({ data, color = 'blue' }: {
     }
 
     return (
-        <div className="h-8 w-full">
+        <div className="h-4 w-full">
             <svg
                 className="w-full h-full"
                 viewBox="0 0 100 30"
@@ -184,45 +184,45 @@ function StatCard({ title, value, icon, description, trend, chartData, color = '
 
     return (
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 bg-white dark:bg-gray-900">
-            <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-800">
+            <CardContent className="p-2">
+                <div className="flex items-start justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                        <div className="p-0.5 rounded-md bg-gray-50 dark:bg-gray-800">
                             {icon}
                         </div>
                         <div>
-                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                            <p className="text-[10px] font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                                 {title}
                             </p>
                         </div>
                     </div>
                     {trend && (
-                        <Badge variant="secondary" className={`text-xs px-2 py-0.5 ${getTrendColor()}`}>
+                        <Badge variant="secondary" className={`text-[10px] px-1 py-0 ${getTrendColor()}`}>
                             {getTrendIcon()}
                             {Math.abs(trend.value)}%
                         </Badge>
                     )}
                 </div>
 
-                <div className="mb-3">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                <div className="mb-1">
+                    <div className="text-base font-bold text-gray-900 dark:text-white">
                         {formatDisplayValue()}
                     </div>
                     {description && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">
                             {description}
                         </p>
                     )}
                 </div>
 
                 {chartData && (
-                    <div className="mb-2">
+                    <div className="mb-0.5">
                         <MiniChart data={chartData} color={color} />
                     </div>
                 )}
 
                 {trend && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">
                         {trend.label}
                     </p>
                 )}
@@ -239,17 +239,17 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
 
     if (loading) {
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {[...Array(6)].map((_, i) => (
                     <Card key={i} className="bg-gray-50 dark:bg-gray-800 animate-pulse border-0">
-                        <CardContent className="p-4">
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 bg-gray-300 dark:bg-gray-700 rounded" />
-                                    <div className="w-16 h-3 bg-gray-300 dark:bg-gray-700 rounded" />
+                        <CardContent className="p-2">
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-1">
+                                    <div className="w-4 h-4 bg-gray-300 dark:bg-gray-700 rounded" />
+                                    <div className="w-12 h-2 bg-gray-300 dark:bg-gray-700 rounded" />
                                 </div>
-                                <div className="w-20 h-8 bg-gray-300 dark:bg-gray-700 rounded" />
-                                <div className="w-full h-6 bg-gray-300 dark:bg-gray-700 rounded" />
+                                <div className="w-14 h-5 bg-gray-300 dark:bg-gray-700 rounded" />
+                                <div className="w-full h-3 bg-gray-300 dark:bg-gray-700 rounded" />
                             </div>
                         </CardContent>
                     </Card>
@@ -259,13 +259,13 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-2">
             {/* Main Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 <StatCard
                     title="Repositories"
                     value={stats.totalRepos}
-                    icon={<Folder className="w-4 h-4 text-blue-600" />}
+                    icon={<Folder className="w-3 h-3 text-blue-600" />}
                     description="Total repositories"
                     trend={stats.trends?.repos || { value: 12, direction: 'up', label: "vs last month" }}
                     chartData={repoChartData}
@@ -275,7 +275,7 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
                 <StatCard
                     title="Stars"
                     value={stats.totalStars}
-                    icon={<Star className="w-4 h-4 text-amber-500" />}
+                    icon={<Star className="w-3 h-3 text-amber-500" />}
                     description="Total stars received"
                     trend={stats.trends?.stars || { value: 8.5, direction: 'up', label: "vs last week" }}
                     chartData={starChartData}
@@ -285,89 +285,25 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
                 <StatCard
                     title="Forks"
                     value={stats.totalForks}
-                    icon={<GitFork className="w-4 h-4 text-green-600" />}
+                    icon={<GitFork className="w-3 h-3 text-green-600" />}
                     description="Total forks created"
                     trend={stats.trends?.forks || { value: 15.2, direction: 'up', label: "vs last month" }}
                     chartData={forkChartData}
                     color="green"
                 />
-            </div>
 
-            {/* Secondary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard
                     title="Active Repos"
                     value={stats.activeRepos}
-                    icon={<Activity className="w-4 h-4 text-purple-600" />}
+                    icon={<Activity className="w-3 h-3 text-purple-600" />}
                     description="Recently updated"
                     color="purple"
                 />
 
-                <StatCard
-                    title="Trending"
-                    value={stats.trendingCount}
-                    icon={<TrendingUp className="w-4 h-4 text-pink-600" />}
-                    description="Projects gaining traction"
-                    trend={stats.trends?.trending || { value: 22, direction: 'up', label: "this week" }}
-                    color="pink"
-                />
 
-                <StatCard
-                    title="Health Score"
-                    value={`${stats.healthyReposPercentage}%`}
-                    icon={<BarChart3 className="w-4 h-4 text-teal-600" />}
-                    description="Repository quality metric"
-                    trend={stats.trends?.health || { value: 3, direction: 'up', label: "this quarter" }}
-                    color="teal"
-                />
             </div>
-
-            {/* Compact Insights Panel */}
-            <Card className="border-0 shadow-sm bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-                <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/50">
-                            <BarChart3 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                            Key Metrics
-                        </h3>
-                    </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                {stats.totalRepos > 0 ? ((stats.totalStars / stats.totalRepos) / 1000).toFixed(1) : '0'}K
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                                Avg stars/repo
-                            </div>
-                        </div>
-
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                {stats.totalRepos > 0 ? (stats.totalForks / stats.totalRepos).toFixed(1) : '0'}
-
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                                Avg forks/repo
-                            </div>
-                        </div>
-
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                {stats.totalRepos > 0 ? ((stats.activeRepos / stats.totalRepos) * 100).toFixed(0) : '0'}%
-
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                                Activity rate
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     )
 }
+
 
