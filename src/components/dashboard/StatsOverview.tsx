@@ -318,7 +318,7 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
                     <div className="grid grid-cols-3 gap-4">
                         <div className="text-center">
                             <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                {((stats.totalStars / stats.totalRepos) / 1000).toFixed(1)}K
+                                {stats.totalRepos > 0 ? ((stats.totalStars / stats.totalRepos) / 1000).toFixed(1) : '0'}K
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
                                 Avg stars/repo
@@ -327,7 +327,8 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
 
                         <div className="text-center">
                             <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                {(stats.totalForks / stats.totalRepos).toFixed(1)}
+                                {stats.totalRepos > 0 ? (stats.totalForks / stats.totalRepos).toFixed(1) : '0'}
+
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
                                 Avg forks/repo
@@ -336,7 +337,8 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
 
                         <div className="text-center">
                             <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                {((stats.activeRepos / stats.totalRepos) * 100).toFixed(0)}%
+                                +{stats.totalRepos > 0 ? ((stats.activeRepos / stats.totalRepos) * 100).toFixed(0) : '0'}%
+
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
                                 Activity rate

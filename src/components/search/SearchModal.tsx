@@ -177,7 +177,9 @@ export function SearchModal() {
 
             {/* Enhanced larger search button */}
             <Button
-              onClick={() => debounceSearch(currentQuery, currentSearchType)}
+              onClick={() => {
+                debounceSearch(currentQuery, currentSearchType);
+              }}
               disabled={currentResults.loading || !currentQuery.trim()}
               size="lg"
               className="px-6 py-2 text-base font-medium"
@@ -329,7 +331,7 @@ export function SearchModal() {
         <div className="border-t px-6 py-3 bg-gray-50 text-xs text-gray-500">
           <div className="flex items-center justify-between">
             <div>
-              <kbd className="px-1 py-0.5 bg-white border rounded">Ctrl</kbd> +
+              <kbd className="px-1 py-0.5 bg-white border rounded">Ctrl</kbd>
               <kbd className="px-1 py-0.5 bg-white border rounded ml-1">K</kbd>
               <span className="ml-2">Search</span>
             </div>
@@ -348,10 +350,20 @@ export function SearchModal() {
 function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => func(...args), wait)
-  }
+): {
+  (...args: Parameters<T>): void;
+  cancel: () => void;
+} {
+  let timeout: NodeJS.Timeout;
+
+  const debounced = (...args: Parameters<T>): void => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+
+  debounced.cancel = () => {
+    clearTimeout(timeout);
+  };
+
+  return debounced;
 }
