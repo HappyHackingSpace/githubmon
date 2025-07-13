@@ -61,12 +61,6 @@ export function Sidebar() {
   }
 
   const navigationItems = [
-    { href: '/', label: ' Ana Sayfa', icon: Home },
-    { href: '/trending', label: ' Trending', icon: TrendingUp },
-    { href: '/languages', label: ' Diller', icon: Languages },
-    { href: '/contributors', label: ' Geliştiriciler', icon: Users },
-    { href: '/collections', label: ' Koleksiyonlar', icon: FolderOpen },
-    { href: '/analytics', label: ' Analytics', icon: BarChart2 },
     { href: '/dashboard', label: ' Dashboard', icon: Flame }
   ]
 
