@@ -16,7 +16,7 @@ import { TrendingReposWidget } from '@/components/widget/TrendingReposWidget'
 import { LanguageHeatmapWidget } from '@/components/widget/LanguageHeatmapWidget'
 import { ActivityFeedWidget } from '@/components/widget/ActivityFeedWidget'
 import { StatsOverview } from '@/components/dashboard/StatsOverview'
-import { Star, Folder, GitFork, AlertTriangle, Search } from "lucide-react"
+import { Folder, AlertTriangle, Search } from "lucide-react"
 import { SearchModal } from '@/components/search/SearchModal'
 
 interface DashboardStats {

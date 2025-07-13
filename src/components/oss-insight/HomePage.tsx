@@ -14,12 +14,12 @@ export default function HomePage() {
   const [trendingRepos, setTrendingRepos] = useState<TrendingRepo[]>([])
   const [topLanguages, setTopLanguages] = useState<TopLanguage[]>([])
   const [platformStats, setPlatformStats] = useState({
-    totalRepos: 2100000,
-    totalStars: 450000000,
-    totalForks: 89000000,
-    activeRepos: 850000,
-    trendingCount: 1250,
-    healthyReposPercentage: 85
+    totalRepos: 0,
+    totalStars: 0,
+    totalForks: 0,
+    activeRepos: 0,
+    trendingCount: 0,
+    healthyReposPercentage: 0
   })
   const [loading, setLoading] = useState(true)
   const [reposLoading, setReposLoading] = useState(false)
@@ -54,7 +54,7 @@ export default function HomePage() {
         totalForks: repoStats.total_forks,
         activeRepos: repoStats.active_repos_count,
         trendingCount: repoStats.trending_repos_count,
-        healthyReposPercentage: Math.round((repoStats.active_repos_count / repoStats.total_repos) * 100)
+        healthyReposPercentage: repoStats.total_repos > 0 ? Math.round((repoStats.active_repos_count / repoStats.total_repos) * 100) : 0
       })
 
       const cachedLanguages = getCachedData('topLanguages')
