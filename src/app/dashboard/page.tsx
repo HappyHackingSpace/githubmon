@@ -213,10 +213,6 @@ export default function DashboardPage() {
                 <SelectItem value="30d">Last 30 Days</SelectItem>
               </SelectContent>
             </Select>
-
-            <Button variant="outline" onClick={loadDashboardData} disabled={dashboardData.loading}>
-              {dashboardData.loading ? 'Refreshing...' : 'Refresh'}
-            </Button>
           </div>
         </div>
 
