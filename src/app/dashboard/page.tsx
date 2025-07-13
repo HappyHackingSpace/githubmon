@@ -295,33 +295,6 @@ export default function DashboardPage() {
               maxItems={8}
             /> */}
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader className="pb-2 border-b">
-                <CardTitle className="text-lg font-medium flex items-center gap-2">
-                  <Folder className="w-5 h-5" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-4">
-                <Button variant="outline" className="w-full flex justify-between items-center p-3">
-                  View Full Analytics
-                  <span>→</span>
-                </Button>
-                <Button variant="outline" className="w-full flex justify-between items-center p-3">
-                  Advanced Search
-                  <span>→</span>
-                </Button>
-                <Button variant="outline" className="w-full flex justify-between items-center p-3">
-                  Export Report
-                  <span>→</span>
-                </Button>
-                <Button variant="outline" className="w-full flex justify-between items-center p-3">
-                  Settings
-                  <span>→</span>
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
