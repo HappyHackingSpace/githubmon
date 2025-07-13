@@ -133,34 +133,7 @@ export function Sidebar() {
 
         
 
-          {/* GitHub Stats Widget */}
-          <div className="p-4 border-t border-sidebar-border">
-            <Card className="bg-gradient-to-br from-muted/50 to-muted">
-              <CardContent className="p-4">
-                <h3 className="text-sm font-semibold text-card-foreground mb-3 flex items-center gap-2">
-                  <BarChart2 size={16} className="text-foreground" /> Anlık GitHub
-                </h3>
-                <div className="space-y-2 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Aktif Repos:</span>
-                    <span className="font-medium text-card-foreground">2.1M+</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Günlük Commits:</span>
-                    <span className="font-medium text-card-foreground">12K+</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Yeni PRs:</span>
-                    <span className="font-medium text-card-foreground">3.2K+</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Aktif Devs:</span>
-                    <span className="font-medium text-card-foreground">89K+</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+         
 
           {/* Theme Toggle */}
           <div className="p-4 border-t border-sidebar-border">
