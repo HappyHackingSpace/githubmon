@@ -48,63 +48,67 @@ export function SearchModal() {
   }, [isSearchModalOpen, defaultSearchType, currentQuery, setCurrentSearchType])
 
 
-  const debounceSearch = useCallback(
-    debounce(async (searchQuery: string, type: 'all' | 'repos' | 'users') => {
-      if (!searchQuery.trim()) {
-        setSearchResults({ repos: [], users: [], loading: false, error: null })
-        return
-      }
+  const performSearch = async (searchQuery: string, type: 'all' | 'repos' | 'users') => {
+    if (!searchQuery.trim()) {
+      setSearchResults({ repos: [], users: [], loading: false, error: null })
+      return
+    }
 
+
+    setSearchResults({
+      repos: currentResults.repos,
+      users: currentResults.users,
+      loading: true,
+      error: null
+    })
+
+    try {
+
+      const promises: [Promise<TrendingRepo[]>, Promise<TopContributor[]>] = [
+        type === 'all' || type === 'repos'
+          ? ossInsightClient.searchRepositories(searchQuery, 'stars', 10)
+          : Promise.resolve([]),
+        type === 'all' || type === 'users'
+          ? ossInsightClient.searchUsers(searchQuery, 'all', 10)
+          : Promise.resolve([])
+      ]
+
+      const [repos, users] = await Promise.all(promises)
+
+      setSearchResults({
+        repos: repos || [],
+        users: users || [],
+        loading: false,
+        error: null
+      })
+
+
+      if ((repos && repos.length > 0) || (users && users.length > 0)) {
+        addToHistory(searchQuery, type)
+      }
+    } catch (error) {
+      const errorMessage = 'An error occurred during search'
 
       setSearchResults({
         repos: currentResults.repos,
         users: currentResults.users,
-        loading: true,
-        error: null
+        loading: false,
+        error: errorMessage
       })
 
-      try {
+      addNotification({
+        type: 'error',
+        title: 'Search Error',
+        message: errorMessage
+      })
+    }
+  }
 
-        const promises: [Promise<TrendingRepo[]>, Promise<TopContributor[]>] = [
-          type === 'all' || type === 'repos'
-            ? ossInsightClient.searchRepositories(searchQuery, 'stars', 10)
-            : Promise.resolve([]),
-          type === 'all' || type === 'users'
-            ? ossInsightClient.searchUsers(searchQuery, 'all', 10)
-            : Promise.resolve([])
-        ]
-
-        const [repos, users] = await Promise.all(promises)
-
-        setSearchResults({
-          repos: repos || [],
-          users: users || [],
-          loading: false,
-          error: null
-        })
-
-
-        if ((repos && repos.length > 0) || (users && users.length > 0)) {
-          addToHistory(searchQuery, type)
-        }
-      } catch (error) {
-        const errorMessage = 'An error occurred during search'
-
-        setSearchResults({
-          repos: currentResults.repos,
-          users: currentResults.users,
-          loading: false,
-          error: errorMessage
-        })
-
-        addNotification({
-          type: 'error',
-          title: 'Search Error',
-          message: errorMessage
-        })
-      }
+  const debounceSearch = useCallback(
+    debounce((query: string, type: 'all' | 'repos' | 'users') => {
+      performSearch(query, type);
     }, 500),
-    [setSearchResults, addToHistory, addNotification]
+    []
   )
 
   useEffect(() => {
@@ -156,7 +160,7 @@ export function SearchModal() {
             placeholder="Search for repository, user or organization..."
             value={currentQuery}
             onChange={(e) => setCurrentQuery(e.target.value)}
-            className="text-lg h-12 w-full overflow-x-auto"
+            className="text-lg h-14 w-full overflow-x-auto px-4 font-medium"
             autoFocus
           />
 
@@ -174,6 +178,8 @@ export function SearchModal() {
                 </Button>
               ))}
             </div>
+
+            {/* Search Now button removed */}
           </div>
         </div>
 
@@ -319,7 +325,7 @@ export function SearchModal() {
         <div className="border-t px-6 py-3 bg-gray-50 text-xs text-gray-500">
           <div className="flex items-center justify-between">
             <div>
-              <kbd className="px-1 py-0.5 bg-white border rounded">Ctrl</kbd> +
+              <kbd className="px-1 py-0.5 bg-white border rounded">Ctrl</kbd>
               <kbd className="px-1 py-0.5 bg-white border rounded ml-1">K</kbd>
               <span className="ml-2">Search</span>
             </div>
@@ -338,10 +344,20 @@ export function SearchModal() {
 function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => func(...args), wait)
-  }
+): {
+  (...args: Parameters<T>): void;
+  cancel: () => void;
+} {
+  let timeout: NodeJS.Timeout;
+
+  const debounced = (...args: Parameters<T>): void => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+
+  debounced.cancel = () => {
+    clearTimeout(timeout);
+  };
+
+  return debounced;
 }
