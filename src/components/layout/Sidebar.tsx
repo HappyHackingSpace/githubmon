@@ -129,54 +129,7 @@ export function Sidebar() {
             })}
           </nav>
 
-          {/* Quick Trends */}
-          <div className="p-4 border-t border-sidebar-border">
-            <h3 className="text-sm font-semibold text-sidebar-foreground mb-3 flex items-center gap-2">
-              <TrendingUp size={16} className="text-foreground" /> Hızlı Trendler
-            </h3>
-            {loading ? (
-              <div className="space-y-2">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="h-4 bg-muted rounded mb-1"></div>
-                    <div className="h-3 bg-muted/50 rounded w-2/3"></div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {quickTrends.slice(0, 6).map((item, index) => (
-                  <a
-                    key={index}
-                    href={item.url}
-                    target="_blank"
-                    className="block group"
-                  >
-                    <Card className="p-3 hover:shadow-md transition-shadow">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-card-foreground truncate group-hover:text-primary">
-                            {item.name}
-                          </h4>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {item.description.slice(0, 60)}...
-                          </p>
-                          <div className="flex items-center mt-2 space-x-2">
-                            <span className="text-xs text-muted-foreground">⭐ {item.stars}</span>
-                            {item.language && (
-                              <Badge variant="outline" className="text-xs px-1 py-0">
-                                {item.language}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
+         
 
           {/* Hot Topics */}
           <div className="p-4 border-t border-sidebar-border">
