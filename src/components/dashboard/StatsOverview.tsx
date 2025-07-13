@@ -322,51 +322,6 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
                 />
             </div>
 
-            {/* Compact Insights Panel */}
-            <Card className="border-0 shadow-sm bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-                <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/50">
-                            <BarChart3 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                            Key Metrics
-                        </h3>
-                    </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                {stats.totalRepos > 0 ? ((stats.totalStars / stats.totalRepos) / 1000).toFixed(1) : '0'}K
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                                Avg stars/repo
-                            </div>
-                        </div>
-
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                {stats.totalRepos > 0 ? (stats.totalForks / stats.totalRepos).toFixed(1) : '0'}
-
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                                Avg forks/repo
-                            </div>
-                        </div>
-
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                {stats.totalRepos > 0 ? ((stats.activeRepos / stats.totalRepos) * 100).toFixed(0) : '0'}%
-
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                                Activity rate
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     )
 }
