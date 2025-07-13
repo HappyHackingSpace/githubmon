@@ -93,7 +93,7 @@ export default function DashboardPage() {
       try {
 
         if (cacheKey && typeof getCachedData === 'function') {
-          cachedData = getCachedData(cacheKey)
+          cachedData = getCachedData(cacheKey as any)
           // Ensure the returned data is valid
           if (cachedData && typeof cachedData !== 'object') {
             console.warn('Invalid cache data format, ignoring cache')
@@ -146,7 +146,7 @@ export default function DashboardPage() {
       setDashboardData(newData)
 
       // Cache for 10 minutes
-      setCachedData(cacheKey, newData, 10 * 60 * 1000)
+      setCachedData(cacheKey as any, newData, 10 * 60 * 1000)
 
     } catch (error) {
       console.error('Dashboard data loading failed:', error)
