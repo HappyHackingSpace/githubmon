@@ -225,28 +225,6 @@ export function Sidebar() {
             </Card>
           </div>
 
-          {/* Call to Action */}
-          <div className="p-4 border-t border-sidebar-border">
-            <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
-              <CardContent className="p-4 text-center">
-                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2 justify-center">
-                  <FolderOpen size={16} className="text-foreground" /> Pro Analytics
-                </h3>
-                <p className="text-xs mb-3 opacity-90">
-                  Organizasyonunuzu detaylı analiz edin
-                </p>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => window.location.href = '/login'}
-                >
-                  Token ile Giriş
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Theme Toggle */}
           <div className="p-4 border-t border-sidebar-border">
             <ThemeToggleMinimal />
