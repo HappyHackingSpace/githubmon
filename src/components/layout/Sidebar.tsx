@@ -131,23 +131,7 @@ export function Sidebar() {
 
          
 
-          {/* Hot Topics */}
-          <div className="p-4 border-t border-sidebar-border">
-            <h3 className="text-sm font-semibold text-sidebar-foreground mb-3 flex items-center gap-2">
-              <Flame size={16} className="text-foreground" /> Popüler Konular
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {topTopics.map((topic, index) => (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className="text-xs cursor-pointer hover:bg-sidebar-accent transition-colors"
-                >
-                  {topic}
-                </Badge>
-              ))}
-            </div>
-          </div>
+        
 
           {/* GitHub Stats Widget */}
           <div className="p-4 border-t border-sidebar-border">
