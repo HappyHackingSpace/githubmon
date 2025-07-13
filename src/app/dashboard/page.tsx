@@ -87,8 +87,25 @@ export default function DashboardPage() {
     setDashboardData(prev => ({ ...prev, loading: true, error: null }))
 
     try {
-      const cacheKey = `dashboard_${period}_${orgData?.orgName}` as any
-      const cachedData = getCachedData(cacheKey)
+      const cacheKey = `dashboard_${period}_${orgData?.orgName}`
+      let cachedData = null;
+
+      try {
+
+        if (cacheKey && typeof getCachedData === 'function') {
+          cachedData = getCachedData(cacheKey)
+          // Ensure the returned data is valid
+          if (cachedData && typeof cachedData !== 'object') {
+            console.warn('Invalid cache data format, ignoring cache')
+            cachedData = null
+          }
+        } else {
+          console.warn('Cache key or getCachedData function is invalid')
+        }
+      } catch (cacheError) {
+        console.warn('Cache retrieval failed:', cacheError)
+        // Continue without using cache
+      }
 
       if (cachedData) {
         setDashboardData(prev => ({
@@ -177,12 +194,12 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-3">
             <Button
-              variant="default"
+              variant="outline"
               onClick={() => setSearchModalOpen(true)}
-              className="px-6 py-2.5 shadow-sm hover:shadow-md transition-shadow font-medium text-base"
+              className="px-6 py-2.5 font-medium text-base"
               size="lg"
             >
-              <Search className="w-6 h-6 mr-2 stroke-[1.5]" />
+              <Search className="w-6 h-6 mr-2" />
               Search
             </Button>
 

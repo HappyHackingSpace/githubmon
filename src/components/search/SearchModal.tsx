@@ -48,63 +48,67 @@ export function SearchModal() {
   }, [isSearchModalOpen, defaultSearchType, currentQuery, setCurrentSearchType])
 
 
-  const debounceSearch = useCallback(
-    debounce(async (searchQuery: string, type: 'all' | 'repos' | 'users') => {
-      if (!searchQuery.trim()) {
-        setSearchResults({ repos: [], users: [], loading: false, error: null })
-        return
-      }
+  const performSearch = async (searchQuery: string, type: 'all' | 'repos' | 'users') => {
+    if (!searchQuery.trim()) {
+      setSearchResults({ repos: [], users: [], loading: false, error: null })
+      return
+    }
 
+
+    setSearchResults({
+      repos: currentResults.repos,
+      users: currentResults.users,
+      loading: true,
+      error: null
+    })
+
+    try {
+
+      const promises: [Promise<TrendingRepo[]>, Promise<TopContributor[]>] = [
+        type === 'all' || type === 'repos'
+          ? ossInsightClient.searchRepositories(searchQuery, 'stars', 10)
+          : Promise.resolve([]),
+        type === 'all' || type === 'users'
+          ? ossInsightClient.searchUsers(searchQuery, 'all', 10)
+          : Promise.resolve([])
+      ]
+
+      const [repos, users] = await Promise.all(promises)
+
+      setSearchResults({
+        repos: repos || [],
+        users: users || [],
+        loading: false,
+        error: null
+      })
+
+
+      if ((repos && repos.length > 0) || (users && users.length > 0)) {
+        addToHistory(searchQuery, type)
+      }
+    } catch (error) {
+      const errorMessage = 'An error occurred during search'
 
       setSearchResults({
         repos: currentResults.repos,
         users: currentResults.users,
-        loading: true,
-        error: null
+        loading: false,
+        error: errorMessage
       })
 
-      try {
+      addNotification({
+        type: 'error',
+        title: 'Search Error',
+        message: errorMessage
+      })
+    }
+  }
 
-        const promises: [Promise<TrendingRepo[]>, Promise<TopContributor[]>] = [
-          type === 'all' || type === 'repos'
-            ? ossInsightClient.searchRepositories(searchQuery, 'stars', 10)
-            : Promise.resolve([]),
-          type === 'all' || type === 'users'
-            ? ossInsightClient.searchUsers(searchQuery, 'all', 10)
-            : Promise.resolve([])
-        ]
-
-        const [repos, users] = await Promise.all(promises)
-
-        setSearchResults({
-          repos: repos || [],
-          users: users || [],
-          loading: false,
-          error: null
-        })
-
-
-        if ((repos && repos.length > 0) || (users && users.length > 0)) {
-          addToHistory(searchQuery, type)
-        }
-      } catch (error) {
-        const errorMessage = 'An error occurred during search'
-
-        setSearchResults({
-          repos: currentResults.repos,
-          users: currentResults.users,
-          loading: false,
-          error: errorMessage
-        })
-
-        addNotification({
-          type: 'error',
-          title: 'Search Error',
-          message: errorMessage
-        })
-      }
+  const debounceSearch = useCallback(
+    debounce((query: string, type: 'all' | 'repos' | 'users') => {
+      performSearch(query, type);
     }, 500),
-    [setSearchResults, addToHistory, addNotification]
+    []
   )
 
   useEffect(() => {
@@ -175,17 +179,7 @@ export function SearchModal() {
               ))}
             </div>
 
-            {/* Enhanced larger search button */}
-            <Button
-              onClick={() => {
-                debounceSearch(currentQuery, currentSearchType);
-              }}
-              disabled={currentResults.loading || !currentQuery.trim()}
-              size="lg"
-              className="px-6 py-2 text-base font-medium"
-            >
-              {currentResults.loading ? 'Searching...' : 'Search'}
-            </Button>
+            {/* Search Now button removed */}
           </div>
         </div>
 

@@ -22,6 +22,13 @@ interface DashboardStats {
     activeRepos: number
     trendingCount: number
     healthyReposPercentage: number
+    trends?: {
+        repos?: { value: number; direction: 'up' | 'down' | 'neutral'; label: string }
+        stars?: { value: number; direction: 'up' | 'down' | 'neutral'; label: string }
+        forks?: { value: number; direction: 'up' | 'down' | 'neutral'; label: string }
+        trending?: { value: number; direction: 'up' | 'down' | 'neutral'; label: string }
+        health?: { value: number; direction: 'up' | 'down' | 'neutral'; label: string }
+    }
 }
 
 interface StatsOverviewProps {
@@ -55,7 +62,14 @@ function getStopColor(color: string = 'blue') {
     return colorMap[color] || colorMap.blue
 }
 
-function MiniChart({ data, color = 'blue' }: { data: number[], color?: string }) {
+function MiniChart({ data, color = 'blue' }: {
+    data: number[],
+    color?: 'blue' | 'amber' | 'green' | 'purple' | 'pink' | 'teal'
+}) {
+    if (!data || data.length === 0) {
+        return <div className="h-8 w-full" />
+    }
+
     const max = Math.max(...data)
     const min = Math.min(...data)
     const range = max - min || 1
@@ -71,7 +85,13 @@ function MiniChart({ data, color = 'blue' }: { data: number[], color?: string })
 
     return (
         <div className="h-8 w-full">
-            <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
+            <svg
+                className="w-full h-full"
+                viewBox="0 0 100 30"
+                preserveAspectRatio="none"
+                role="img"
+                aria-label="Mini chart showing data trend"
+            >
                 <polyline
                     fill="none"
                     stroke="currentColor"
@@ -247,7 +267,7 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
                     value={stats.totalRepos}
                     icon={<Folder className="w-4 h-4 text-blue-600" />}
                     description="Total repositories"
-                    trend={{ value: 12, direction: 'up', label: "vs last month" }}
+                    trend={stats.trends?.repos || { value: 12, direction: 'up', label: "vs last month" }}
                     chartData={repoChartData}
                     color="blue"
                 />
@@ -257,7 +277,7 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
                     value={stats.totalStars}
                     icon={<Star className="w-4 h-4 text-amber-500" />}
                     description="Total stars received"
-                    trend={{ value: 8.5, direction: 'up', label: "vs last week" }}
+                    trend={stats.trends?.stars || { value: 8.5, direction: 'up', label: "vs last week" }}
                     chartData={starChartData}
                     color="amber"
                 />
@@ -267,7 +287,7 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
                     value={stats.totalForks}
                     icon={<GitFork className="w-4 h-4 text-green-600" />}
                     description="Total forks created"
-                    trend={{ value: 15.2, direction: 'up', label: "vs last month" }}
+                    trend={stats.trends?.forks || { value: 15.2, direction: 'up', label: "vs last month" }}
                     chartData={forkChartData}
                     color="green"
                 />
@@ -288,7 +308,7 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
                     value={stats.trendingCount}
                     icon={<TrendingUp className="w-4 h-4 text-pink-600" />}
                     description="Projects gaining traction"
-                    trend={{ value: 22, direction: 'up', label: "this week" }}
+                    trend={stats.trends?.trending || { value: 22, direction: 'up', label: "this week" }}
                     color="pink"
                 />
 
@@ -297,7 +317,7 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
                     value={`${stats.healthyReposPercentage}%`}
                     icon={<BarChart3 className="w-4 h-4 text-teal-600" />}
                     description="Repository quality metric"
-                    trend={{ value: 3, direction: 'up', label: "this quarter" }}
+                    trend={stats.trends?.health || { value: 3, direction: 'up', label: "this quarter" }}
                     color="teal"
                 />
             </div>
@@ -337,7 +357,7 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
 
                         <div className="text-center">
                             <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                +{stats.totalRepos > 0 ? ((stats.activeRepos / stats.totalRepos) * 100).toFixed(0) : '0'}%
+                                {stats.totalRepos > 0 ? ((stats.activeRepos / stats.totalRepos) * 100).toFixed(0) : '0'}%
 
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
