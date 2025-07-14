@@ -240,7 +240,7 @@ export function StatsOverview({ stats, loading = false }: StatsOverviewProps) {
     if (loading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {[...Array(6)].map((_, i) => (
+                {[...Array(4)].map((_, i) => (
                     <Card key={i} className="bg-gray-50 dark:bg-gray-800 animate-pulse border-0">
                         <CardContent className="p-2">
                             <div className="space-y-1.5">
