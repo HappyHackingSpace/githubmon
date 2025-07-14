@@ -159,19 +159,19 @@ export default function DashboardPage() {
     }
   }
 
- 
+
 
   return (
- 
+
     <>
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-             GithubMon 
+              GithubMon
             </h1>
-           
+
           </div>
 
           <div className="flex items-center gap-3">
@@ -197,8 +197,8 @@ export default function DashboardPage() {
             </Select>
           </div>
         </div>
-        
-          <div className="text-center mb-12">
+
+        <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-foreground mb-4">
             Discover GitHub Trends
           </h2>
@@ -256,6 +256,7 @@ export default function DashboardPage() {
               repos={dashboardData.trendingRepos}
               period={period}
               category={selectedCategory}
+              setPeriod={setPeriod}
             />
 
             {/* Language Heatmap */}
@@ -289,7 +290,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-      
+
 
       <CallToActionSection />
 
