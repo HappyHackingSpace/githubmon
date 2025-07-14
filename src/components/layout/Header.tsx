@@ -46,7 +46,7 @@ export function SearchHeader() {
             className="px-6 py-2.5 font-medium text-base"
             size="lg"
           >
-            <Search className="w-60 h-6 mr-2" />
+            <Search className="w-6 h-6 mr-2" />
             Search
           </Button>
 
