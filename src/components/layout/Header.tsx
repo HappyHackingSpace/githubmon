@@ -8,6 +8,8 @@ import { RateLimitWarning } from '@/components/common/RateLimitWarning'
 import { SearchModal } from '@/components/search/SearchModal'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { useSearchStore } from '@/stores'
+import { Button } from '../ui/button'
+import { Search } from 'lucide-react'
 
 
 export function SearchHeader() {
@@ -38,29 +40,15 @@ export function SearchHeader() {
             <Badge variant="secondary">OSS Analytics</Badge>
           </div>
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="flex items-center space-x-2 flex-1 max-w-md mx-8">
-            <Select value={currentSearchType} onValueChange={(value: 'all' | 'repos' | 'users') => setCurrentSearchType(value)}>
-
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="repos">Repositories</SelectItem>
-                <SelectItem value="users">Users</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input
-              type="text"
-              placeholder={`Search ${currentSearchType}...`}
-              value={currentQuery}
-              onChange={(e) => setCurrentQuery(e.target.value)}
-              onClick={handleInputClick}
-              readOnly
-              className="flex-1 cursor-pointer"
-            />
-          </form>
+          <Button
+            variant="outline"
+            onClick={() => setSearchModalOpen(true)}
+            className="px-6 py-2.5 font-medium text-base"
+            size="lg"
+          >
+            <Search className="w-6 h-6 mr-2" />
+            Search
+          </Button>
 
           <SearchModal />
 

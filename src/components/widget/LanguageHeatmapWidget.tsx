@@ -21,22 +21,22 @@ interface EnhancedLanguage extends TopLanguage {
 }
 
 const LANGUAGE_CATEGORIES = {
-  'JavaScript': { category: 'Web Frontend', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'TypeScript': { category: 'Web Frontend', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'Python': { category: 'Data Science', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'Java': { category: 'Enterprise', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'Go': { category: 'System/DevOps', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'Rust': { category: 'System', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'C++': { category: 'System', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'C#': { category: 'Enterprise', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'PHP': { category: 'Web Backend', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'Ruby': { category: 'Web Backend', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'Swift': { category: 'Mobile', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'Kotlin': { category: 'Mobile', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'Dart': { category: 'Mobile', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'Shell': { category: 'DevOps', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'R': { category: 'Data Science', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
-  'Julia': { category: 'Data Science', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' }
+  'JavaScript': { category: 'Web Frontend', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'TypeScript': { category: 'Web Frontend', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'Python': { category: 'Data Science', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'Java': { category: 'Enterprise', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'Go': { category: 'System/DevOps', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'Rust': { category: 'System', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'C++': { category: 'System', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'C#': { category: 'Enterprise', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'PHP': { category: 'Web Backend', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'Ruby': { category: 'Web Backend', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'Swift': { category: 'Mobile', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'Kotlin': { category: 'Mobile', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'Dart': { category: 'Mobile', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'Shell': { category: 'DevOps', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'R': { category: 'Data Science', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' },
+  'Julia': { category: 'Data Science', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' }
 }
 
 export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidgetProps) {
@@ -73,7 +73,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
       else if (lang.rank_change < 0) growthIcon = <TrendingDown className="w-4 h-4 text-red-500" />
 
       const categoryInfo = LANGUAGE_CATEGORIES[lang.language as keyof typeof LANGUAGE_CATEGORIES] ||
-        { category: 'Other', color: 'bg-blue-100 text-white border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' }
+        { category: 'Other', color: 'bg-blue-100 text-black border-blue-200 dark:bg-blue-900/30 dark:text-white dark:border-blue-700' }
 
       return {
         ...lang,
@@ -98,11 +98,11 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
 
   const getHeatmapIntensity = (value: number, maxValue: number) => {
     const intensity = (value / maxValue)
-    if (intensity > 0.8) return 'bg-blue-500/30 border-blue-500/40 text-white dark:text-white'
-    if (intensity > 0.6) return 'bg-blue-400/25 border-blue-400/35 text-white dark:text-white'
-    if (intensity > 0.4) return 'bg-blue-400/20 border-blue-400/30 text-white dark:text-white'
-    if (intensity > 0.2) return 'bg-blue-400/15 border-blue-400/25 text-white dark:text-white'
-    return 'bg-blue-400/10 border-blue-400/20 text-white dark:text-white'
+    if (intensity > 0.8) return 'bg-blue-500/30 border-blue-500/40 text-black dark:text-white'
+    if (intensity > 0.6) return 'bg-blue-400/25 border-blue-400/35 text-black dark:text-white'
+    if (intensity > 0.4) return 'bg-blue-400/20 border-blue-400/30 text-black dark:text-white'
+    if (intensity > 0.2) return 'bg-blue-400/15 border-blue-400/25 text-black dark:text-white'
+    return 'bg-blue-400/10 border-blue-400/20 text-black dark:text-white'
   }
 
   const getTrendColor = (trend: string, rankChange: number) => {
@@ -217,7 +217,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
                   <span className="text-lg">{lang.momentumIcon}</span>
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-medium text-white dark:text-white">{lang.language}</span>
+                      <span className="font-medium text-black  dark:text-white">{lang.language}</span>
                       <Badge className={lang.categoryColor} variant="outline">
                         {lang.categoryLabel}
                       </Badge>
@@ -259,7 +259,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
 
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
-                      <span className="font-semibold text-white dark:text-white">{lang.language}</span>
+                      <span className="font-semibold text-black dark:text-white">{lang.language}</span>
                       <Badge className={lang.categoryColor} variant="outline">
                         {lang.categoryLabel}
                       </Badge>
@@ -304,7 +304,7 @@ export function LanguageHeatmapWidget({ languages, period }: LanguageHeatmapWidg
               return (
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-lg font-semibold text-white dark:text-white flex items-center space-x-2">
+                    <h4 className="text-lg font-semibold text-black dark:text-white flex items-center space-x-2">
                       <span>{lang.language}</span>
                       <span>{lang.momentumIcon}</span>
                     </h4>

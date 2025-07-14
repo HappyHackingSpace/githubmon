@@ -170,7 +170,7 @@ export function TrendingReposWidget({ repos, period, category, setPeriod }: Tren
                 <SelectItem value="30d">Last 30 Days</SelectItem>
               </SelectContent>
             </Select>
-          </div>  
+          </div>
 
           <div className="flex items-center gap-2">
             <Select value={sortBy} onValueChange={(value: 'growth' | 'stars' | 'health') => setSortBy(value)}>
