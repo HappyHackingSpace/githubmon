@@ -4,19 +4,15 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
+
 import { useAuthStore, useDataCacheStore, useStoreHydration, useSearchStore } from '@/stores'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import type { TrendingRepo, TopLanguage, GitHubEvent, TopContributor } from '@/types/oss-insight'
-import { TrendingReposWidget } from '@/components/widget/TrendingReposWidget'
-import { LanguageHeatmapWidget } from '@/components/widget/LanguageHeatmapWidget'
-import { ActivityFeedWidget } from '@/components/widget/ActivityFeedWidget'
-import { StatsOverview } from '@/components/dashboard/StatsOverview'
-import { Folder, AlertTriangle, Search } from "lucide-react"
+
+import {  Search } from "lucide-react"
 import { SearchModal } from '@/components/search/SearchModal'
 
 interface DashboardStats {
@@ -216,87 +212,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Stats Cards */}
-        <StatsOverview stats={dashboardData.stats} loading={dashboardData.loading} />
-
-        {/* Error State */}
-        {dashboardData.error && (
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2 text-red-800">
-                <AlertTriangle className="w-5 h-5 text-red-500" />
-                <span>{dashboardData.error}</span>
-                <Button size="sm" variant="outline" onClick={loadDashboardData}>
-                  Retry
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Category Filter */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">Focus:</span>
-          {(['all', 'ai-ml', 'web-dev', 'devops', 'mobile'] as const).map((cat) => (
-            <Button
-              key={cat}
-              variant={selectedCategory === cat ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedCategory(cat)}
-            >
-              {cat === 'all' ? ' All' :
-                cat === 'ai-ml' ? ' AI/ML' :
-                  cat === 'web-dev' ? ' Web Dev' :
-                    cat === 'devops' ? ' DevOps' : ' Mobile'}
-            </Button>
-          ))}
-        </div>
-
-        <Separator />
-
-        {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-          {/* Left Column - 2/3 width */}
-          <div className="lg:col-span-2 space-y-6">
-
-            {/* Trending Repositories with Intelligence */}
-            <TrendingReposWidget
-              repos={dashboardData.trendingRepos}
-              period={period}
-              category={selectedCategory}
-            />
-
-            {/* Language Heatmap */}
-            <LanguageHeatmapWidget
-              languages={dashboardData.topLanguages}
-              period={period}
-            />
-
-            {/* Repository Health & Momentum */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* <RepositoryHealthWidget repos={dashboardData.trendingRepos} />
-              <MomentumAnalysisWidget repos={dashboardData.trendingRepos} period={period} /> */}
-            </div>
-          </div>
-
-          {/* Right Column - 1/3 width */}
-          <div className="space-y-6">
-
-            {/* Activity Feed - NOW ACTIVE */}
-            <ActivityFeedWidget
-              events={dashboardData.recentEvents}
-              maxItems={10}
-            />
-
-            {/* Top Contributors */}
-            {/* <ContributorInsightsWidget 
-              contributors={dashboardData.topContributors}
-              maxItems={8}
-            /> */}
-
-          </div>
-        </div>
+       
       </div>
 
       {/* Search Modal - no props needed */}
