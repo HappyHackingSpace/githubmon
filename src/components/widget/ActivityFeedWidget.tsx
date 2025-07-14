@@ -23,7 +23,7 @@ export function ActivityFeedWidget({ events, maxItems = 10 }: ActivityFeedWidget
     const eventPatterns = useEventPatterns(enhancedEvents)
 
     return (
-        <Card>
+        <Card >
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -39,7 +39,7 @@ export function ActivityFeedWidget({ events, maxItems = 10 }: ActivityFeedWidget
                 </div>
             </CardHeader>
 
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 overflow-x-hidden">
                 {filteredEvents.length === 0 ? (
                     <EmptyState filterLevel={filterLevel} />
                 ) : (
