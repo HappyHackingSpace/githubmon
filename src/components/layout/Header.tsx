@@ -43,14 +43,11 @@ export function SearchHeader() {
           <Button
             variant="outline"
             onClick={() => setSearchModalOpen(true)}
-            className="px-6 py-2.5 font-medium text-base"
-            size="lg"
+            className="w-64 flex justify-start "
           >
             <Search className="w-6 h-6 mr-2" />
-            Search
+            Search GitHub ...
           </Button>
-
-          <SearchModal />
 
           {/* Rate Limit Warning */}
           <div className="flex items-center space-x-3">
