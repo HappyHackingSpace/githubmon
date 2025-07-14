@@ -13,7 +13,7 @@ import type { TrendingRepo, TopLanguage, GitHubEvent, TopContributor } from '@/t
 import { TrendingReposWidget } from '@/components/widget/TrendingReposWidget'
 import { LanguageHeatmapWidget } from '@/components/widget/LanguageHeatmapWidget'
 import { ActivityFeedWidget } from '@/components/widget/ActivityFeedWidget'
-import { StatsOverview } from '@/components/dashboard/StatsOverview'
+import { StatsOverview } from '@/components/widget/StatsOverview'
 import { AlertTriangle, Search } from "lucide-react"
 import { SearchModal } from '@/components/search/SearchModal'
 import { CallToActionSection } from '@/components/CallToActionSection'
