@@ -13,6 +13,7 @@ interface TrendingReposWidgetProps {
   repos: TrendingRepo[]
   period: '24h' | '7d' | '30d'
   category: 'all' | 'ai-ml' | 'web-dev' | 'devops' | 'mobile'
+  setPeriod: (period: '24h' | '7d' | '30d') => void
 }
 
 interface CategorizedRepo extends TrendingRepo {
@@ -50,7 +51,7 @@ const CATEGORY_MAPPINGS = {
   }
 }
 
-export function TrendingReposWidget({ repos, period, category }: TrendingReposWidgetProps) {
+export function TrendingReposWidget({ repos, period, category, setPeriod }: TrendingReposWidgetProps) {
   const [sortBy, setSortBy] = useState<'growth' | 'stars' | 'health'>('growth')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
@@ -157,6 +158,19 @@ export function TrendingReposWidget({ repos, period, category }: TrendingReposWi
             <Flame className="w-5 h-5 text-orange-600" /> Trending Repositories
             <Badge variant="outline">{sortedRepos.length} repos</Badge>
           </CardTitle>
+
+          <div className="flex items-center gap-2">
+            <Select value={period} onValueChange={(value: '24h' | '7d' | '30d') => setPeriod(value)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="24h">Last 24 Hours</SelectItem>
+                <SelectItem value="7d">Last 7 Days</SelectItem>
+                <SelectItem value="30d">Last 30 Days</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>  
 
           <div className="flex items-center gap-2">
             <Select value={sortBy} onValueChange={(value: 'growth' | 'stars' | 'health') => setSortBy(value)}>
