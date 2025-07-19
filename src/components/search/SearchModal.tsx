@@ -14,6 +14,7 @@ import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import { useSearchStore, usePreferencesStore, useNotifications } from '@/stores'
 import type { TrendingRepo, TopContributor } from '@/types/oss-insight'
 
+import { useRouter } from 'next/navigation' 
 
 type SearchResults = {
   repos: TrendingRepo[]
@@ -23,6 +24,7 @@ type SearchResults = {
 }
 
 export function SearchModal() {
+  const router = useRouter()
   const {
     isSearchModalOpen,
     currentQuery,
@@ -143,7 +145,10 @@ export function SearchModal() {
   }
 
   const hasResults = currentResults.repos.length > 0 || currentResults.users.length > 0
-
+  const handleUserClick = (username: string) => {
+    setSearchModalOpen(false) // Modal'ı kapat
+    router.push(`/search?user=${username}`) // ← Kendi sayfanıza yönlendir
+  }
   return (
     <Dialog open={isSearchModalOpen} onOpenChange={setSearchModalOpen}>
       <DialogContent className="max-w-4xl max-h-[80vh] p-0 overflow-y-auto">
@@ -263,13 +268,10 @@ export function SearchModal() {
               <Card className="max-h-80 overflow-y-auto">
                 <CardContent className="p-0 divide-y">
                   {currentResults.users.map((user) => (
-                    <a
-                      key={user.login}
-                      href={user.html_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 group cursor-pointer"
-                      onClick={() => setSearchModalOpen(false)}
+                    <div
+                       key={user.login}
+                       className="flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 group cursor-pointer"
+                       onClick={() => handleUserClick(user.login)}
                     >
                       <img src={user.avatar_url} alt={user.login} className="w-7 h-7 rounded-full object-cover" />
                       <div className="flex-1 min-w-0">
@@ -279,7 +281,7 @@ export function SearchModal() {
                           <span className="block text-xs text-gray-500 mt-0.5 truncate">{user.bio}</span>
                         )}
                       </div>
-                    </a>
+                    </div>
                   ))}
                 </CardContent>
               </Card>
