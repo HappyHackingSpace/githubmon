@@ -1,11 +1,9 @@
-// src/app/dashboard/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { useAuthStore, useDataCacheStore, useStoreHydration, useSearchStore } from '@/stores'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
@@ -18,7 +16,7 @@ import { AlertTriangle, Search } from "lucide-react"
 import { SearchModal } from '@/components/search/SearchModal'
 import { CallToActionSection } from '@/components/CallToActionSection'
 import { SearchHeader } from '@/components/layout/Header'
-
+import { useState } from 'react'
 
 interface DashboardStats {
   totalRepos: number
@@ -39,7 +37,7 @@ interface DashboardData {
   error: string | null
 }
 
-export default function DashboardPage() {
+export default function HomePage() {
   const router = useRouter()
   const hasHydrated = useStoreHydration()
   const { isConnected, orgData, isTokenValid } = useAuthStore()
@@ -65,47 +63,33 @@ export default function DashboardPage() {
     error: null
   })
 
+  // Sadece giriş yapmış kullanıcılar dashboard butonunu görür
+  // Otomatik yönlendirme yapmıyoruz, kullanıcı kendisi karar verir
+
+  // Ana sayfa verilerini yükle (tüm kullanıcılar için - giriş yapmış veya yapmamış)
   useEffect(() => {
-    if (!hasHydrated) return
-
-    if (!isConnected || !orgData) {
-      router.push('/login')
-      return
+    if (hasHydrated) {
+      loadPublicData()
     }
+  }, [hasHydrated, period])
 
-    if (orgData.token && !isTokenValid()) {
-      router.push('/login')
-      return
-    }
-  }, [hasHydrated, isConnected, orgData, isTokenValid, router])
-
-  useEffect(() => {
-    if (!hasHydrated || !isConnected) return
-    loadDashboardData()
-  }, [hasHydrated, isConnected, period])
-
-  const loadDashboardData = async () => {
+  const loadPublicData = async () => {
     setDashboardData(prev => ({ ...prev, loading: true, error: null }))
 
     try {
-      const cacheKey = `dashboard_${period}_${orgData?.orgName}`
-      let cachedData = null;
+      const cacheKey = `public_data_${period}`
+      let cachedData = null
 
       try {
-
         if (cacheKey && typeof getCachedData === 'function') {
           cachedData = getCachedData(cacheKey as any)
-          // Ensure the returned data is valid
           if (cachedData && typeof cachedData !== 'object') {
             console.warn('Invalid cache data format, ignoring cache')
             cachedData = null
           }
-        } else {
-          console.warn('Cache key or getCachedData function is invalid')
         }
       } catch (cacheError) {
         console.warn('Cache retrieval failed:', cacheError)
-        // Continue without using cache
       }
 
       if (cachedData) {
@@ -150,36 +134,41 @@ export default function DashboardPage() {
       setCachedData(cacheKey as any, newData, 10 * 60 * 1000)
 
     } catch (error) {
-      console.error('Dashboard data loading failed:', error)
+      console.error('Public data loading failed:', error)
       setDashboardData(prev => ({
         ...prev,
         loading: false,
-        error: 'Failed to load dashboard data. Please try again.'
+        error: 'Failed to load data. Please try again.'
       }))
     }
   }
 
-
+  // Yükleme durumu
+  if (!hasHydrated || dashboardData.loading) {
+    return (
+      <>
+        <SearchHeader />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
-
     <>
       <SearchHeader />
       <div className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Header Section */}
-
-
-
-
-
-
-
+        {/* Hero Section */}
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-foreground mb-4">
             Discover GitHub Trends
           </h2>
           <p className="text-xl text-muted-foreground mb-8">
-            Trending projects and real-time programming language statistics
+            Explore trending projects and real-time programming language statistics
           </p>
         </div>
 
@@ -193,7 +182,7 @@ export default function DashboardPage() {
               <div className="flex items-center space-x-2 text-red-800">
                 <AlertTriangle className="w-5 h-5 text-red-500" />
                 <span>{dashboardData.error}</span>
-                <Button size="sm" variant="outline" onClick={loadDashboardData}>
+                <Button size="sm" variant="outline" onClick={loadPublicData}>
                   Retry
                 </Button>
               </div>
@@ -211,23 +200,21 @@ export default function DashboardPage() {
               size="sm"
               onClick={() => setSelectedCategory(cat)}
             >
-              {cat === 'all' ? ' All' :
-                cat === 'ai-ml' ? ' AI/ML' :
-                  cat === 'web-dev' ? ' Web Dev' :
-                    cat === 'devops' ? ' DevOps' : ' Mobile'}
+              {cat === 'all' ? 'All' :
+                cat === 'ai-ml' ? 'AI/ML' :
+                  cat === 'web-dev' ? 'Web Dev' :
+                    cat === 'devops' ? 'DevOps' : 'Mobile'}
             </Button>
           ))}
         </div>
 
         <Separator />
 
-        {/* Main Dashboard Grid */}
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
           {/* Left Column - 2/3 width */}
           <div className="lg:col-span-2 space-y-6">
-
-            {/* Trending Repositories with Intelligence */}
+            {/* Trending Repositories */}
             <TrendingReposWidget
               repos={dashboardData.trendingRepos}
               period={period}
@@ -240,37 +227,23 @@ export default function DashboardPage() {
               languages={dashboardData.topLanguages}
               period={period}
             />
-
-            {/* Repository Health & Momentum */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* <RepositoryHealthWidget repos={dashboardData.trendingRepos} />
-              <MomentumAnalysisWidget repos={dashboardData.trendingRepos} period={period} /> */}
-            </div>
           </div>
 
           {/* Right Column - 1/3 width */}
           <div className="space-y-6">
-
-            {/* Activity Feed - NOW ACTIVE */}
+            {/* Activity Feed */}
             <ActivityFeedWidget
               events={dashboardData.recentEvents}
               maxItems={10}
             />
-
-            {/* Top Contributors */}
-            {/* <ContributorInsightsWidget 
-              contributors={dashboardData.topContributors}
-              maxItems={8}
-            /> */}
-
           </div>
         </div>
       </div>
 
-
+      {/* Call to Action Section */}
       <CallToActionSection />
 
-      {/* Search Modal - no props needed */}
+      {/* Search Modal */}
       <SearchModal />
     </>
   )

@@ -2,17 +2,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
 
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-import { useAuthStore, useDataCacheStore, useStoreHydration, useSearchStore } from '@/stores'
+import { useDataCacheStore, useSearchStore } from '@/stores'
+import { useRequireAuth } from '@/hooks/useAuth'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
 import type { TrendingRepo, TopLanguage, GitHubEvent, TopContributor } from '@/types/oss-insight'
 
-import {  Search } from "lucide-react"
+import { Search } from "lucide-react"
 import { SearchModal } from '@/components/search/SearchModal'
 
 interface DashboardStats {
@@ -35,9 +35,7 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const hasHydrated = useStoreHydration()
-  const { isConnected, orgData, isTokenValid } = useAuthStore()
+  const { isAuthenticated, isLoading, orgData, shouldRender } = useRequireAuth()
   const { getCachedData, setCachedData } = useDataCacheStore()
   const { setSearchModalOpen } = useSearchStore()
 
@@ -61,23 +59,10 @@ export default function DashboardPage() {
   })
 
   useEffect(() => {
-    if (!hasHydrated) return
-
-    if (!isConnected || !orgData) {
-      router.push('/login')
-      return
+    if (isAuthenticated && orgData) {
+      loadDashboardData()
     }
-
-    if (orgData.token && !isTokenValid()) {
-      router.push('/login')
-      return
-    }
-  }, [hasHydrated, isConnected, orgData, isTokenValid, router])
-
-  useEffect(() => {
-    if (!hasHydrated || !isConnected) return
-    loadDashboardData()
-  }, [hasHydrated, isConnected, period])
+  }, [isAuthenticated, orgData, period])
 
   const loadDashboardData = async () => {
     setDashboardData(prev => ({ ...prev, loading: true, error: null }))
@@ -161,7 +146,12 @@ export default function DashboardPage() {
     return `${timeOfDay}, ${userName}! `
   }
 
-  if (!hasHydrated || dashboardData.loading) {
+  // Auth kontrolü - render yapma eğer yönlendirme gerekiyorsa
+  if (!shouldRender) {
+    return null // Hiçbir şey render etme, sadece yönlendir
+  }
+
+  if (isLoading || dashboardData.loading) {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
@@ -212,7 +202,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-       
+
       </div>
 
       {/* Search Modal - no props needed */}
