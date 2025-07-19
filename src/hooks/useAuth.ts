@@ -45,7 +45,6 @@ export const useRequireAuth = (redirectTo: string = '/login') => {
     }
 }
 
-// Guest-only sayfalar için (login olmuş kullanıcıları yönlendir)
 export const useRequireGuest = (redirectTo: string = '/dashboard') => {
     const router = useRouter()
     const hasHydrated = useStoreHydration()
