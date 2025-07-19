@@ -5,11 +5,14 @@ import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useAuthStore, usePreferencesStore } from '@/stores/app'
+import { useAuthStore, usePreferencesStore } from '@/stores'
+import { useRequireAuth } from '@/hooks/useAuth'
 import { ThemeSelector, ThemeToggle } from '@/components/theme/ThemeToggle'
+import { cookieUtils } from '@/lib/cookies'
 
 export default function SettingsPage() {
-  const { orgData, setOrgData } = useAuthStore()
+  const { isAuthenticated, isLoading, orgData, shouldRender } = useRequireAuth()
+  const { setOrgData } = useAuthStore()
   const { resetPreferences } = usePreferencesStore()
   const [tempOrgName, setTempOrgName] = useState(orgData?.orgName || '')
   const [tempToken, setTempToken] = useState('')
@@ -17,17 +20,35 @@ export default function SettingsPage() {
   const handleClearData = () => {
     if (confirm('Tüm veriler silinecek. Emin misiniz?')) {
       resetPreferences()
-  
+      cookieUtils.removeAuth()
       localStorage.clear()
       window.location.reload()
     }
+  }
+
+  // Auth kontrolü - render yapma eğer yönlendirme gerekiyorsa
+  if (!shouldRender) {
+    return null // Hiçbir şey render etme, sadece yönlendir
+  }
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading settings...</p>
+          </div>
+        </div>
+      </Layout>
+    )
   }
 
   return (
     <Layout>
       <div className="max-w-2xl">
         <h2 className="text-xl font-semibold mb-4">Ayarlar</h2>
-        
+
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -42,7 +63,7 @@ export default function SettingsPage() {
                   placeholder="örnek: microsoft, facebook"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium mb-2">API Token (Opsiyonel)</label>
                 <Input
@@ -55,7 +76,7 @@ export default function SettingsPage() {
                   Token olmadan da çalışır, ancak rate limit düşük olur.
                 </p>
               </div>
-              
+
               <Button>
                 Kaydet
               </Button>
@@ -63,20 +84,20 @@ export default function SettingsPage() {
           </Card>
 
           <Card>
-  <CardHeader>
-    <CardTitle>🎨 Görünüm</CardTitle>
-  </CardHeader>
-  <CardContent className="space-y-4">
-    <div>
-      <label className="block text-sm font-medium mb-2">Tema</label>
-      <ThemeSelector />
-      <p className="text-xs text-gray-500 mt-1">
-        Sistem temasını takip edebilir veya manuel seçim yapabilirsiniz.
-      </p>
-    </div>
-  </CardContent>
-</Card>
-          
+            <CardHeader>
+              <CardTitle>🎨 Görünüm</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Tema</label>
+                <ThemeSelector />
+                <p className="text-xs text-gray-500 mt-1">
+                  Sistem temasını takip edebilir veya manuel seçim yapabilirsiniz.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Veri Yönetimi</CardTitle>

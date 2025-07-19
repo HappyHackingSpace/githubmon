@@ -7,9 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RateLimitWarning } from '@/components/common/RateLimitWarning'
 import { SearchModal } from '@/components/search/SearchModal'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
-import { useSearchStore } from '@/stores'
+import { useSearchStore, useAuthStore, useStoreHydration } from '@/stores'
 import { Button } from '../ui/button'
-import { Search } from 'lucide-react'
+import { Search, User, LogOut, BarChart3 } from 'lucide-react'
 
 
 export function SearchHeader() {
@@ -20,6 +20,9 @@ export function SearchHeader() {
     setCurrentQuery,
     setCurrentSearchType
   } = useSearchStore()
+
+  const { isConnected, orgData, logout } = useAuthStore()
+  const hasHydrated = useStoreHydration()
   const router = useRouter()
 
   const handleSearch = (e: React.FormEvent) => {
@@ -29,6 +32,11 @@ export function SearchHeader() {
 
   const handleInputClick = () => {
     setSearchModalOpen(true)
+  }
+
+  const handleLogout = () => {
+    logout()
+    router.push('/')
   }
 
   return (
@@ -43,25 +51,63 @@ export function SearchHeader() {
           <Button
             variant="outline"
             onClick={() => setSearchModalOpen(true)}
-            className="px-6 py-2.5 font-medium text-base"
-            size="lg"
+            className="w-64 flex justify-start "
           >
             <Search className="w-6 h-6 mr-2" />
-            Search
+            Search GitHub ...
           </Button>
-
-          <SearchModal />
 
           {/* Rate Limit Warning */}
           <div className="flex items-center space-x-3">
             <RateLimitWarning />
             <ThemeToggle />
-            <button
-              onClick={() => router.push('/login')}
-              className="text-sm text-primary hover:text-primary/80 transition-colors"
-            >
-              Login
-            </button>
+
+            {/* Auth buttons - only show when hydrated */}
+            {hasHydrated && (
+              isConnected && orgData ? (
+                // Logged in user
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push('/dashboard')}
+                    className="flex items-center space-x-1"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push('/settings')}
+                    className="flex items-center space-x-1"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>{orgData.orgName}</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="flex items-center space-x-1 text-red-600 hover:text-red-700"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </Button>
+                </div>
+              ) : (
+                // Not logged in
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push('/login')}
+                  className="flex items-center space-x-1"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Login</span>
+                </Button>
+              )
+            )}
           </div>
         </div>
       </div>

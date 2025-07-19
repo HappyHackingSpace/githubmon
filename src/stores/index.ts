@@ -22,22 +22,23 @@ let isHydrated = false
 
 const hydrateStores = async () => {
   if (hydrationPromise) return hydrationPromise
-  
+
   hydrationPromise = Promise.all([
-    
-    useAuthStore.persist.rehydrate(),
+    // Auth store now uses cookies, so we manually hydrate it
+    Promise.resolve(useAuthStore.getState().hydrate()),
     usePreferencesStore.persist.rehydrate(),
     useSearchStore.persist.rehydrate(),
     useDataCacheStore.persist.rehydrate()
   ]).then(() => {
     isHydrated = true
   })
- 
+
   return hydrationPromise
 }
 
 export const useStoreHydration = () => {
   const [hasHydrated, setHasHydrated] = useState(isHydrated)
+  const authHydrated = useAuthStore(state => state.isHydrated)
 
   useEffect(() => {
     if (!isHydrated) {
@@ -45,7 +46,8 @@ export const useStoreHydration = () => {
     }
   }, [])
 
-  return hasHydrated
+  // Auth store has its own hydration state
+  return hasHydrated && authHydrated
 }
 
 // ============ SAFE SELECTORS (SSR-friendly) ============
@@ -150,30 +152,31 @@ export const useDataCache = () => {
     }
   }
 
-  return store}
+  return store
+}
 
 export const useApp = () => {
   const hasHydrated = useStoreHydration()
   const store = useAppStore()
-  
+
   if (!hasHydrated) {
     return {
       sidebarOpen: false,
-     notifications: [],
-      setSidebarOpen: () => {},
-      addNotification: () => {},
-      removeNotification: () => {},
-      clearNotifications: () => {}
+      notifications: [],
+      setSidebarOpen: () => { },
+      addNotification: () => { },
+      removeNotification: () => { },
+      clearNotifications: () => { }
     }
   }
-  
+
   return store
 }
 
 // Specific selectors
 export const useIsAuthenticated = () => {
   const { isConnected, orgData, isTokenValid } = useAuth()
- return isConnected && orgData?.token && isTokenValid?.()
+  return isConnected && orgData?.token && isTokenValid?.()
 }
 
 export const useTheme = () => {
@@ -182,13 +185,13 @@ export const useTheme = () => {
 }
 
 export const useSidebarState = () => {
- 
+
   const { sidebarOpen: isOpen, setSidebarOpen: setOpen } = useApp()
   return { isOpen, setOpen }
 }
 
 export const useNotifications = () => {
- const { notifications, addNotification: add, removeNotification: remove, clearNotifications: clear } = useApp()
+  const { notifications, addNotification: add, removeNotification: remove, clearNotifications: clear } = useApp()
 
   return { notifications, add, remove, clear }
 }

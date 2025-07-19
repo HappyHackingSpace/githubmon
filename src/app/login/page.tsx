@@ -8,13 +8,20 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 import { useAuthStore } from '@/stores'
+import { useRequireGuest } from '@/hooks/useAuth'
 
 export default function LoginPage() {
   const [token, setToken] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const { shouldRender } = useRequireGuest()
   const { setOrgData, setConnected, setTokenExpiry } = useAuthStore()
+
+  // Auth kontrolü - giriş yapmış kullanıcıyı dashboard'a yönlendir
+  if (!shouldRender) {
+    return null
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,14 +70,14 @@ export default function LoginPage() {
   return (
     <div className="h-screen bg-background flex items-center justify-center p-3">
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-4 h-full max-h-[95vh]">
-        
+
         {/* Left Column - Token Guide */}
         <Card className="shadow-xl flex flex-col overflow-hidden">
           <CardHeader className="text-center pb-3 border-b">
             <h1 className="text-2xl font-bold text-foreground mb-1">GitHubMon</h1>
             <p className="text-sm text-muted-foreground">GitHub organization analytics</p>
           </CardHeader>
-          
+
           <CardContent className="flex-1 p-4 space-y-4 overflow-y-auto">
             {/* Rate Limits */}
             <div>
@@ -166,7 +173,7 @@ export default function LoginPage() {
             <CardTitle className="text-xl font-bold">Login with GitHub Token</CardTitle>
             <p className="text-muted-foreground text-sm">Enter your personal access token</p>
           </CardHeader>
-          
+
           <CardContent className="flex-1 flex flex-col justify-center p-4">
             <div className="max-w-md mx-auto w-full space-y-4">
               <form onSubmit={handleLogin} className="space-y-4">

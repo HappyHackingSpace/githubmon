@@ -1,12 +1,14 @@
 // stores/auth.ts
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { subscribeWithSelector } from 'zustand/middleware'
 import type { OrgData } from '@/types/auth'
+import { cookieUtils, type AuthCookieData } from '@/lib/cookies'
 
 interface AuthState {
   isConnected: boolean
   orgData: OrgData | null
   tokenExpiry: string | null
+  isHydrated: boolean
 
   // Actions
   setOrgData: (data: OrgData | null) => void
@@ -14,44 +16,71 @@ interface AuthState {
   setTokenExpiry: (expiry: string | null) => void
   logout: () => void
   isTokenValid: () => boolean
+  hydrate: () => void
+  persistToCookie: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      isConnected: false,
-      orgData: null,
-      tokenExpiry: null,
+  subscribeWithSelector((set, get) => ({
+    isConnected: false,
+    orgData: null,
+    tokenExpiry: null,
+    isHydrated: false,
 
-      setOrgData: (data) => set({ orgData: data }),
-      setConnected: (connected) => set({ isConnected: connected }),
-      setTokenExpiry: (expiry) => set({ tokenExpiry: expiry }),
+    setOrgData: (data) => {
+      set({ orgData: data })
+      get().persistToCookie()
+    },
 
-      logout: () => set({
+    setConnected: (connected) => {
+      set({ isConnected: connected })
+      get().persistToCookie()
+    },
+
+    setTokenExpiry: (expiry) => {
+      set({ tokenExpiry: expiry })
+      get().persistToCookie()
+    },
+
+    logout: () => {
+      set({
         isConnected: false,
         orgData: null,
         tokenExpiry: null
-      }),
+      })
+      cookieUtils.removeAuth()
+    },
 
-      isTokenValid: () => {
-        const { tokenExpiry } = get()
-        if (!tokenExpiry) return false
-        return new Date(tokenExpiry) > new Date()
+    isTokenValid: () => {
+      const { tokenExpiry } = get()
+      if (!tokenExpiry) return false
+      return new Date(tokenExpiry) > new Date()
+    },
+
+    hydrate: () => {
+      if (typeof window === 'undefined') return
+
+      const authData = cookieUtils.getAuth()
+      if (authData) {
+        set({
+          isConnected: authData.isConnected,
+          orgData: authData.orgData,
+          tokenExpiry: authData.tokenExpiry,
+          isHydrated: true
+        })
+      } else {
+        set({ isHydrated: true })
       }
-    }),
-    {
-      name: 'githubmon-auth',
-      storage: createJSONStorage(() => {
-        if (typeof window === 'undefined') {
-          return {
-            getItem: () => null,
-            setItem: () => { },
-            removeItem: () => { },
-          }
-        }
-        return localStorage
-      }),
-      skipHydration: true,
+    },
+
+    persistToCookie: () => {
+      const { isConnected, orgData, tokenExpiry } = get()
+      const authData: AuthCookieData = {
+        isConnected,
+        orgData,
+        tokenExpiry
+      }
+      cookieUtils.setAuth(authData)
     }
-  )
+  }))
 )
