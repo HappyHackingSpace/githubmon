@@ -18,7 +18,7 @@ export default function LoginPage() {
   const { isLoading: authLoading } = useRequireGuest()
   const { setOrgData, setConnected, setTokenExpiry } = useAuthStore()
 
- 
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,7 +39,7 @@ export default function LoginPage() {
 
       const userData = await response.json()
 
-    
+
       const expiryDate = new Date()
       expiryDate.setDate(expiryDate.getDate() + 90) // 90 gün sonra
 
@@ -219,16 +219,6 @@ export default function LoginPage() {
                   <span className="px-3 bg-background text-muted-foreground">or</span>
                 </div>
               </div>
-
-              <Button
-                variant="outline"
-                onClick={continueWithoutToken}
-                className="w-full h-10"
-              >
-                <span className="font-semibold">Continue Without Token</span>
-                <Badge variant="secondary" className="ml-2 text-xs">Limited</Badge>
-              </Button>
-
               <div className="text-center pt-3">
                 <p className="text-sm text-muted-foreground">
                   Already have an account? Enter your token above.

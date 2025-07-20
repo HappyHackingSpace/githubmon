@@ -3,42 +3,32 @@ import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  
-  // Debug log - bu görünmeli
-  console.log(`🔥 Middleware executing for: ${pathname}`)
-  
+
   // Check if user has auth token from the auth cookie
   const authCookie = request.cookies.get('githubmon-auth')?.value
-  console.log(`🍪 Cookie exists: ${!!authCookie}`)
-  
+
   let isAuthenticated = false
-  
+
   if (authCookie) {
     try {
       const authData = JSON.parse(authCookie)
-      console.log('Auth data:', { 
-        isConnected: authData.isConnected, 
-        hasOrgData: !!authData.orgData,
-        hasToken: !!authData.orgData?.token,
-        hasOrgName: !!authData.orgData?.orgName 
-      })
-      
+
       // Check if user is connected and has valid token data
-      const hasValidData = authData.isConnected && 
-                          authData.orgData && 
-                          authData.orgData.token &&
-                          authData.orgData.orgName
-      
+      const hasValidData = authData.isConnected &&
+        authData.orgData &&
+        authData.orgData.token &&
+        authData.orgData.orgName
+
       if (hasValidData) {
         // Check if token is not expired based on our local expiry
         if (authData.tokenExpiry) {
           const expiryDate = new Date(authData.tokenExpiry)
           const now = new Date()
-          
+
           // Add a buffer of 1 day before actual expiry for safety
           const bufferTime = 24 * 60 * 60 * 1000 // 1 day in milliseconds
           const effectiveExpiry = new Date(expiryDate.getTime() - bufferTime)
-          
+
           isAuthenticated = now <= effectiveExpiry
         } else {
           // If no expiry date, consider it expired for security
@@ -55,26 +45,22 @@ export function middleware(request: NextRequest) {
       isAuthenticated = false
     }
   }
-  
+
   // Define public routes that don't require authentication
-  const publicRoutes = ['/login', '/register', '/about', '/search'] 
-  
+  const publicRoutes = ['/login', '/register', '/about', '/search']
+
   // Ana sayfa (/) authenticated kullanıcılar için protected
   // Define protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/settings'] 
-  
+  const protectedRoutes = ['/dashboard', '/settings']
+
   // Check if current path is a protected route
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-  
+
   // Check if current path is a public route
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
-  
-  // Debug log
-  console.log(`Auth: ${isAuthenticated}, Path: ${pathname}, Protected: ${isProtectedRoute}, Cookie: ${!!authCookie}`)
-  
+
   // PRIORITY 1: If user is authenticated and tries to access root page, redirect to dashboard
   if (isAuthenticated && pathname === '/') {
-    console.log('🚀 REDIRECTING: authenticated user from / to /dashboard')
     const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url))
     // Prevent caching to ensure proper redirect behavior
     redirectResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
@@ -82,10 +68,9 @@ export function middleware(request: NextRequest) {
     redirectResponse.headers.set('Expires', '0')
     return redirectResponse
   }
-  
+
   // If user is authenticated and tries to access login page, redirect to dashboard
   if (isAuthenticated && pathname === '/login') {
-    console.log('Redirecting authenticated user from /login to /dashboard')
     const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url))
     // Prevent caching to ensure proper redirect behavior
     redirectResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
@@ -93,19 +78,19 @@ export function middleware(request: NextRequest) {
     redirectResponse.headers.set('Expires', '0')
     return redirectResponse
   }
-  
+
   // If user is not authenticated and tries to access protected route, redirect to login
   if (!isAuthenticated && isProtectedRoute) {
     const loginUrl = new URL('/login', request.url)
     // Optionally, add the intended destination as a query parameter
     loginUrl.searchParams.set('from', pathname)
-    
+
     const response = NextResponse.redirect(loginUrl)
     // Prevent caching to ensure proper redirect behavior
     response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
     response.headers.set('Pragma', 'no-cache')
     response.headers.set('Expires', '0')
-    
+
     // Clear any invalid/expired auth cookies
     if (authCookie) {
       response.cookies.set('githubmon-auth', '', {
@@ -115,7 +100,7 @@ export function middleware(request: NextRequest) {
     }
     return response
   }
-  
+
   // Allow access to public routes and static assets
   return NextResponse.next()
 }
