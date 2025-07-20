@@ -4,12 +4,11 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Debug log - bu görünmeli
-  console.log(`🔥 Middleware executing for: ${pathname}`)
+
   
   // Check if user has auth token from the auth cookie
   const authCookie = request.cookies.get('githubmon-auth')?.value
-  console.log(`🍪 Cookie exists: ${!!authCookie}`)
+
   
   let isAuthenticated = false
   
@@ -59,7 +58,7 @@ export function middleware(request: NextRequest) {
   // Define public routes that don't require authentication
   const publicRoutes = ['/login', '/register', '/about', '/search'] 
   
-  // Ana sayfa (/) authenticated kullanıcılar için protected
+
   // Define protected routes that require authentication
   const protectedRoutes = ['/dashboard', '/settings'] 
   
@@ -69,9 +68,7 @@ export function middleware(request: NextRequest) {
   // Check if current path is a public route
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
   
-  // Debug log
-  console.log(`Auth: ${isAuthenticated}, Path: ${pathname}, Protected: ${isProtectedRoute}, Cookie: ${!!authCookie}`)
-  
+ 
   // PRIORITY 1: If user is authenticated and tries to access root page, redirect to dashboard
   if (isAuthenticated && pathname === '/') {
     console.log('🚀 REDIRECTING: authenticated user from / to /dashboard')
