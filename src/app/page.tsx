@@ -17,6 +17,7 @@ import { SearchModal } from '@/components/search/SearchModal'
 import { CallToActionSection } from '@/components/CallToActionSection'
 import { Header } from '@/components/layout/Header'
 import { useState } from 'react'
+import Footer from '@/components/layout/Footer'
 
 interface DashboardStats {
   totalRepos: number
@@ -246,6 +247,7 @@ export default function HomePage() {
       {/* Call to Action Section */}
       <CallToActionSection />
       <SearchModal />
+      <Footer />
     </>
   )
 }
