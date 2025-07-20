@@ -60,7 +60,7 @@ export function Header() {
           {/* Rate Limit Warning */}
           <div className="flex items-center space-x-3">
             <RateLimitWarning />
-            <ThemeToggle />
+
 
             {/* Auth buttons - only show when hydrated */}
 
@@ -73,7 +73,7 @@ export function Header() {
               <User className="w-4 h-4" />
               <span>Login</span>
             </Button>
-
+            <ThemeToggle />
           </div>
         </div>
       </div>
