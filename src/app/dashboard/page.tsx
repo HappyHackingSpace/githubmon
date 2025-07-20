@@ -15,6 +15,7 @@ import type { TrendingRepo, TopLanguage, GitHubEvent, TopContributor } from '@/t
 import { Search } from "lucide-react"
 import { SearchModal } from '@/components/search/SearchModal'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import Footer from '@/components/layout/Footer'
 
 interface DashboardStats {
   totalRepos: number
@@ -208,6 +209,7 @@ export default function DashboardPage() {
 
       {/* Search Modal - no props needed */}
       <SearchModal />
+      <Footer />
     </Layout>
   )
 }
