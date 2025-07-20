@@ -63,10 +63,6 @@ export default function HomePage() {
     error: null
   })
 
-  // Sadece giriş yapmış kullanıcılar dashboard butonunu görür
-  // Otomatik yönlendirme yapmıyoruz, kullanıcı kendisi karar verir
-
-  // Ana sayfa verilerini yükle (tüm kullanıcılar için - giriş yapmış veya yapmamış)
   useEffect(() => {
     if (hasHydrated) {
       loadPublicData()
@@ -164,19 +160,19 @@ export default function HomePage() {
       <main className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Hero Section */}
         <div className="text-center space-y-8">
-           <div className="space-y-4">
-         <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white">
-             GitHub Analytics
-            <span className="text-indigo-600 dark:text-indigo-400 block">
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white">
+              GitHub Analytics
+              <span className="text-indigo-600 dark:text-indigo-400 block">
                 Made Simple
               </span>
-          </h1>
-          
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-             Monitor your GitHub repositories, track trends, and analyze performance 
+            </h1>
+
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Monitor your GitHub repositories, track trends, and analyze performance
               with powerful insights and beautiful visualizations.
-          </p>
-        </div>
+            </p>
+          </div>
         </div>
 
         {/* Quick Stats Cards */}
@@ -249,8 +245,6 @@ export default function HomePage() {
 
       {/* Call to Action Section */}
       <CallToActionSection />
-
-      {/* Search Modal */}
       <SearchModal />
     </>
   )
