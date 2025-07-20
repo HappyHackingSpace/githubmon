@@ -161,15 +161,22 @@ export default function HomePage() {
   return (
     <>
       <Header />
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <main className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-foreground mb-4">
-            Discover GitHub Trends
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8">
-            Explore trending projects and real-time programming language statistics
+        <div className="text-center space-y-8">
+           <div className="space-y-4">
+         <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white">
+             GitHub Analytics
+            <span className="text-indigo-600 dark:text-indigo-400 block">
+                Made Simple
+              </span>
+          </h1>
+          
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+             Monitor your GitHub repositories, track trends, and analyze performance 
+              with powerful insights and beautiful visualizations.
           </p>
+        </div>
         </div>
 
         {/* Quick Stats Cards */}
@@ -238,7 +245,7 @@ export default function HomePage() {
             />
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Call to Action Section */}
       <CallToActionSection />
