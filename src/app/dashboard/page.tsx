@@ -35,7 +35,7 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
-  const { isAuthenticated, isLoading, orgData, shouldRender } = useRequireAuth()
+  const { isAuthenticated, isLoading, orgData } = useRequireAuth()
   const { getCachedData, setCachedData } = useDataCacheStore()
   const { setSearchModalOpen } = useSearchStore()
 
@@ -63,6 +63,28 @@ export default function DashboardPage() {
       loadDashboardData()
     }
   }, [isAuthenticated, orgData, period])
+
+  // History management - geri gitmeyi önle
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Browser history'sini manipüle et
+      const handlePopState = (event: PopStateEvent) => {
+        // Geri gidmeye çalışırsa dashboard'da kal
+        event.preventDefault()
+        window.history.pushState(null, '', '/dashboard')
+      }
+
+      // Current state'i dashboard olarak ayarla
+      window.history.pushState(null, '', '/dashboard')
+      
+      // PopState event listener ekle
+      window.addEventListener('popstate', handlePopState)
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState)
+      }
+    }
+  }, [isAuthenticated])
 
   const loadDashboardData = async () => {
     setDashboardData(prev => ({ ...prev, loading: true, error: null }))
@@ -146,10 +168,7 @@ export default function DashboardPage() {
     return `${timeOfDay}, ${userName}! `
   }
 
-  // Auth kontrolü - render yapma eğer yönlendirme gerekiyorsa
-  if (!shouldRender) {
-    return null // Hiçbir şey render etme, sadece yönlendir
-  }
+
 
   if (isLoading || dashboardData.loading) {
     return (
