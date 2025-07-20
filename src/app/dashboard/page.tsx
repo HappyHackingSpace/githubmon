@@ -14,6 +14,7 @@ import type { TrendingRepo, TopLanguage, GitHubEvent, TopContributor } from '@/t
 
 import { Search } from "lucide-react"
 import { SearchModal } from '@/components/search/SearchModal'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 interface DashboardStats {
   totalRepos: number
@@ -35,7 +36,7 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
-  const { isAuthenticated, isLoading, orgData } = useRequireAuth()
+  const { isAuthenticated, isLoading, orgData, shouldRender } = useRequireAuth()
   const { getCachedData, setCachedData } = useDataCacheStore()
   const { setSearchModalOpen } = useSearchStore()
 
@@ -63,28 +64,6 @@ export default function DashboardPage() {
       loadDashboardData()
     }
   }, [isAuthenticated, orgData, period])
-
-  // History management - geri gitmeyi önle
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Browser history'sini manipüle et
-      const handlePopState = (event: PopStateEvent) => {
-        // Geri gidmeye çalışırsa dashboard'da kal
-        event.preventDefault()
-        window.history.pushState(null, '', '/dashboard')
-      }
-
-      // Current state'i dashboard olarak ayarla
-      window.history.pushState(null, '', '/dashboard')
-      
-      // PopState event listener ekle
-      window.addEventListener('popstate', handlePopState)
-
-      return () => {
-        window.removeEventListener('popstate', handlePopState)
-      }
-    }
-  }, [isAuthenticated])
 
   const loadDashboardData = async () => {
     setDashboardData(prev => ({ ...prev, loading: true, error: null }))
@@ -168,7 +147,10 @@ export default function DashboardPage() {
     return `${timeOfDay}, ${userName}! `
   }
 
-
+  // Auth kontrolü - render yapma eğer yönlendirme gerekiyorsa
+  if (!shouldRender) {
+    return null // Hiçbir şey render etme, sadece yönlendir
+  }
 
   if (isLoading || dashboardData.loading) {
     return (
@@ -182,7 +164,6 @@ export default function DashboardPage() {
       </Layout>
     )
   }
-
   return (
     <Layout>
       <div className="max-w-7xl mx-auto p-6 space-y-6">
@@ -218,6 +199,7 @@ export default function DashboardPage() {
                 <SelectItem value="30d">Last 30 Days</SelectItem>
               </SelectContent>
             </Select>
+            <ThemeToggle />
           </div>
         </div>
 
