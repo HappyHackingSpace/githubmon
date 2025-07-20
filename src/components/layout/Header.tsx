@@ -63,51 +63,17 @@ export function SearchHeader() {
             <ThemeToggle />
 
             {/* Auth buttons - only show when hydrated */}
-            {hasHydrated && (
-              isConnected && orgData ? (
-                // Logged in user
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push('/dashboard')}
-                    className="flex items-center space-x-1"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    <span>Dashboard</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push('/settings')}
-                    className="flex items-center space-x-1"
-                  >
-                    <User className="w-4 h-4" />
-                    <span>{orgData.orgName}</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="flex items-center space-x-1 text-red-600 hover:text-red-700"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
-                  </Button>
-                </div>
-              ) : (
-                // Not logged in
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push('/login')}
-                  className="flex items-center space-x-1"
-                >
-                  <User className="w-4 h-4" />
-                  <span>Login</span>
-                </Button>
-              )
-            )}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/login')}
+              className="flex items-center space-x-1"
+            >
+              <User className="w-4 h-4" />
+              <span>Login</span>
+            </Button>
+
           </div>
         </div>
       </div>
