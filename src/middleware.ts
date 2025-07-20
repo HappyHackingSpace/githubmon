@@ -4,14 +4,25 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
+  // Debug log - bu görünmeli
+  console.log(`🔥 Middleware executing for: ${pathname}`)
+  
   // Check if user has auth token from the auth cookie
   const authCookie = request.cookies.get('githubmon-auth')?.value
+  console.log(`🍪 Cookie exists: ${!!authCookie}`)
   
   let isAuthenticated = false
   
   if (authCookie) {
     try {
       const authData = JSON.parse(authCookie)
+      console.log('Auth data:', { 
+        isConnected: authData.isConnected, 
+        hasOrgData: !!authData.orgData,
+        hasToken: !!authData.orgData?.token,
+        hasOrgName: !!authData.orgData?.orgName 
+      })
+      
       // Check if user is connected and has valid token data
       const hasValidData = authData.isConnected && 
                           authData.orgData && 
@@ -46,10 +57,11 @@ export function middleware(request: NextRequest) {
   }
   
   // Define public routes that don't require authentication
-  const publicRoutes = ['/login', '/register', '/about'] // Ana sayfa authenticated kullanıcılar için kapalı
+  const publicRoutes = ['/login', '/register', '/about', '/search'] 
   
+  // Ana sayfa (/) authenticated kullanıcılar için protected
   // Define protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/search', '/settings']
+  const protectedRoutes = ['/dashboard', '/settings'] 
   
   // Check if current path is a protected route
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
@@ -57,8 +69,12 @@ export function middleware(request: NextRequest) {
   // Check if current path is a public route
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
   
-  // If user is authenticated and tries to access login page, redirect to dashboard
-  if (isAuthenticated && pathname === '/login') {
+  // Debug log
+  console.log(`Auth: ${isAuthenticated}, Path: ${pathname}, Protected: ${isProtectedRoute}, Cookie: ${!!authCookie}`)
+  
+  // PRIORITY 1: If user is authenticated and tries to access root page, redirect to dashboard
+  if (isAuthenticated && pathname === '/') {
+    console.log('🚀 REDIRECTING: authenticated user from / to /dashboard')
     const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url))
     // Prevent caching to ensure proper redirect behavior
     redirectResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
@@ -67,9 +83,15 @@ export function middleware(request: NextRequest) {
     return redirectResponse
   }
   
-  // If user is authenticated and tries to access root page, redirect to dashboard
-  if (isAuthenticated && pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  // If user is authenticated and tries to access login page, redirect to dashboard
+  if (isAuthenticated && pathname === '/login') {
+    console.log('Redirecting authenticated user from /login to /dashboard')
+    const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url))
+    // Prevent caching to ensure proper redirect behavior
+    redirectResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    redirectResponse.headers.set('Pragma', 'no-cache')
+    redirectResponse.headers.set('Expires', '0')
+    return redirectResponse
   }
   
   // If user is not authenticated and tries to access protected route, redirect to login
