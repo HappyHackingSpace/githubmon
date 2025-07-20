@@ -146,8 +146,8 @@ export function SearchModal() {
 
   const hasResults = currentResults.repos.length > 0 || currentResults.users.length > 0
   const handleUserClick = (username: string) => {
-    setSearchModalOpen(false) // Modal'ı kapat
-    router.push(`/search?user=${username}`) // ← Kendi sayfanıza yönlendir
+    setSearchModalOpen(false) // Close the modal
+    router.push(`/search?user=${username}`) // ← Redirect to your own page
   }
   return (
     <Dialog open={isSearchModalOpen} onOpenChange={setSearchModalOpen}>
