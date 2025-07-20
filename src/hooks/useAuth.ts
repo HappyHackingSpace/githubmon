@@ -68,3 +68,4 @@ export const useRequireGuest = (redirectTo: string = '/dashboard') => {
         shouldRedirect: hasHydrated && isAuthenticated,
         shouldRender: hasHydrated && !isAuthenticated
     }
+}
