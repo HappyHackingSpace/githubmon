@@ -1,28 +1,41 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Search, AlertCircle, Star, Loader2, GitBranch, Users } from 'lucide-react'
-import { ossInsightClient } from '@/lib/api/oss-insight-client'
-import { useSearchStore, usePreferencesStore, useNotifications } from '@/stores'
-import type { TrendingRepo, TopContributor } from '@/types/oss-insight'
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Search,
+  AlertCircle,
+  Star,
+  Loader2,
+  GitBranch,
+  Users,
+} from "lucide-react";
+import { ossInsightClient } from "@/lib/api/oss-insight-client";
+import {
+  useSearchStore,
+  usePreferencesStore,
+  useNotifications,
+} from "@/stores";
+import type { TrendingRepo, TopContributor } from "@/types/oss-insight";
 
+import { useRouter } from "next/navigation";
 
 type SearchResults = {
-  repos: TrendingRepo[]
-  users: TopContributor[]
-  loading: boolean
-  error: string | null
-}
+  repos: TrendingRepo[];
+  users: TopContributor[];
+  loading: boolean;
+  error: string | null;
+};
 
 export function SearchModal() {
+  const router = useRouter();
   const {
     isSearchModalOpen,
     currentQuery,
@@ -34,115 +47,126 @@ export function SearchModal() {
     setCurrentQuery,
     setCurrentSearchType,
     setSearchResults,
-    addToHistory
-  } = useSearchStore()
+    addToHistory,
+  } = useSearchStore();
 
-  const { defaultSearchType } = usePreferencesStore()
-  const { add: addNotification } = useNotifications()
-
+  const { defaultSearchType } = usePreferencesStore();
+  const { add: addNotification } = useNotifications();
 
   useEffect(() => {
     if (isSearchModalOpen && !currentQuery) {
-      setCurrentSearchType(defaultSearchType)
+      setCurrentSearchType(defaultSearchType);
     }
-  }, [isSearchModalOpen, defaultSearchType, currentQuery, setCurrentSearchType])
+  }, [
+    isSearchModalOpen,
+    defaultSearchType,
+    currentQuery,
+    setCurrentSearchType,
+  ]);
 
-
-  const performSearch = async (searchQuery: string, type: 'all' | 'repos' | 'users') => {
+  const performSearch = async (
+    searchQuery: string,
+    type: "all" | "repos" | "users"
+  ) => {
     if (!searchQuery.trim()) {
-      setSearchResults({ repos: [], users: [], loading: false, error: null })
-      return
+      setSearchResults({ repos: [], users: [], loading: false, error: null });
+      return;
     }
-
 
     setSearchResults({
       repos: currentResults.repos,
       users: currentResults.users,
       loading: true,
-      error: null
-    })
+      error: null,
+    });
 
     try {
-
       const promises: [Promise<TrendingRepo[]>, Promise<TopContributor[]>] = [
-        type === 'all' || type === 'repos'
-          ? ossInsightClient.searchRepositories(searchQuery, 'stars', 10)
+        type === "all" || type === "repos"
+          ? ossInsightClient.searchRepositories(searchQuery, "stars", 10)
           : Promise.resolve([]),
-        type === 'all' || type === 'users'
-          ? ossInsightClient.searchUsers(searchQuery, 'all', 10)
-          : Promise.resolve([])
-      ]
+        type === "all" || type === "users"
+          ? ossInsightClient.searchUsers(searchQuery, "all", 10)
+          : Promise.resolve([]),
+      ];
 
-      const [repos, users] = await Promise.all(promises)
+      const [repos, users] = await Promise.all(promises);
 
       setSearchResults({
         repos: repos || [],
         users: users || [],
         loading: false,
-        error: null
-      })
-
+        error: null,
+      });
 
       if ((repos && repos.length > 0) || (users && users.length > 0)) {
-        addToHistory(searchQuery, type)
+        addToHistory(searchQuery, type);
       }
     } catch (error) {
-      const errorMessage = 'An error occurred during search'
+      const errorMessage = "An error occurred during search";
 
       setSearchResults({
         repos: currentResults.repos,
         users: currentResults.users,
         loading: false,
-        error: errorMessage
-      })
+        error: errorMessage,
+      });
 
       addNotification({
-        type: 'error',
-        title: 'Search Error',
-        message: errorMessage
-      })
+        type: "error",
+        title: "Search Error",
+        message: errorMessage,
+      });
     }
-  }
+  };
 
   const debounceSearch = useCallback(
-    debounce((query: string, type: 'all' | 'repos' | 'users') => {
+    debounce((query: string, type: "all" | "repos" | "users") => {
       performSearch(query, type);
     }, 500),
     []
-  )
+  );
 
   useEffect(() => {
-    debounceSearch(currentQuery, currentSearchType)
-  }, [currentQuery, currentSearchType, debounceSearch])
-
+    debounceSearch(currentQuery, currentSearchType);
+  }, [currentQuery, currentSearchType, debounceSearch]);
 
   useEffect(() => {
     if (!isSearchModalOpen) {
-      setCurrentQuery('')
-      setSearchResults({ repos: [], users: [], loading: false, error: null })
+      setCurrentQuery("");
+      setSearchResults({ repos: [], users: [], loading: false, error: null });
     }
-  }, [isSearchModalOpen, setCurrentQuery, setSearchResults])
-
+  }, [isSearchModalOpen, setCurrentQuery, setSearchResults]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault()
-        setSearchModalOpen(true)
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchModalOpen(true);
       }
-      if (e.key === 'Escape' && isSearchModalOpen) {
-        setSearchModalOpen(false)
+      if (e.key === "Escape" && isSearchModalOpen) {
+        setSearchModalOpen(false);
       }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isSearchModalOpen, setSearchModalOpen])
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isSearchModalOpen, setSearchModalOpen]);
 
   const handleRecentSearchClick = (query: string) => {
-    setCurrentQuery(query)
-  }
+    setCurrentQuery(query);
+  };
 
-  const hasResults = currentResults.repos.length > 0 || currentResults.users.length > 0
+  const hasResults =
+    currentResults.repos.length > 0 || currentResults.users.length > 0;
+  const handleUserClick = (username: string) => {
+    setSearchModalOpen(false); // Close the modal
+    router.push(`/search?user=${username}`); // ← Redirect to your own page
+  };
+
+  const handleRepoClick = (repoName: string) => {
+    setSearchModalOpen(false); // Close the modal
+    router.push(`/search?repo=${repoName}`); // ← Redirect to repo page 
+  };
 
   return (
     <Dialog open={isSearchModalOpen} onOpenChange={setSearchModalOpen}>
@@ -167,14 +191,18 @@ export function SearchModal() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">Filter:</span>
-              {(['all', 'repos', 'users'] as const).map((type) => (
+              {(["all", "repos", "users"] as const).map((type) => (
                 <Button
                   key={type}
-                  variant={currentSearchType === type ? 'default' : 'outline'}
+                  variant={currentSearchType === type ? "default" : "outline"}
                   size="sm"
                   onClick={() => setCurrentSearchType(type)}
                 >
-                  {type === 'all' ? 'All' : type === 'repos' ? 'Repositories' : 'Users'}
+                  {type === "all"
+                    ? "All"
+                    : type === "repos"
+                    ? "Repositories"
+                    : "Users"}
                 </Button>
               ))}
             </div>
@@ -198,21 +226,27 @@ export function SearchModal() {
                 <AlertCircle className="w-6 h-6 mr-2" />
                 {currentResults.error}
               </div>
-              <Button variant="outline" onClick={() => debounceSearch(currentQuery, currentSearchType)}>
+              <Button
+                variant="outline"
+                onClick={() => debounceSearch(currentQuery, currentSearchType)}
+              >
                 Try Again
               </Button>
             </div>
           )}
 
-          {!currentResults.loading && !currentResults.error && currentQuery && !hasResults && (
-            <div className="text-center py-8 text-gray-500">
-              <div className="flex items-center justify-center mb-2">
-                <Search className="w-12 h-12 text-gray-300" />
+          {!currentResults.loading &&
+            !currentResults.error &&
+            currentQuery &&
+            !hasResults && (
+              <div className="text-center py-8 text-gray-500">
+                <div className="flex items-center justify-center mb-2">
+                  <Search className="w-12 h-12 text-gray-300" />
+                </div>
+                <div>No results found for "{currentQuery}"</div>
+                <div className="text-sm mt-2">Try different keywords</div>
               </div>
-              <div>No results found for "{currentQuery}"</div>
-              <div className="text-sm mt-2">Try different keywords</div>
-            </div>
-          )}
+            )}
 
           {/* Repositories */}
           {currentResults.repos.length > 0 && (
@@ -224,29 +258,38 @@ export function SearchModal() {
               <Card className="max-h-80 overflow-y-auto">
                 <CardContent className="p-0 divide-y">
                   {currentResults.repos.map((repo) => (
-                    <a
+                    <div
                       key={repo.id}
-                      href={repo.html_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 group cursor-pointer"
-                      onClick={() => setSearchModalOpen(false)}
+                      onClick={() => handleRepoClick(repo.full_name)}
                     >
-                      <img src={repo.owner.avatar_url} alt={repo.owner.login} className="w-7 h-7 rounded-full object-cover" />
+                      <img
+                        src={repo.owner.avatar_url}
+                        alt={repo.owner.login}
+                        className="w-7 h-7 rounded-full object-cover"
+                      />
                       <div className="flex-1 min-w-0">
-                        <span className="font-medium text-indigo-600 group-hover:text-indigo-800 truncate">{repo.full_name}</span>
+                        <span className="font-medium text-indigo-600 group-hover:text-indigo-800 truncate">
+                          {repo.full_name}
+                        </span>
                         {repo.language && (
-                          <Badge variant="outline" className="text-xs ml-2">{repo.language}</Badge>
+                          <Badge variant="outline" className="text-xs ml-2">
+                            {repo.language}
+                          </Badge>
                         )}
                         <div className="flex items-center text-xs text-gray-500 mt-0.5">
                           <Star className="w-3 h-3 mr-1" />
-                          <span className="truncate">{repo.stargazers_count.toLocaleString()}</span>
+                          <span className="truncate">
+                            {repo.stargazers_count.toLocaleString()}
+                          </span>
                         </div>
                         {repo.description && (
-                          <span className="block text-xs text-gray-400 mt-0.5 truncate">{repo.description}</span>
+                          <span className="block text-xs text-gray-400 mt-0.5 truncate">
+                            {repo.description}
+                          </span>
                         )}
                       </div>
-                    </a>
+                    </div>
                   ))}
                 </CardContent>
               </Card>
@@ -263,23 +306,30 @@ export function SearchModal() {
               <Card className="max-h-80 overflow-y-auto">
                 <CardContent className="p-0 divide-y">
                   {currentResults.users.map((user) => (
-                    <a
+                    <div
                       key={user.login}
-                      href={user.html_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 group cursor-pointer"
-                      onClick={() => setSearchModalOpen(false)}
+                      onClick={() => handleUserClick(user.login)}
                     >
-                      <img src={user.avatar_url} alt={user.login} className="w-7 h-7 rounded-full object-cover" />
+                      <img
+                        src={user.avatar_url}
+                        alt={user.login}
+                        className="w-7 h-7 rounded-full object-cover"
+                      />
                       <div className="flex-1 min-w-0">
-                        <span className="font-medium text-indigo-600 group-hover:text-indigo-800 truncate">{user.login}</span>
-                        <Badge variant="outline" className="text-xs ml-2">{user.type}</Badge>
+                        <span className="font-medium text-indigo-600 group-hover:text-indigo-800 truncate">
+                          {user.login}
+                        </span>
+                        <Badge variant="outline" className="text-xs ml-2">
+                          {user.type}
+                        </Badge>
                         {user.bio && (
-                          <span className="block text-xs text-gray-500 mt-0.5 truncate">{user.bio}</span>
+                          <span className="block text-xs text-gray-500 mt-0.5 truncate">
+                            {user.bio}
+                          </span>
                         )}
                       </div>
-                    </a>
+                    </div>
                   ))}
                 </CardContent>
               </Card>
@@ -298,7 +348,9 @@ export function SearchModal() {
               </p>
               {searchHistory.length > 0 && (
                 <div className="text-left max-w-md mx-auto">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Recent Searches</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">
+                    Recent Searches
+                  </h4>
                   <div className="space-y-2">
                     {searchHistory.slice(0, 5).map((item, index) => (
                       <div
@@ -337,9 +389,8 @@ export function SearchModal() {
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-
 
 function debounce<T extends (...args: any[]) => any>(
   func: T,
