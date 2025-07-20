@@ -1,15 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ThemeToggleMinimal } from '@/components/theme/ThemeToggle'
+
 
 import { useSidebarState, useAuthStore, useStoreHydration } from '@/stores'
-import { Home, Flame, TrendingUp, Languages, Users, FolderOpen, BarChart2, LogOut, User } from 'lucide-react'
+import {  Flame,  LogOut,  } from 'lucide-react'
 
 interface SidebarProps {
   isOpen: boolean
@@ -27,15 +25,11 @@ interface TrendingItem {
 
 export function Sidebar() {
   const pathname = usePathname()
-  const router = useRouter()
-  const [quickTrends, setQuickTrends] = useState<TrendingItem[]>([])
-  const [topTopics, setTopTopics] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
   const { isOpen, setOpen } = useSidebarState()
 
   // Auth state
   const hasHydrated = useStoreHydration()
-  const { isConnected, orgData, logout } = useAuthStore()
+  const { isConnected,  logout } = useAuthStore()
 
 
 
