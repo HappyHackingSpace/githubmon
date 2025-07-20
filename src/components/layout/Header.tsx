@@ -12,7 +12,7 @@ import { Button } from '../ui/button'
 import { Search, User, LogOut, BarChart3 } from 'lucide-react'
 
 
-export function SearchHeader() {
+export function Header() {
   const {
     currentQuery,
     currentSearchType,
