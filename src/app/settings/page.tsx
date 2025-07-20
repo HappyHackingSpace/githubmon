@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,7 @@ import { ThemeSelector, ThemeToggle } from '@/components/theme/ThemeToggle'
 import { cookieUtils } from '@/lib/cookies'
 
 export default function SettingsPage() {
-  const { isAuthenticated, isLoading, orgData, shouldRender } = useRequireAuth()
+  const { isAuthenticated, isLoading, orgData } = useRequireAuth()
   const { setOrgData } = useAuthStore()
   const { resetPreferences } = usePreferencesStore()
   const [tempOrgName, setTempOrgName] = useState(orgData?.orgName || '')
@@ -26,10 +26,10 @@ export default function SettingsPage() {
     }
   }
 
-  // Auth kontrolü - render yapma eğer yönlendirme gerekiyorsa
-  if (!shouldRender) {
-    return null // Hiçbir şey render etme, sadece yönlendir
-  }
+  // Middleware auth kontrolü yaptığı için bu kontrol artık gereksiz
+  // if (!shouldRender) {
+  //   return null
+  // }
 
   if (isLoading) {
     return (

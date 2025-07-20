@@ -15,13 +15,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-  const { shouldRender } = useRequireGuest()
+  const { isLoading: authLoading } = useRequireGuest()
   const { setOrgData, setConnected, setTokenExpiry } = useAuthStore()
 
-  // Auth kontrolü - giriş yapmış kullanıcıyı dashboard'a yönlendir
-  if (!shouldRender) {
-    return null
-  }
+ 
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,8 +39,9 @@ export default function LoginPage() {
 
       const userData = await response.json()
 
+    
       const expiryDate = new Date()
-      expiryDate.setMonth(expiryDate.getMonth() + 1)
+      expiryDate.setDate(expiryDate.getDate() + 90) // 90 gün sonra
 
       setOrgData({
         orgName: userData.login,
@@ -52,7 +50,8 @@ export default function LoginPage() {
       setTokenExpiry(expiryDate.toISOString())
       setConnected(true)
 
-      router.push('/dashboard')
+      // History replacement - kullanıcının geri gidememesi için
+      router.replace('/dashboard')
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
@@ -64,7 +63,7 @@ export default function LoginPage() {
   const continueWithoutToken = () => {
     setOrgData({ orgName: 'guest', token: '' })
     setConnected(true)
-    router.push('/dashboard')
+    router.replace('/dashboard') // History replacement
   }
 
   return (
