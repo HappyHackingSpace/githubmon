@@ -159,13 +159,21 @@ export function SearchModal() {
   const hasResults =
     currentResults.repos.length > 0 || currentResults.users.length > 0;
   const handleUserClick = (username: string) => {
-    setSearchModalOpen(false); // Close the modal
-    router.push(`/search?user=${username}`); // ← Redirect to your own page
+    // Store'da seçili kullanıcıyı sakla
+    setCurrentQuery(username);
+    setCurrentSearchType("users");
+    setSearchModalOpen(false);
+    // Search sayfasına git ve kullanıcı bilgilerini aktar
+    router.push(`/search?user=${username}`);
   };
 
   const handleRepoClick = (repoName: string) => {
-    setSearchModalOpen(false); // Close the modal
-    router.push(`/search?repo=${repoName}`); // ← Redirect to repo page 
+    // Store'da seçili repo'yu sakla
+    setCurrentQuery(repoName);
+    setCurrentSearchType("repos");
+    setSearchModalOpen(false);
+    // Search sayfasına git ve repo bilgilerini aktar
+    router.push(`/search?repo=${repoName}`);
   };
 
   return (
@@ -201,8 +209,8 @@ export function SearchModal() {
                   {type === "all"
                     ? "All"
                     : type === "repos"
-                    ? "Repositories"
-                    : "Users"}
+                      ? "Repositories"
+                      : "Users"}
                 </Button>
               ))}
             </div>
