@@ -1,20 +1,12 @@
 // hooks/useAuth.ts
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuthStore, useStoreHydration } from '@/stores'
 
-export const useAuth = (redirectTo?: string) => {
-    const router = useRouter()
+// Basit auth durumu kontrolü - middleware auth routing'i hallediyor
+export const useAuth = () => {
     const hasHydrated = useStoreHydration()
     const { isConnected, orgData, isTokenValid, logout } = useAuthStore()
 
     const isAuthenticated = hasHydrated && isConnected && orgData && isTokenValid()
-
-    useEffect(() => {
-        if (hasHydrated && !isAuthenticated && redirectTo) {
-            router.replace(redirectTo) // replace kullanarak history'yi temizle
-        }
-    }, [hasHydrated, isAuthenticated, redirectTo, router])
 
     return {
         isAuthenticated,
@@ -22,50 +14,28 @@ export const useAuth = (redirectTo?: string) => {
         isConnected,
         orgData,
         logout,
-        isLoading: !hasHydrated,
-        shouldRedirect: hasHydrated && !isAuthenticated && !!redirectTo
+        isLoading: !hasHydrated
     }
 }
 
-// Auth gerektiren sayfalar için (login olmamış kullanıcıları yönlendir)
-export const useRequireAuth = (redirectTo: string = '/login') => {
-    const authData = useAuth(redirectTo)
-
-    // Eğer hydrate olmuş ve authenticated değilse, hiçbir şey render etme
-    if (authData.shouldRedirect) {
-        return {
-            ...authData,
-            shouldRender: false
-        }
-    }
+// Protected sayfalar için - middleware zaten routing'i hallediyor
+export const useRequireAuth = () => {
+    const authData = useAuth()
 
     return {
         ...authData,
+        // Middleware zaten auth kontrolü yaptığı için her zaman render edebiliriz
         shouldRender: authData.hasHydrated
     }
 }
 
-export const useRequireGuest = (redirectTo: string = '/dashboard') => {
-    const router = useRouter()
-    const hasHydrated = useStoreHydration()
-    const { isConnected, orgData, isTokenValid, logout } = useAuthStore()
-
-    const isAuthenticated = hasHydrated && isConnected && orgData && isTokenValid()
-
-    useEffect(() => {
-        if (hasHydrated && isAuthenticated) {
-            router.replace(redirectTo)
-        }
-    }, [hasHydrated, isAuthenticated, redirectTo, router])
+// Login sayfası için - middleware zaten yönlendirme yapıyor
+export const useRequireGuest = () => {
+    const authData = useAuth()
 
     return {
-        isAuthenticated,
-        hasHydrated,
-        isConnected,
-        orgData,
-        logout,
-        isLoading: !hasHydrated,
-        shouldRedirect: hasHydrated && isAuthenticated,
-        shouldRender: hasHydrated && !isAuthenticated
+        ...authData,
+        // Middleware zaten auth kontrolü yaptığı için her zaman render edebiliriz
+        shouldRender: authData.hasHydrated
     }
 }
