@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ThemeToggleMinimal } from '@/components/theme/ThemeToggle'
 import { ossInsightClient } from '@/lib/api/oss-insight-client'
-import { useSidebarState } from '@/stores'
-import { Home, Flame, TrendingUp, Languages, Users, FolderOpen, BarChart2 } from 'lucide-react'
+import { useSidebarState, useAuthStore, useStoreHydration } from '@/stores'
+import { Home, Flame, TrendingUp, Languages, Users, FolderOpen, BarChart2, LogOut, User } from 'lucide-react'
 
 interface SidebarProps {
   isOpen: boolean
@@ -27,10 +27,16 @@ interface TrendingItem {
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [quickTrends, setQuickTrends] = useState<TrendingItem[]>([])
   const [topTopics, setTopTopics] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const { isOpen, setOpen } = useSidebarState()
+
+  // Auth state
+  const hasHydrated = useStoreHydration()
+  const { isConnected, orgData, logout } = useAuthStore()
+
 
   useEffect(() => {
     loadSidebarData()
@@ -61,21 +67,23 @@ export function Sidebar() {
   }
 
   const navigationItems = [
-   
-    { href: '/dashboard', label: ' Dashboard', icon: Flame }
+    { href: '/dashboard', label: 'Dashboard', icon: Flame }
   ]
 
+  const handleLogout = () => {
+    logout()
+    window.location.href = '/'
+  }
   return (
     <>
       {/* Overlay for mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-
+          onClick={() => setOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed top-0 left-0 h-full w-80 bg-sidebar border-r border-sidebar-border z-50 transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -90,16 +98,16 @@ export function Sidebar() {
             <p className="text-xs text-muted-foreground">OSS Analytics</p>
           </div>
           <button
-
+            onClick={() => setOpen(false)}
             className="lg:hidden text-muted-foreground hover:text-sidebar-foreground transition-colors"
           >
             ✕
           </button>
         </div>
 
+
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
-
           {/* Navigation */}
           <nav className="p-4 space-y-1">
             {navigationItems.map((item) => {
@@ -125,15 +133,24 @@ export function Sidebar() {
           </nav>
         </div>
 
-        {/* Theme Toggle - Fixed at bottom */}
-        <div className="p-4 border-t border-sidebar-border">
-          <ThemeToggleMinimal />
-        </div>
+        {/* Logout - Fixed at bottom */}
+        {hasHydrated && isConnected && (
+          <div className="p-4 border-t border-sidebar-border">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="w-full justify-start text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
+        )}
       </aside>
     </>
   )
 }
-
 
 export function SidebarToggle({ onClick }: { onClick: () => void }) {
   return (
