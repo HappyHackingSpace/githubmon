@@ -35,7 +35,8 @@ export function Header() {
   }
 
   const handleLogout = () => {
-    logout() // logout fonksiyonu artık otomatik yönlendirme yapıyor
+    logout()
+    router.push('/')
   }
 
   return (

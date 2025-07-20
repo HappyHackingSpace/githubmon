@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ThemeToggleMinimal } from '@/components/theme/ThemeToggle'
-import { ossInsightClient } from '@/lib/api/oss-insight-client'
+
 import { useSidebarState, useAuthStore, useStoreHydration } from '@/stores'
 import { Home, Flame, TrendingUp, Languages, Users, FolderOpen, BarChart2, LogOut, User } from 'lucide-react'
 
@@ -38,41 +38,14 @@ export function Sidebar() {
   const { isConnected, orgData, logout } = useAuthStore()
 
 
-  useEffect(() => {
-    loadSidebarData()
-  }, [])
 
-  const loadSidebarData = async () => {
-    try {
-      const [trending, collections] = await Promise.all([
-        ossInsightClient.getTrendingRepos('24h', 8),
-        ossInsightClient.getHotCollections(6)
-      ])
-
-      setQuickTrends(trending.map(repo => ({
-        name: repo.name,
-        description: repo.description || '',
-        stars: repo.stargazers_count,
-        language: repo.language || '',
-        url: repo.html_url,
-        type: 'repo' as const
-      })))
-
-      setTopTopics(collections.map(col => col.name))
-    } catch (error) {
-      console.error('Sidebar verileri yüklenemedi:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const navigationItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Flame }
   ]
 
   const handleLogout = () => {
-    logout()
-    window.location.href = '/'
+    logout() // logout fonksiyonu artık otomatik yönlendirme yapıyor
   }
   return (
     <>
