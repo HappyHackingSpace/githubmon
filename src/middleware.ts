@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-
+  
   // Check if user has auth token from the auth cookie
   const authCookie = request.cookies.get('githubmon-auth')?.value
 
@@ -47,9 +47,9 @@ export function middleware(request: NextRequest) {
   }
 
   // Define public routes that don't require authentication
-  const publicRoutes = ['/login', '/register', '/about', '/search']
 
-  // Ana sayfa (/) authenticated kullanıcılar için protected
+  const publicRoutes = ['/login', '/register', '/about', '/search'] 
+
   // Define protected routes that require authentication
   const protectedRoutes = ['/dashboard', '/settings']
 
