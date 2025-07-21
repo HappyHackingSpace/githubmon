@@ -49,6 +49,7 @@ export function SidebarSearch() {
     const [quickTrends, setQuickTrends] = useState<TrendingItem[]>([])
     const [topTopics, setTopTopics] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
+    const [activeSection, setActiveSection] = useState('overview')
     const { isOpen, setOpen } = useSidebarState()
 
     // Auth state
@@ -56,15 +57,25 @@ export function SidebarSearch() {
     const { isConnected, orgData, logout } = useAuthStore()
 
     const navigationItems = [
-        { href: '/overview', label: 'Overview', icon: Eye, section: 'analytics' },
-        { href: '/behavior', label: 'Behavior', icon: Activity, section: 'analytics' },
-        { href: '/star', label: 'Star', icon: Star, section: 'analytics' },
-        { href: '/code', label: 'Code', icon: Code, section: 'analytics' },
-        { href: '/code-review', label: 'Code Review', icon: GitPullRequest, section: 'analytics' },
-        { href: '/issue', label: 'Issue', icon: AlertCircle, section: 'analytics' },
-        { href: '/monthly-stats', label: 'Monthly Stats', icon: Calendar, section: 'analytics' },
-        { href: '/contribution-activities', label: 'Contribution Activities', icon: UserPlus, section: 'analytics' }
+        { href: '#overview', label: 'Overview', icon: Eye, section: 'analytics' },
+        { href: '#behavior', label: 'Behavior', icon: Activity, section: 'analytics' },
+        { href: '#star', label: 'Star', icon: Star, section: 'analytics' },
+        { href: '#code', label: 'Code', icon: Code, section: 'analytics' },
+        { href: '#code-review', label: 'Code Review', icon: GitPullRequest, section: 'analytics' },
+        { href: '#issue', label: 'Issue', icon: AlertCircle, section: 'analytics' },
+        { href: '#monthly-stats', label: 'Monthly Stats', icon: Calendar, section: 'analytics' },
+        { href: '#contribution-activities', label: 'Contribution Activities', icon: UserPlus, section: 'analytics' }
     ]
+
+    // Listen for active section changes
+    useEffect(() => {
+        const handleActiveSection = (event: CustomEvent) => {
+            setActiveSection(event.detail.section);
+        };
+
+        window.addEventListener('activeSectionChange', handleActiveSection as EventListener);
+        return () => window.removeEventListener('activeSectionChange', handleActiveSection as EventListener);
+    }, []);
 
     const handleLogout = () => {
         logout() // logout fonksiyonu artık otomatik yönlendirme yapıyor
@@ -73,6 +84,13 @@ export function SidebarSearch() {
     // Group navigation items by section
     const mainItems = navigationItems.filter(item => item.section === 'main')
     const analyticsItems = navigationItems.filter(item => item.section === 'analytics')
+
+    const scrollToSection = (sectionId: string) => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
 
     return (
         <>
@@ -130,14 +148,14 @@ export function SidebarSearch() {
 
                         <nav className="space-y-1">
                             {analyticsItems.map((item) => {
-                                const isActive = pathname === item.href
+                                const isActive = activeSection === item.href.replace('#', '')
                                 const Icon = item.icon
                                 return (
-                                    <Link
+                                    <button
                                         key={item.href}
-                                        href={item.href}
+                                        onClick={() => scrollToSection(item.href.replace('#', ''))}
                                         className={`
-                                            flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm
+                                            w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm text-left
                                             ${isActive
                                                 ? 'bg-sidebar-accent text-sidebar-primary font-medium'
                                                 : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
@@ -146,7 +164,7 @@ export function SidebarSearch() {
                                     >
                                         <Icon size={16} className="text-muted-foreground" />
                                         <span>{item.label}</span>
-                                    </Link>
+                                    </button>
                                 )
                             })}
                         </nav>
