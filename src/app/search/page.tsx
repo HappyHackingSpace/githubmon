@@ -1,65 +1,166 @@
 "use client"
 
-import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
 
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/layout/Header";
 import { useRequireAuth } from "@/hooks/useAuth";
 import { SidebarSearch, SidebarToggle } from "@/components/layout/SidebarSearch";
 import { useSearchStore, useSidebarState } from "@/stores";
+import { SearchModal } from "@/components/search/SearchModal";
+import { ossInsightClient } from "@/lib/api/oss-insight-client";
+import { Star, GitFork, Eye, ExternalLink, Search, User, Package, Activity, Code, GitPullRequest, AlertCircle, Calendar, UserPlus, BarChart3 } from "lucide-react";
+import type { TrendingRepo, TopContributor } from "@/types/oss-insight";
+import { AreaChart, BarChart, PieChart, LineChart } from '@/components/charts';
+import ChartWrapper from '@/components/charts/ChartWrapper';
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const userParam = searchParams.get("user");
   const repoParam = searchParams.get("repo");
   const { isLoading } = useRequireAuth();
-  const { setCurrentQuery, setCurrentSearchType } = useSearchStore();
+  const { setCurrentQuery, setCurrentSearchType, setSearchModalOpen } = useSearchStore();
   const { setOpen } = useSidebarState();
 
+  // Refs for scroll sections
+  const overviewRef = useRef<HTMLDivElement>(null);
+  const behaviorRef = useRef<HTMLDivElement>(null);
+  const starRef = useRef<HTMLDivElement>(null);
+  const codeRef = useRef<HTMLDivElement>(null);
+  const codeReviewRef = useRef<HTMLDivElement>(null);
+  const issueRef = useRef<HTMLDivElement>(null);
+  const monthlyStatsRef = useRef<HTMLDivElement>(null);
+  const contributionActivitiesRef = useRef<HTMLDivElement>(null);
+
+  const [searchResults, setSearchResults] = useState<{
+    repos: TrendingRepo[];
+    users: TopContributor[];
+    loading: boolean;
+    error: string | null;
+  }>({
+    repos: [],
+    users: [],
+    loading: false,
+    error: null
+  });
+
+  const [activeSection, setActiveSection] = useState('overview');
+  const [hasSearched, setHasSearched] = useState(false);
+  const [userAnalytics, setUserAnalytics] = useState<any>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+
+  // Scroll spy effect
   useEffect(() => {
-    if (userParam) {
-      setCurrentQuery(userParam);
-      setCurrentSearchType("users");
-      console.log("Search for user:", userParam);
-    } else if (repoParam) {
-      setCurrentQuery(repoParam);
-      setCurrentSearchType("repos");
-      console.log("Search for repo:", repoParam);
+    const handleScroll = () => {
+      const sections = [
+        { id: 'overview', ref: overviewRef },
+        { id: 'behavior', ref: behaviorRef },
+        { id: 'star', ref: starRef },
+        { id: 'code', ref: codeRef },
+        { id: 'code-review', ref: codeReviewRef },
+        { id: 'issue', ref: issueRef },
+        { id: 'monthly-stats', ref: monthlyStatsRef },
+        { id: 'contribution-activities', ref: contributionActivitiesRef },
+      ];
+
+      for (const section of sections) {
+        const element = section.ref.current;
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top >= 0 && rect.top <= window.innerHeight / 2) {
+            setActiveSection(section.id);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (userParam || repoParam) {
+      const query = userParam || repoParam || '';
+      const type = userParam ? 'users' : 'repos';
+
+      setCurrentQuery(query);
+      setCurrentSearchType(type);
+      performSearch(query, type);
+      setHasSearched(true);
+
+      // If searching for a user, load analytics
+      if (userParam) {
+        loadUserAnalytics(userParam);
+      }
     }
   }, [userParam, repoParam, setCurrentQuery, setCurrentSearchType]);
 
-  // History management - geri gitmeyi önle  
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !isLoading) {
-      const handlePopState = (event: PopStateEvent) => {
-        event.preventDefault()
-        window.history.pushState(null, '', '/search')
-      }
+  const performSearch = async (query: string, type: 'users' | 'repos') => {
+    setSearchResults(prev => ({ ...prev, loading: true, error: null }));
 
-      window.history.pushState(null, '', '/search')
-      window.addEventListener('popstate', handlePopState)
-
-      return () => {
-        window.removeEventListener('popstate', handlePopState)
+    try {
+      if (type === 'users') {
+        const users = await ossInsightClient.searchUsers(query, 'all', 20);
+        setSearchResults({
+          repos: [],
+          users: users || [],
+          loading: false,
+          error: null
+        });
+      } else {
+        const repos = await ossInsightClient.searchRepositories(query, 'stars', 20);
+        setSearchResults({
+          repos: repos || [],
+          users: [],
+          loading: false,
+          error: null
+        });
       }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults({
+        repos: [],
+        users: [],
+        loading: false,
+        error: 'Search failed. Please try again.'
+      });
     }
-  }, [isLoading])
+  };
+
+  const loadUserAnalytics = async (username: string) => {
+    setLoadingAnalytics(true);
+    try {
+      // Use real API to get user analytics
+      const analytics = await ossInsightClient.getUserAnalytics(username);
+      setUserAnalytics(analytics);
+    } catch (error) {
+      console.error('Analytics error:', error);
+      // Fallback to null if API fails
+      setUserAnalytics(null);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
+
+  // Dispatch active section to sidebar
+  useEffect(() => {
+    const event = new CustomEvent('activeSectionChange', {
+      detail: { section: activeSection }
+    });
+    window.dispatchEvent(event);
+  }, [activeSection]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        {/* Header - Full Width */}
         <Header />
-
-        {/* Content Area */}
         <div className="flex flex-1">
-          {/* Mobile Sidebar Toggle */}
           <SidebarToggle onClick={() => setOpen(true)} />
-
-          {/* Sidebar */}
           <SidebarSearch />
-
-          {/* Main Content */}
           <main className="flex-1 lg:ml-80 flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
@@ -73,75 +174,516 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header - Full Width */}
       <Header />
 
-      {/* Content Area */}
       <div className="flex flex-1">
-        {/* Mobile Sidebar Toggle */}
         <SidebarToggle onClick={() => setOpen(true)} />
-
-        {/* Sidebar */}
         <SidebarSearch />
 
-        {/* Main Content */}
         <main className="flex-1 lg:ml-80 p-6">
           <div className="max-w-5xl mx-auto">
-            {userParam || repoParam ? (
-              <div>
-                <h1 className="text-2xl font-bold mb-4">
-                  Search Results for {userParam ? `User: ${userParam}` : `Repository: ${repoParam}`}
-                </h1>
-                <div className="mt-6">
-                  <div className="bg-card border rounded-lg p-6">
-                    <div className="flex items-center space-x-3 mb-4">
-                      {userParam ? (
-                        <>
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-semibold text-sm">U</span>
+            {/* Show search prompt if no parameters */}
+            {!userParam && !repoParam && !hasSearched && (
+              <div className="text-center py-12">
+                <div className="mb-6">
+                  <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                    Search GitHub
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Use the search functionality to find users or repositories
+                  </p>
+                </div>
+
+                <Button
+                  onClick={() => setSearchModalOpen(true)}
+                  className="px-6 py-3"
+                >
+                  <Search className="w-5 h-5 mr-2" />
+                  Open Search
+                </Button>
+              </div>
+            )}
+
+            {/* User Results with Analytics */}
+            {userParam && searchResults.users.length > 0 && !searchResults.loading && (
+              <div className="space-y-8">
+                {/* User Profile Section */}
+                <div>
+                  <div className="flex items-center mb-6">
+                    <User className="w-6 h-6 mr-2" />
+                    <h1 className="text-2xl font-bold">
+                      User Profile: "{userParam}"
+                    </h1>
+                  </div>
+
+                  <div className="grid gap-4 mb-8">
+                    {userAnalytics?.profile && (
+                      <Card className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex items-start space-x-4">
+                            <img
+                              src={userAnalytics.profile.avatar_url}
+                              alt={userAnalytics.profile.login}
+                              className="w-20 h-20 rounded-full"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <h2 className="text-2xl font-semibold">{userAnalytics.profile.login}</h2>
+                                <Badge variant="outline">{userAnalytics.profile.type}</Badge>
+                              </div>
+                              {userAnalytics.profile.bio && (
+                                <p className="text-gray-600 mb-3">{userAnalytics.profile.bio}</p>
+                              )}
+                              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                <span>Repos: {userAnalytics.profile.public_repos}</span>
+                                <span>Followers: {userAnalytics.profile.followers}</span>
+                                <span>Following: {userAnalytics.profile.following}</span>
+                              </div>
+                              {userAnalytics.profile.location && (
+                                <p className="text-sm text-gray-500 mt-2">📍 {userAnalytics.profile.location}</p>
+                              )}
+                              {userAnalytics.profile.company && (
+                                <p className="text-sm text-gray-500 mt-1">🏢 {userAnalytics.profile.company}</p>
+                              )}
+                            </div>
+                            <Button asChild>
+                              <a href={userAnalytics.profile.html_url} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                View Profile
+                              </a>
+                            </Button>
                           </div>
-                          <div>
-                            <h2 className="text-lg font-semibold">{userParam}</h2>
-                            <p className="text-sm text-muted-foreground">GitHub User Profile</p>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Fallback to search results if no analytics profile */}
+                    {!userAnalytics?.profile && searchResults.users.slice(0, 1).map((user) => (
+                      <Card key={user.login} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex items-start space-x-4">
+                            <img
+                              src={user.avatar_url}
+                              alt={user.login}
+                              className="w-20 h-20 rounded-full"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <h2 className="text-2xl font-semibold">{user.login}</h2>
+                                <Badge variant="outline">{user.type}</Badge>
+                              </div>
+                              {user.bio && (
+                                <p className="text-gray-600 mb-3">{user.bio}</p>
+                              )}
+                              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                <span>Repos: {user.repos_count}</span>
+                                <span>Followers: {user.followers_count}</span>
+                              </div>
+                            </div>
+                            <Button asChild>
+                              <a href={user.html_url} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                View Profile
+                              </a>
+                            </Button>
                           </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <span className="text-green-600 font-semibold text-sm">R</span>
-                          </div>
-                          <div>
-                            <h2 className="text-lg font-semibold">{repoParam}</h2>
-                            <p className="text-sm text-muted-foreground">GitHub Repository</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <button
-                        onClick={() => window.open(`https://github.com/${userParam || repoParam}`, '_blank')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
-                      >
-                        View on GitHub
-                      </button>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(`https://github.com/${userParam || repoParam}`)}
-                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md transition-colors"
-                      >
-                        Copy Link
-                      </button>
-                    </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-12">
 
+                {/* Analytics Sections */}
+                {userAnalytics?.overview && userAnalytics?.languages && userAnalytics?.behavior && !loadingAnalytics && (
+                  <>
+                    {/* Overview Section */}
+                    <div id="overview" ref={overviewRef} className="scroll-mt-24">
+                      <div className="flex items-center mb-6">
+                        <Eye className="w-6 h-6 mr-2" />
+                        <h2 className="text-2xl font-bold">Overview</h2>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <ChartWrapper
+                          title="Activity Overview"
+                          loading={false}
+                          height={200}
+                        >
+                          <AreaChart
+                            data={userAnalytics.overview}
+                            xField="name"
+                            yFields={['commits', 'stars']}
+                            height={200}
+                            stack={true}
+                            colors={['#8884d8', '#82ca9d']}
+                          />
+                        </ChartWrapper>
+
+                        <ChartWrapper
+                          title="Language Distribution"
+                          loading={false}
+                          height={200}
+                        >
+                          <PieChart
+                            data={userAnalytics.languages}
+                            height={200}
+                            radius={['30%', '60%']}
+                            showLabels={false}
+                            showPercentage={true}
+                          />
+                        </ChartWrapper>
+
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border">
+                          <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Total Commits</span>
+                              <span className="font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.commits, 0)}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Total Stars</span>
+                              <span className="font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.stars, 0)}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Total Repos</span>
+                              <span className="font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.repos, 0)}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Primary Language</span>
+                              <span className="font-semibold">{userAnalytics.languages[0]?.name || 'N/A'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Behavior Section */}
+                    <div id="behavior" ref={behaviorRef} className="scroll-mt-24">
+                      <div className="flex items-center mb-6">
+                        <Activity className="w-6 h-6 mr-2" />
+                        <h2 className="text-2xl font-bold">Behavior Analysis</h2>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <Card>
+                          <CardContent className="p-4">
+                            <h3 className="text-lg font-semibold mb-3">Weekly Activity Pattern</h3>
+                            <BarChart
+                              data={userAnalytics.behavior}
+                              xField="day"
+                              yFields={['commits', 'prs', 'issues']}
+                              height={250}
+                              colors={['#8884d8', '#82ca9d', '#ffc658']}
+                            />
+                          </CardContent>
+                        </Card>
+
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border">
+                          <h3 className="text-lg font-semibold mb-3">Activity Summary</h3>
+                          <div className="space-y-4">
+                            <div>
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm text-gray-600">Most Active Day</span>
+                                <span className="font-semibold">
+                                  {userAnalytics.behavior.reduce((max: any, day: any) =>
+                                    (day.commits + day.prs + day.issues) > (max.commits + max.prs + max.issues) ? day : max
+                                  ).day}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm text-gray-600">Total Weekly Commits</span>
+                                <span className="font-semibold">
+                                  {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.commits, 0)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm text-gray-600">Total Weekly PRs</span>
+                                <span className="font-semibold">
+                                  {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.prs, 0)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">Total Weekly Issues</span>
+                                <span className="font-semibold">
+                                  {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.issues, 0)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Star Section */}
+                    <div id="star" ref={starRef} className="scroll-mt-24">
+                      <div className="flex items-center mb-6">
+                        <Star className="w-6 h-6 mr-2" />
+                        <h2 className="text-2xl font-bold">Star Activity</h2>
+                      </div>
+
+                      <ChartWrapper
+                        title="Stars Over Time"
+                        loading={false}
+                        height={200}
+                      >
+                        <LineChart
+                          data={userAnalytics.overview}
+                          xField="name"
+                          yFields={['stars']}
+                          height={200}
+                          colors={['#8884d8']}
+                        />
+                      </ChartWrapper>
+                    </div>
+                    {/* Code Section */}
+                    <div id="code" ref={codeRef} className="scroll-mt-24">
+                      <div className="flex items-center mb-6">
+                        <Code className="w-6 h-6 mr-2" />
+                        <h2 className="text-2xl font-bold">Code Contributions</h2>
+                      </div>
+
+                      <ChartWrapper
+                        title="Commit Activity"
+                        loading={false}
+                        height={200}
+                      >
+                        <AreaChart
+                          data={userAnalytics.overview}
+                          xField="name"
+                          yFields={['commits']}
+                          height={200}
+                          colors={['#8884d8']}
+                        />
+                      </ChartWrapper>
+                    </div>
+
+                    {/* Code Review & Issue Sections */}
+                    <div id="code-review" ref={codeReviewRef} className="scroll-mt-24">
+                      <div className="flex items-center mb-6">
+                        <GitPullRequest className="w-6 h-6 mr-2" />
+                        <h2 className="text-2xl font-bold">Code Review & Issues</h2>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <ChartWrapper
+                          title="Pull Request Activity"
+                          loading={false}
+                          height={200}
+                        >
+                          <BarChart
+                            data={userAnalytics.behavior}
+                            xField="day"
+                            yFields={['prs']}
+                            height={200}
+                            colors={['#82ca9d']}
+                          />
+                        </ChartWrapper>
+
+                        <ChartWrapper
+                          title="Issue Activity"
+                          loading={false}
+                          height={200}
+                        >
+                          <LineChart
+                            data={userAnalytics.behavior}
+                            xField="day"
+                            yFields={['issues']}
+                            height={200}
+                            colors={['#ffc658']}
+                          />
+                        </ChartWrapper>
+                      </div>
+                    </div>
+
+                    <div id="issue" ref={issueRef} className="scroll-mt-24 hidden">
+                    </div>
+
+                    {/* Monthly Stats & Contribution Activities */}
+                    <div id="monthly-stats" ref={monthlyStatsRef} className="scroll-mt-24">
+                      <div className="flex items-center mb-6">
+                        <Calendar className="w-6 h-6 mr-2" />
+                        <h2 className="text-2xl font-bold">Monthly Statistics & Contributions</h2>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <ChartWrapper
+                          title="Monthly Trends"
+                          loading={false}
+                          height={250}
+                        >
+                          <AreaChart
+                            data={userAnalytics.overview}
+                            xField="name"
+                            yFields={['commits', 'repos', 'stars']}
+                            height={250}
+                            stack={true}
+                            colors={['#8884d8', '#82ca9d', '#ffc658']}
+                          />
+                        </ChartWrapper>
+
+                        <ChartWrapper
+                          title="Overall Contribution Pattern"
+                          loading={false}
+                          height={250}
+                        >
+                          <BarChart
+                            data={userAnalytics.behavior}
+                            xField="day"
+                            yFields={['commits', 'prs', 'issues']}
+                            height={250}
+                            colors={['#8884d8', '#82ca9d', '#ffc658']}
+                          />
+                        </ChartWrapper>
+                      </div>
+                    </div>
+                    {/* Hidden refs for navigation */}
+                    <div id="contribution-activities" ref={contributionActivitiesRef} className="scroll-mt-24 hidden">
+                    </div>
+                  </>
+                )}
+
+                {/* Loading Analytics */}
+                {loadingAnalytics && (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading analytics...</p>
+                  </div>
+                )}
+
+                {/* No Analytics Data */}
+                {!loadingAnalytics && userAnalytics && (!userAnalytics.overview || !userAnalytics.languages || !userAnalytics.behavior) && (
+                  <div className="text-center py-12">
+                    <AlertCircle className="w-16 h-16 text-yellow-300 mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold mb-2">Limited Analytics Data</h2>
+                    <p className="text-gray-600 mb-4">
+                      Analytics data for this user is limited or unavailable. This may be due to:
+                    </p>
+                    <ul className="text-sm text-gray-500 text-left max-w-md mx-auto">
+                      <li>• Private repositories or activity</li>
+                      <li>• Limited public activity</li>
+                      <li>• GitHub API rate limits</li>
+                    </ul>
+                  </div>
+                )}
+
+                {/* No User Found */}
+                {!loadingAnalytics && !userAnalytics && searchResults.users.length === 0 && (
+                  <div className="text-center py-12">
+                    <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold mb-2">User Not Found</h2>
+                    <p className="text-gray-600 mb-4">
+                      No user data available for "{userParam}"
+                    </p>
+                    <Button onClick={() => setSearchModalOpen(true)}>
+                      Try Different Search
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Repository Results */}
+            {repoParam && searchResults.repos.length > 0 && !searchResults.loading && (
+              <div>
+                <div className="flex items-center mb-6">
+                  <Package className="w-6 h-6 mr-2" />
+                  <h1 className="text-2xl font-bold">
+                    Repositories matching "{repoParam}"
+                  </h1>
+                  <Badge variant="secondary" className="ml-3">
+                    {searchResults.repos.length} results
+                  </Badge>
+                </div>
+
+                <div className="grid gap-4">
+                  {searchResults.repos.map((repo) => (
+                    <Card key={repo.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h2 className="text-xl font-semibold text-blue-600">
+                                {repo.full_name}
+                              </h2>
+                              {repo.language && (
+                                <Badge variant="outline">{repo.language}</Badge>
+                              )}
+                              {repo.archived && (
+                                <Badge variant="secondary">Archived</Badge>
+                              )}
+                            </div>
+                            {repo.description && (
+                              <p className="text-gray-600 mb-3">{repo.description}</p>
+                            )}
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <span className="flex items-center">
+                                <Star className="w-4 h-4 mr-1" />
+                                {repo.stargazers_count.toLocaleString()}
+                              </span>
+                              <span className="flex items-center">
+                                <GitFork className="w-4 h-4 mr-1" />
+                                {repo.forks_count.toLocaleString()}
+                              </span>
+                              <span className="flex items-center">
+                                <Eye className="w-4 h-4 mr-1" />
+                                {repo.watchers_count.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          <Button asChild>
+                            <a href={repo.html_url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              View Repo
+                            </a>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* No Results */}
+            {(userParam || repoParam) && !searchResults.loading && !searchResults.error &&
+              ((userParam && searchResults.users.length === 0) || (repoParam && searchResults.repos.length === 0)) && (
+                <div className="text-center py-12">
+                  <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold mb-2">No results found</h2>
+                  <p className="text-gray-600 mb-4">
+                    No {userParam ? 'users' : 'repositories'} found for "{userParam || repoParam}"
+                  </p>
+                  <Button onClick={() => setSearchModalOpen(true)}>
+                    Try Different Search
+                  </Button>
+                </div>
+              )}
+
+            {/* Error State */}
+            {searchResults.error && (
+              <div className="text-center py-12">
+                <AlertCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2 text-red-600">Search Error</h2>
+                <p className="text-gray-600 mb-4">{searchResults.error}</p>
+                <Button onClick={() => setSearchModalOpen(true)}>
+                  Try Again
+                </Button>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {searchResults.loading && (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Searching...</p>
               </div>
             )}
           </div>
         </main>
       </div>
+
+      <SearchModal />
     </div>
   );
 }
