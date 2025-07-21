@@ -14,12 +14,13 @@ export interface ChartWrapperProps {
   onFullscreen?: () => void;
   headerActions?: ReactNode;
 }
+
+
 const cardStyles = {
   background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%)',
   borderRadius: 2,
   border: '1px solid rgba(255,255,255,0.1)'
 };
-
 
 export default function ChartWrapper({
   title,
@@ -79,11 +80,10 @@ export default function ChartWrapper({
     );
   }
 
+  // Normal state
   return (
     <Card sx={{
-      background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%)',
-      borderRadius: 2,
-      border: '1px solid rgba(255,255,255,0.1)',
+      ...cardStyles,
       transition: 'all 0.3s ease',
       '&:hover': {
         border: '1px solid rgba(255,255,255,0.2)',
@@ -186,3 +186,5 @@ export default function ChartWrapper({
     </Card>
   );
 }
+
+
