@@ -106,7 +106,6 @@ export default function AreaChart({
       name: field,
       type: 'line',
       stack: stack ? 'Total' : undefined,
-      areaStyle: {},
       emphasis: {
         focus: 'series'
       },

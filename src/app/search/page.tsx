@@ -1,5 +1,6 @@
 "use client"
 
+
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,19 +16,6 @@ import { Star, GitFork, Eye, ExternalLink, Search, User, Package, Activity, Code
 import type { TrendingRepo, TopContributor } from "@/types/oss-insight";
 import { AreaChart, BarChart, PieChart, LineChart } from '@/components/charts';
 import ChartWrapper from '@/components/charts/ChartWrapper';
-import {
-  ResponsiveContainer,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Bar,
-  Line,
-  Area,
-  BarChart as RechartsBarChart,
-  LineChart as RechartsLineChart,
-  AreaChart as RechartsAreaChart
-} from 'recharts';
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -307,7 +295,7 @@ export default function SearchPage() {
                 </div>
 
                 {/* Analytics Sections */}
-                {userAnalytics && userAnalytics.overview && userAnalytics.languages && userAnalytics.behavior && !loadingAnalytics && (
+                {userAnalytics?.overview && userAnalytics?.languages && userAnalytics?.behavior && !loadingAnalytics && (
                   <>
                     {/* Overview Section */}
                     <div id="overview" ref={overviewRef} className="scroll-mt-24">
@@ -381,17 +369,13 @@ export default function SearchPage() {
                         <Card>
                           <CardContent className="p-4">
                             <h3 className="text-lg font-semibold mb-3">Weekly Activity Pattern</h3>
-                            <ResponsiveContainer width="100%" height={250}>
-                              <RechartsBarChart data={userAnalytics.behavior}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="day" fontSize={12} />
-                                <YAxis fontSize={12} />
-                                <Tooltip />
-                                <Bar dataKey="commits" fill="#8884d8" name="Commits" />
-                                <Bar dataKey="prs" fill="#82ca9d" name="Pull Requests" />
-                                <Bar dataKey="issues" fill="#ffc658" name="Issues" />
-                              </RechartsBarChart>
-                            </ResponsiveContainer>
+                            <BarChart
+                              data={userAnalytics.behavior}
+                              xField="day"
+                              yFields={['commits', 'prs', 'issues']}
+                              height={250}
+                              colors={['#8884d8', '#82ca9d', '#ffc658']}
+                            />
                           </CardContent>
                         </Card>
 
@@ -438,22 +422,20 @@ export default function SearchPage() {
                         <h2 className="text-2xl font-bold">Star Activity</h2>
                       </div>
 
-                      <Card>
-                        <CardContent className="p-4">
-                          <h3 className="text-lg font-semibold mb-3">Stars Over Time</h3>
-                          <ResponsiveContainer width="100%" height={200}>
-                            <RechartsLineChart data={userAnalytics.overview}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" fontSize={12} />
-                              <YAxis fontSize={12} />
-                              <Tooltip />
-                              <Line type="monotone" dataKey="stars" stroke="#8884d8" strokeWidth={2} />
-                            </RechartsLineChart>
-                          </ResponsiveContainer>
-                        </CardContent>
-                      </Card>
+                      <ChartWrapper
+                        title="Stars Over Time"
+                        loading={false}
+                        height={200}
+                      >
+                        <LineChart
+                          data={userAnalytics.overview}
+                          xField="name"
+                          yFields={['stars']}
+                          height={200}
+                          colors={['#8884d8']}
+                        />
+                      </ChartWrapper>
                     </div>
-
                     {/* Code Section */}
                     <div id="code" ref={codeRef} className="scroll-mt-24">
                       <div className="flex items-center mb-6">
@@ -461,20 +443,19 @@ export default function SearchPage() {
                         <h2 className="text-2xl font-bold">Code Contributions</h2>
                       </div>
 
-                      <Card>
-                        <CardContent className="p-4">
-                          <h3 className="text-lg font-semibold mb-3">Commit Activity</h3>
-                          <ResponsiveContainer width="100%" height={200}>
-                            <RechartsAreaChart data={userAnalytics.overview}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" fontSize={12} />
-                              <YAxis fontSize={12} />
-                              <Tooltip />
-                              <Area type="monotone" dataKey="commits" stroke="#8884d8" fill="#8884d8" />
-                            </RechartsAreaChart>
-                          </ResponsiveContainer>
-                        </CardContent>
-                      </Card>
+                      <ChartWrapper
+                        title="Commit Activity"
+                        loading={false}
+                        height={200}
+                      >
+                        <AreaChart
+                          data={userAnalytics.overview}
+                          xField="name"
+                          yFields={['commits']}
+                          height={200}
+                          colors={['#8884d8']}
+                        />
+                      </ChartWrapper>
                     </div>
 
                     {/* Code Review & Issue Sections */}
@@ -485,39 +466,36 @@ export default function SearchPage() {
                       </div>
 
                       <div className="grid gap-4 md:grid-cols-2">
-                        <Card>
-                          <CardContent className="p-4">
-                            <h3 className="text-lg font-semibold mb-3">Pull Request Activity</h3>
-                            <ResponsiveContainer width="100%" height={200}>
-                              <RechartsBarChart data={userAnalytics.behavior}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="day" fontSize={12} />
-                                <YAxis fontSize={12} />
-                                <Tooltip />
-                                <Bar dataKey="prs" fill="#82ca9d" name="Pull Requests" />
-                              </RechartsBarChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
+                        <ChartWrapper
+                          title="Pull Request Activity"
+                          loading={false}
+                          height={200}
+                        >
+                          <BarChart
+                            data={userAnalytics.behavior}
+                            xField="day"
+                            yFields={['prs']}
+                            height={200}
+                            colors={['#82ca9d']}
+                          />
+                        </ChartWrapper>
 
-                        <Card>
-                          <CardContent className="p-4">
-                            <h3 className="text-lg font-semibold mb-3">Issue Activity</h3>
-                            <ResponsiveContainer width="100%" height={200}>
-                              <RechartsLineChart data={userAnalytics.behavior}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="day" fontSize={12} />
-                                <YAxis fontSize={12} />
-                                <Tooltip />
-                                <Line type="monotone" dataKey="issues" stroke="#ffc658" strokeWidth={2} />
-                              </RechartsLineChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
+                        <ChartWrapper
+                          title="Issue Activity"
+                          loading={false}
+                          height={200}
+                        >
+                          <LineChart
+                            data={userAnalytics.behavior}
+                            xField="day"
+                            yFields={['issues']}
+                            height={200}
+                            colors={['#ffc658']}
+                          />
+                        </ChartWrapper>
                       </div>
                     </div>
 
-                    {/* Issue Section for navigation */}
                     <div id="issue" ref={issueRef} className="scroll-mt-24 hidden">
                     </div>
 
@@ -529,42 +507,36 @@ export default function SearchPage() {
                       </div>
 
                       <div className="grid gap-4 md:grid-cols-2">
-                        <Card>
-                          <CardContent className="p-4">
-                            <h3 className="text-lg font-semibold mb-3">Monthly Trends</h3>
-                            <ResponsiveContainer width="100%" height={250}>
-                              <RechartsAreaChart data={userAnalytics.overview}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" fontSize={12} />
-                                <YAxis fontSize={12} />
-                                <Tooltip />
-                                <Area type="monotone" dataKey="commits" stackId="1" stroke="#8884d8" fill="#8884d8" />
-                                <Area type="monotone" dataKey="repos" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
-                                <Area type="monotone" dataKey="stars" stackId="1" stroke="#ffc658" fill="#ffc658" />
-                              </RechartsAreaChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
+                        <ChartWrapper
+                          title="Monthly Trends"
+                          loading={false}
+                          height={250}
+                        >
+                          <AreaChart
+                            data={userAnalytics.overview}
+                            xField="name"
+                            yFields={['commits', 'repos', 'stars']}
+                            height={250}
+                            stack={true}
+                            colors={['#8884d8', '#82ca9d', '#ffc658']}
+                          />
+                        </ChartWrapper>
 
-                        <Card>
-                          <CardContent className="p-4">
-                            <h3 className="text-lg font-semibold mb-3">Overall Contribution Pattern</h3>
-                            <ResponsiveContainer width="100%" height={250}>
-                              <RechartsBarChart data={userAnalytics.behavior}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="day" fontSize={12} />
-                                <YAxis fontSize={12} />
-                                <Tooltip />
-                                <Bar dataKey="commits" fill="#8884d8" name="Commits" />
-                                <Bar dataKey="prs" fill="#82ca9d" name="Pull Requests" />
-                                <Bar dataKey="issues" fill="#ffc658" name="Issues" />
-                              </RechartsBarChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
+                        <ChartWrapper
+                          title="Overall Contribution Pattern"
+                          loading={false}
+                          height={250}
+                        >
+                          <BarChart
+                            data={userAnalytics.behavior}
+                            xField="day"
+                            yFields={['commits', 'prs', 'issues']}
+                            height={250}
+                            colors={['#8884d8', '#82ca9d', '#ffc658']}
+                          />
+                        </ChartWrapper>
                       </div>
                     </div>
-
                     {/* Hidden refs for navigation */}
                     <div id="contribution-activities" ref={contributionActivitiesRef} className="scroll-mt-24 hidden">
                     </div>
