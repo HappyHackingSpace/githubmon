@@ -1,5 +1,5 @@
 import React from 'react';
-import EChartsBase, { EChartsBaseProps } from './EChartsBase';
+import EChartsBase, { EChartsBaseProps, GITHUB_COLORS } from './EChartsBase';
 import type { EChartsOption } from 'echarts';
 
 export interface LineChartProps extends Omit<EChartsBaseProps, 'option'> {
@@ -14,6 +14,15 @@ export interface LineChartProps extends Omit<EChartsBaseProps, 'option'> {
   showSymbol?: boolean;
 }
 
+const githubColors = [
+  GITHUB_COLORS.primary,
+  GITHUB_COLORS.success,
+  GITHUB_COLORS.accent,
+  GITHUB_COLORS.danger,
+  GITHUB_COLORS.warning,
+  '#fb8500',
+];
+
 export default function LineChart({
   data,
   xField,
@@ -21,33 +30,25 @@ export default function LineChart({
   xAxisLabel,
   yAxisLabel,
   title,
-  colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de'],
+  colors = githubColors,
   smooth = true,
   showSymbol = true,
   ...chartProps
-}: LineChartProps) {
+}: LineChartProps): React.JSX.Element {
   const option: EChartsOption = {
     title: title ? {
       text: title,
-      left: 'center',
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold'
-      }
+      left: 'center'
     } : undefined,
     tooltip: {
       trigger: 'axis',
       axisPointer: {
-        type: 'cross',
-        label: {
-          backgroundColor: '#6a7985'
-        }
+        type: 'cross'
       }
     },
     legend: {
       data: yFields,
-      top: title ? 40 : 10,
-      left: 'center'
+      top: title ? 40 : 10
     },
     grid: {
       left: '3%',
@@ -62,54 +63,19 @@ export default function LineChart({
       data: data.map(item => item[xField]),
       name: xAxisLabel,
       nameLocation: 'middle',
-      nameGap: 30,
-      axisLine: {
-        lineStyle: {
-          color: '#484753'
-        }
-      },
-      axisTick: {
-        lineStyle: {
-          color: '#484753'
-        }
-      },
-      axisLabel: {
-        color: '#9ca3af'
-      }
+      nameGap: 30
     },
     yAxis: {
       type: 'value',
       name: yAxisLabel,
       nameLocation: 'middle',
-      nameGap: 50,
-      axisLine: {
-        lineStyle: {
-          color: '#484753'
-        }
-      },
-      axisTick: {
-        lineStyle: {
-          color: '#484753'
-        }
-      },
-      axisLabel: {
-        color: '#9ca3af'
-      },
-      splitLine: {
-        lineStyle: {
-          color: '#484753',
-          type: 'dashed'
-        }
-      }
+      nameGap: 50
     },
     series: yFields.map((field, index) => ({
       name: field,
       type: 'line',
       smooth,
       showSymbol,
-      emphasis: {
-        focus: 'series'
-      },
       data: data.map(item => item[field]),
       itemStyle: {
         color: colors[index % colors.length]
