@@ -16,6 +16,7 @@ import { Search } from "lucide-react"
 import { SearchModal } from '@/components/search/SearchModal'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
+
 interface DashboardStats {
   totalRepos: number
   totalStars: number
