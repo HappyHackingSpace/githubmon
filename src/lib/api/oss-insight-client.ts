@@ -605,12 +605,17 @@ class OSSInsightClient {
       })
 
       const totalStars = repos.reduce((sum, repo) => sum + (repo.stargazers_count || 0), 0)
-      const totalCommits = repos.length * 10 // Estimate, as GitHub API doesn't provide commit count per repo easily
+      // Group stars by repo creation month
+      const starsPerMonth = repos.reduce((acc, repo) => {
+        const month = new Date(repo.created_at).toLocaleDateString('en', { month: 'short' });
+        acc[month] = (acc[month] || 0) + (repo.stargazers_count || 0);
+        return acc;
+      }, {});
 
       overviewData.push({
         name: monthName,
-        stars: Math.floor(totalStars / 6 + Math.random() * 20), // Distribute stars across months
-        commits: Math.floor(totalCommits / 6 + Math.random() * 30),
+        stars: starsPerMonth[monthName] || 0,
+        commits: reposInMonth.length * 10,
         repos: reposInMonth.length
       })
     }
@@ -689,16 +694,7 @@ class OSSInsightClient {
           break
       }
     })
-
-    return behaviorData.map(data => ({
-      ...data,
-      day: data.day === 'Sun' ? 'Sun' :
-        data.day === 'Mon' ? 'Mon' :
-          data.day === 'Tue' ? 'Tue' :
-            data.day === 'Wed' ? 'Wed' :
-              data.day === 'Thu' ? 'Thu' :
-                data.day === 'Fri' ? 'Fri' : 'Sat'
-    }))
+    return behaviorData
   }
 
   // Repository detailed analysis

@@ -28,23 +28,23 @@ export default function ChartWrapper({
   headerActions
 }: ChartWrapperProps) {
   if (loading) {
-    return (
-      <Card sx={{
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%)',
-        borderRadius: 2,
-        border: '1px solid rgba(255,255,255,0.1)'
-      }}>
-        <CardContent sx={{ p: 3 }}>
-          {title && (
-            <Box sx={{ mb: 2 }}>
-              <Skeleton variant="text" width="40%" height={28} />
-              {description && <Skeleton variant="text" width="60%" height={20} sx={{ mt: 1 }} />}
-            </Box>
-          )}
-          <Skeleton variant="rectangular" height={height} sx={{ borderRadius: 1 }} />
-        </CardContent>
-      </Card>
-    );
+    const cardStyles = {
+      background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%)',
+      borderRadius: 2,
+      border: '1px solid rgba(255,255,255,0.1)'
+    };
+    <Card sx={cardStyles}>
+      <CardContent sx={{ p: 3 }}>
+        {title && (
+          <Box sx={{ mb: 2 }}>
+            <Skeleton variant="text" width="40%" height={28} />
+            {description && <Skeleton variant="text" width="60%" height={20} sx={{ mt: 1 }} />}
+          </Box>
+        )}
+        <Skeleton variant="rectangular" height={height} sx={{ borderRadius: 1 }} />
+      </CardContent>
+    </Card>
+
   }
 
   if (error) {
