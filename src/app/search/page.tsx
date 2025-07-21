@@ -6,13 +6,14 @@ import { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Header } from "@/components/layout/Header";
 import { useRequireAuth } from "@/hooks/useAuth";
 import { SidebarSearch, SidebarToggle } from "@/components/layout/SidebarSearch";
 import { useSearchStore, useSidebarState } from "@/stores";
 import { SearchModal } from "@/components/search/SearchModal";
 import { ossInsightClient } from "@/lib/api/oss-insight-client";
-import { Star, GitFork, Eye, ExternalLink, Search, User, Package, Activity, Code, GitPullRequest, AlertCircle, Calendar, UserPlus, BarChart3 } from "lucide-react";
+import { Star, GitFork, Eye, ExternalLink, Search, User, Package, Activity, Code, GitPullRequest, AlertCircle, Calendar, UserPlus, BarChart3, GitCommit, Folder } from "lucide-react";
 import type { TrendingRepo, TopContributor } from "@/types/oss-insight";
 import { AreaChart, BarChart, PieChart, LineChart } from '@/components/charts';
 import ChartWrapper from '@/components/charts/ChartWrapper';
@@ -211,317 +212,206 @@ export default function SearchPage() {
                 {/* User Profile Section */}
                 <div>
 
-
-                  <div className="grid gap-4 mb-8">
-                    {userAnalytics?.profile && (
-                      <Card className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
-                          <div className="flex items-start space-x-4">
-                            <img
-                              src={userAnalytics.profile.avatar_url}
-                              alt={userAnalytics.profile.login}
-                              className="w-20 h-20 rounded-full"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <h2 className="text-2xl font-semibold">{userAnalytics.profile.login}</h2>
-                                <Badge variant="outline">{userAnalytics.profile.type}</Badge>
-                              </div>
-                              {userAnalytics.profile.bio && (
-                                <p className="text-gray-600 mb-3">{userAnalytics.profile.bio}</p>
-                              )}
-                              <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                <span>Repos: {userAnalytics.profile.public_repos}</span>
-                                <span>Followers: {userAnalytics.profile.followers}</span>
-                                <span>Following: {userAnalytics.profile.following}</span>
-                              </div>
-                              {userAnalytics.profile.location && (
-                                <p className="text-sm text-gray-500 mt-2">📍 {userAnalytics.profile.location}</p>
-                              )}
-                              {userAnalytics.profile.company && (
-                                <p className="text-sm text-gray-500 mt-1">🏢 {userAnalytics.profile.company}</p>
-                              )}
-                            </div>
-                            <Button asChild>
-                              <a href={userAnalytics.profile.html_url} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="w-4 h-4 mr-2" />
-                                View Profile
-                              </a>
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {/* Fallback to search results if no analytics profile */}
-                    {!userAnalytics?.profile && searchResults.users.slice(0, 1).map((user) => (
-                      <Card key={user.login} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
-                          <div className="flex items-start space-x-4">
-                            <img
-                              src={user.avatar_url}
-                              alt={user.login}
-                              className="w-20 h-20 rounded-full"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <h2 className="text-2xl font-semibold">{user.login}</h2>
-                                <Badge variant="outline">{user.type}</Badge>
-                              </div>
-                              {user.bio && (
-                                <p className="text-gray-600 mb-3">{user.bio}</p>
-                              )}
-                              <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                <span>Repos: {user.repos_count}</span>
-                                <span>Followers: {user.followers_count}</span>
-                              </div>
-                            </div>
-                            <Button asChild>
-                              <a href={user.html_url} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="w-4 h-4 mr-2" />
-                                View Profile
-                              </a>
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
                 </div>
-
-                {/* Analytics Sections */}
-                {userAnalytics?.overview && userAnalytics?.languages && userAnalytics?.behavior && !loadingAnalytics && (
-                  <>
-                    {/* Overview Section */}
-                    <div id="overview" ref={overviewRef} className="scroll-mt-24">
-                      <div className="flex items-center mb-6">
-                        <Eye className="w-6 h-6 mr-2" />
-                        <h2 className="text-2xl font-bold">Overview</h2>
-                      </div>
-
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        <ChartWrapper
-                          title="Activity Overview"
-                          loading={false}
-                          height={200}
-                        >
-                          <AreaChart
-                            data={userAnalytics.overview}
-                            xField="name"
-                            yFields={['commits', 'stars']}
-                            height={200}
-                            stack={true}
-                            colors={['#8884d8', '#82ca9d']}
+                <div className="grid gap-4 mb-8">
+                  {userAnalytics?.profile && (
+                    <Card className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-start space-x-4">
+                          <img
+                            src={userAnalytics.profile.avatar_url}
+                            alt={userAnalytics.profile.login}
+                            className="w-20 h-20 rounded-full"
                           />
-                        </ChartWrapper>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h2 className="text-2xl font-semibold">{userAnalytics.profile.login}</h2>
+                              <Badge variant="outline">{userAnalytics.profile.type}</Badge>
+                            </div>
+                            {userAnalytics.profile.bio && (
+                              <p className="text-gray-600 mb-3">{userAnalytics.profile.bio}</p>
+                            )}
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <span>Repos: {userAnalytics.profile.public_repos}</span>
+                              <span>Followers: {userAnalytics.profile.followers}</span>
+                              <span>Following: {userAnalytics.profile.following}</span>
+                            </div>
+                            {userAnalytics.profile.location && (
+                              <p className="text-sm text-gray-500 mt-2">📍 {userAnalytics.profile.location}</p>
+                            )}
+                            {userAnalytics.profile.company && (
+                              <p className="text-sm text-gray-500 mt-1">🏢 {userAnalytics.profile.company}</p>
+                            )}
+                          </div>
+                          <Button asChild>
+                            <a href={userAnalytics.profile.html_url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              View Profile
+                            </a>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                        <ChartWrapper
-                          title="Language Distribution"
-                          loading={false}
-                          height={200}
-                        >
-                          <BarChart
-                            data={userAnalytics.languages}
-                            xField="name"
-                            yFields={['value']}
-                            height={200}
-                            colors={['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0', '#ffb347']}
+                  {/* Fallback to search results if no analytics profile */}
+                  {!userAnalytics?.profile && searchResults.users.slice(0, 1).map((user) => (
+                    <Card key={user.login} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-start space-x-4">
+                          <img
+                            src={user.avatar_url}
+                            alt={user.login}
+                            className="w-20 h-20 rounded-full"
                           />
-                        </ChartWrapper>
-
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border">
-                          <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Total Commits</span>
-                              <span className="font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.commits, 0)}</span>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h2 className="text-2xl font-semibold">{user.login}</h2>
+                              <Badge variant="outline">{user.type}</Badge>
                             </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Total Stars</span>
-                              <span className="font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.stars, 0)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Total Repos</span>
-                              <span className="font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.repos, 0)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Primary Language</span>
-                              <span className="font-semibold">{userAnalytics.languages[0]?.name || 'N/A'}</span>
+                            {user.bio && (
+                              <p className="text-gray-600 mb-3">{user.bio}</p>
+                            )}
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <span>Repos: {user.repos_count}</span>
+                              <span>Followers: {user.followers_count}</span>
                             </div>
                           </div>
+                          <Button asChild>
+                            <a href={user.html_url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              View Profile
+                            </a>
+                          </Button>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                    {/* Behavior Section */}
-                    <div id="behavior" ref={behaviorRef} className="scroll-mt-24">
-                      <div className="flex items-center mb-6">
-                        <Activity className="w-6 h-6 mr-2" />
-                        <h2 className="text-2xl font-bold">Behavior Analysis</h2>
-                      </div>
+            {/* Analytics Sections */}
+            {userAnalytics?.overview && userAnalytics?.languages && userAnalytics?.behavior && !loadingAnalytics && (
+              <>
+                {/* Overview Section */}
+                <div id="overview" ref={overviewRef} className="scroll-mt-24">
+                  <div className="flex items-center mb-6">
+                    <Eye className="w-6 h-6 mr-2" />
+                    <h2 className="text-2xl font-bold">Overview</h2>
+                  </div>
 
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <Card>
-                          <CardContent className="p-4">
-                            <h3 className="text-lg font-semibold mb-3">Weekly Activity Pattern</h3>
-                            <BarChart
-                              data={userAnalytics.behavior}
-                              xField="day"
-                              yFields={['commits', 'prs', 'issues']}
-                              height={250}
-                              colors={['#8884d8', '#82ca9d', '#ffc658']}
-                            />
-                          </CardContent>
-                        </Card>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <ChartWrapper
+                      title="Activity Overview"
+                      loading={false}
+                      height={200}
+                    >
+                      <AreaChart
+                        data={userAnalytics.overview}
+                        xField="name"
+                        yFields={['commits', 'stars']}
+                        height={200}
+                        stack={true}
+                        colors={['#8884d8', '#82ca9d']}
+                      />
+                    </ChartWrapper>
 
-                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border">
-                          <h3 className="text-lg font-semibold mb-3">Activity Summary</h3>
-                          <div className="space-y-4">
-                            <div>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-sm text-gray-600">Most Active Day</span>
-                                <span className="font-semibold">
-                                  {userAnalytics.behavior.reduce((max: any, day: any) =>
-                                    (day.commits + day.prs + day.issues) > (max.commits + max.prs + max.issues) ? day : max
-                                  ).day}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-sm text-gray-600">Total Weekly Commits</span>
-                                <span className="font-semibold">
-                                  {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.commits, 0)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-sm text-gray-600">Total Weekly PRs</span>
-                                <span className="font-semibold">
-                                  {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.prs, 0)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-gray-600">Total Weekly Issues</span>
-                                <span className="font-semibold">
-                                  {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.issues, 0)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
+                    <ChartWrapper
+                      title="Language Distribution"
+                      loading={false}
+                      height={200}
+                    >
+                      <BarChart
+                        data={userAnalytics.languages}
+                        xField="name"
+                        yFields={['value']}
+                        height={200}
+                        colors={['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0', '#ffb347']}
+                      />
+                    </ChartWrapper>
+
+
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <BarChart3 className="w-5 h-5 text-blue-500" />
+                          <h3 className="text-lg font-semibold">Quick Stats</h3>
                         </div>
-                      </div>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Metric</TableHead>
+                              <TableHead className="text-right">Value</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <Folder className="w-4 h-4 text-gray-500" />
+                                  Total Repositories
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">{userAnalytics.profile?.public_repos || 0}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <User className="w-4 h-4 text-gray-500" />
+                                  Total Followers
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">{userAnalytics.profile?.followers || 0}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <UserPlus className="w-4 h-4 text-gray-500" />
+                                  Following
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">{userAnalytics.profile?.following || 0}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <Star className="w-4 h-4 text-gray-500" />
+                                  Total Stars Earned
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {userAnalytics.overview?.reduce((sum: number, item: any) => sum + (item.stars || 0), 0) || 0}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <GitCommit className="w-4 h-4 text-gray-500" />
+                                  Total Commits
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {userAnalytics.overview?.reduce((sum: number, item: any) => sum + (item.commits || 0), 0) || 0}
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Behavior Section */}
+                  <div id="behavior" ref={behaviorRef} className="scroll-mt-24">
+                    <div className="flex items-center mb-6">
+                      <Activity className="w-6 h-6 mr-2" />
+                      <h2 className="text-2xl font-bold">Behavior Analysis</h2>
                     </div>
 
-                    {/* Star Section */}
-                    <div id="star" ref={starRef} className="scroll-mt-24">
-                      <div className="flex items-center mb-6">
-                        <Star className="w-6 h-6 mr-2" />
-                        <h2 className="text-2xl font-bold">Star Activity</h2>
-                      </div>
-
-                      <ChartWrapper
-                        title="Stars Over Time"
-                        loading={false}
-                        height={200}
-                      >
-                        <LineChart
-                          data={userAnalytics.overview}
-                          xField="name"
-                          yFields={['stars']}
-                          height={200}
-                          colors={['#8884d8']}
-                        />
-                      </ChartWrapper>
-                    </div>
-                    {/* Code Section */}
-                    <div id="code" ref={codeRef} className="scroll-mt-24">
-                      <div className="flex items-center mb-6">
-                        <Code className="w-6 h-6 mr-2" />
-                        <h2 className="text-2xl font-bold">Code Contributions</h2>
-                      </div>
-
-                      <ChartWrapper
-                        title="Commit Activity"
-                        loading={false}
-                        height={200}
-                      >
-                        <AreaChart
-                          data={userAnalytics.overview}
-                          xField="name"
-                          yFields={['commits']}
-                          height={200}
-                          colors={['#8884d8']}
-                        />
-                      </ChartWrapper>
-                    </div>
-
-                    {/* Code Review & Issue Sections */}
-                    <div id="code-review" ref={codeReviewRef} className="scroll-mt-24">
-                      <div className="flex items-center mb-6">
-                        <GitPullRequest className="w-6 h-6 mr-2" />
-                        <h2 className="text-2xl font-bold">Code Review & Issues</h2>
-                      </div>
-
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <ChartWrapper
-                          title="Pull Request Activity"
-                          loading={false}
-                          height={200}
-                        >
-                          <BarChart
-                            data={userAnalytics.behavior}
-                            xField="day"
-                            yFields={['prs']}
-                            height={200}
-                            colors={['#82ca9d']}
-                          />
-                        </ChartWrapper>
-
-                        <ChartWrapper
-                          title="Issue Activity"
-                          loading={false}
-                          height={200}
-                        >
-                          <LineChart
-                            data={userAnalytics.behavior}
-                            xField="day"
-                            yFields={['issues']}
-                            height={200}
-                            colors={['#ffc658']}
-                          />
-                        </ChartWrapper>
-                      </div>
-                    </div>
-
-                    <div id="issue" ref={issueRef} className="scroll-mt-24 hidden">
-                    </div>
-
-                    {/* Monthly Stats & Contribution Activities */}
-                    <div id="monthly-stats" ref={monthlyStatsRef} className="scroll-mt-24">
-                      <div className="flex items-center mb-6">
-                        <Calendar className="w-6 h-6 mr-2" />
-                        <h2 className="text-2xl font-bold">Monthly Statistics & Contributions</h2>
-                      </div>
-
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <ChartWrapper
-                          title="Monthly Trends"
-                          loading={false}
-                          height={250}
-                        >
-                          <AreaChart
-                            data={userAnalytics.overview}
-                            xField="name"
-                            yFields={['commits', 'repos', 'stars']}
-                            height={250}
-                            stack={true}
-                            colors={['#8884d8', '#82ca9d', '#ffc658']}
-                          />
-                        </ChartWrapper>
-
-                        <ChartWrapper
-                          title="Overall Contribution Pattern"
-                          loading={false}
-                          height={250}
-                        >
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <Card>
+                        <CardContent className="p-4">
+                          <h3 className="text-lg font-semibold mb-3">Weekly Activity Pattern</h3>
                           <BarChart
                             data={userAnalytics.behavior}
                             xField="day"
@@ -529,52 +419,230 @@ export default function SearchPage() {
                             height={250}
                             colors={['#8884d8', '#82ca9d', '#ffc658']}
                           />
-                        </ChartWrapper>
+                        </CardContent>
+                      </Card>
+
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Activity className="w-5 h-5 text-green-500" />
+                          <h3 className="text-lg font-semibold">Activity Summary</h3>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                              <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td className="py-3 flex items-center gap-2">
+                                  <Calendar className="w-4 h-4 text-gray-500" />
+                                  <span className="text-sm font-medium">Most Active Day</span>
+                                </td>
+                                <td className="py-3 text-right font-semibold">
+                                  {/* Most Active Day calculation */}
+                                  {userAnalytics.behavior?.length > 0
+                                    ? userAnalytics.behavior.reduce((max: any, day: any) =>
+                                      (day.commits + day.prs + day.issues) > (max.commits + max.prs + max.issues) ? day : max
+                                    ).day
+                                    : 'N/A'}
+                                </td>
+                              </tr>
+                              <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td className="py-3 flex items-center gap-2">
+                                  <GitCommit className="w-4 h-4 text-gray-500" />
+                                  <span className="text-sm font-medium">Total Weekly Commits</span>
+                                </td>
+                                <td className="py-3 text-right font-semibold">
+                                  {/* Weekly totals */}
+                                  {userAnalytics.behavior?.reduce((sum: number, day: any) => sum + day.commits, 0) || 0}
+                                </td>
+                              </tr>
+                              <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td className="py-3 flex items-center gap-2">
+                                  <GitPullRequest className="w-4 h-4 text-gray-500" />
+                                  <span className="text-sm font-medium">Total Weekly PRs</span>
+                                </td>
+                                <td className="py-3 text-right font-semibold">
+                                  {userAnalytics.behavior?.reduce((sum: number, day: any) => sum + day.prs, 0) || 0}
+                                </td>
+                              </tr>
+                              <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td className="py-3 flex items-center gap-2">
+                                  <AlertCircle className="w-4 h-4 text-gray-500" />
+                                  <span className="text-sm font-medium">Total Weekly Issues</span>
+                                </td>
+                                <td className="py-3 text-right font-semibold">
+                                  {userAnalytics.behavior?.reduce((sum: number, day: any) => sum + day.issues, 0) || 0}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
-                    {/* Hidden refs for navigation */}
-                    <div id="contribution-activities" ref={contributionActivitiesRef} className="scroll-mt-24 hidden">
+                  </div>
+
+                  {/* Star Section */}
+                  <div id="star" ref={starRef} className="scroll-mt-24">
+                    <div className="flex items-center mb-6">
+                      <Star className="w-6 h-6 mr-2" />
+                      <h2 className="text-2xl font-bold">Star Activity</h2>
                     </div>
-                  </>
-                )}
 
-                {/* Loading Analytics */}
-                {loadingAnalytics && (
-                  <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading analytics...</p>
+                    <ChartWrapper
+                      title="Stars Over Time"
+                      loading={false}
+                      height={200}
+                    >
+                      <LineChart
+                        data={userAnalytics.overview}
+                        xField="name"
+                        yFields={['stars']}
+                        height={200}
+                        colors={['#8884d8']}
+                      />
+                    </ChartWrapper>
                   </div>
-                )}
+                  {/* Code Section */}
+                  <div id="code" ref={codeRef} className="scroll-mt-24">
+                    <div className="flex items-center mb-6">
+                      <Code className="w-6 h-6 mr-2" />
+                      <h2 className="text-2xl font-bold">Code Contributions</h2>
+                    </div>
 
-                {/* No Analytics Data */}
-                {!loadingAnalytics && userAnalytics && (!userAnalytics.overview || !userAnalytics.languages || !userAnalytics.behavior) && (
-                  <div className="text-center py-12">
-                    <AlertCircle className="w-16 h-16 text-yellow-300 mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">Limited Analytics Data</h2>
-                    <p className="text-gray-600 mb-4">
-                      Analytics data for this user is limited or unavailable. This may be due to:
-                    </p>
-                    <ul className="text-sm text-gray-500 text-left max-w-md mx-auto">
-                      <li>• Private repositories or activity</li>
-                      <li>• Limited public activity</li>
-                      <li>• GitHub API rate limits</li>
-                    </ul>
+                    <ChartWrapper
+                      title="Commit Activity"
+                      loading={false}
+                      height={200}
+                    >
+                      <AreaChart
+                        data={userAnalytics.overview}
+                        xField="name"
+                        yFields={['commits']}
+                        height={200}
+                        colors={['#8884d8']}
+                      />
+                    </ChartWrapper>
                   </div>
-                )}
 
-                {/* No User Found */}
-                {!loadingAnalytics && !userAnalytics && searchResults.users.length === 0 && (
-                  <div className="text-center py-12">
-                    <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">User Not Found</h2>
-                    <p className="text-gray-600 mb-4">
-                      No user data available for "{userParam}"
-                    </p>
-                    <Button onClick={() => setSearchModalOpen(true)}>
-                      Try Different Search
-                    </Button>
+                  {/* Code Review & Issue Sections */}
+                  <div id="code-review" ref={codeReviewRef} className="scroll-mt-24">
+                    <div className="flex items-center mb-6">
+                      <GitPullRequest className="w-6 h-6 mr-2" />
+                      <h2 className="text-2xl font-bold">Code Review & Issues</h2>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <ChartWrapper
+                        title="Pull Request Activity"
+                        loading={false}
+                        height={200}
+                      >
+                        <BarChart
+                          data={userAnalytics.behavior}
+                          xField="day"
+                          yFields={['prs']}
+                          height={200}
+                          colors={['#82ca9d']}
+                        />
+                      </ChartWrapper>
+
+                      <ChartWrapper
+                        title="Issue Activity"
+                        loading={false}
+                        height={200}
+                      >
+                        <LineChart
+                          data={userAnalytics.behavior}
+                          xField="day"
+                          yFields={['issues']}
+                          height={200}
+                          colors={['#ffc658']}
+                        />
+                      </ChartWrapper>
+                    </div>
                   </div>
-                )}
+
+                  <div id="issue" ref={issueRef} className="scroll-mt-24 hidden">
+                  </div>
+
+                  {/* Monthly Stats & Contribution Activities */}
+                  <div id="monthly-stats" ref={monthlyStatsRef} className="scroll-mt-24">
+                    <div className="flex items-center mb-6">
+                      <Calendar className="w-6 h-6 mr-2" />
+                      <h2 className="text-2xl font-bold">Monthly Statistics & Contributions</h2>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <ChartWrapper
+                        title="Monthly Trends"
+                        loading={false}
+                        height={250}
+                      >
+                        <AreaChart
+                          data={userAnalytics.overview}
+                          xField="name"
+                          yFields={['commits', 'repos', 'stars']}
+                          height={250}
+                          stack={true}
+                          colors={['#8884d8', '#82ca9d', '#ffc658']}
+                        />
+                      </ChartWrapper>
+
+                      <ChartWrapper
+                        title="Overall Contribution Pattern"
+                        loading={false}
+                        height={250}
+                      >
+                        <BarChart
+                          data={userAnalytics.behavior}
+                          xField="day"
+                          yFields={['commits', 'prs', 'issues']}
+                          height={250}
+                          colors={['#8884d8', '#82ca9d', '#ffc658']}
+                        />
+                      </ChartWrapper>
+                    </div>
+                  </div>
+                  {/* Hidden refs for navigation */}
+                  <div id="contribution-activities" ref={contributionActivitiesRef} className="scroll-mt-24 hidden">
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Loading Analytics */}
+            {loadingAnalytics && (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading analytics...</p>
+              </div>
+            )}
+
+            {/* No Analytics Data */}
+            {!loadingAnalytics && userAnalytics && (!userAnalytics.overview || !userAnalytics.languages || !userAnalytics.behavior) && (
+              <div className="text-center py-12">
+                <AlertCircle className="w-16 h-16 text-yellow-300 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">Limited Analytics Data</h2>
+                <p className="text-gray-600 mb-4">
+                  Analytics data for this user is limited or unavailable. This may be due to:
+                </p>
+                <ul className="text-sm text-gray-500 text-left max-w-md mx-auto">
+                  <li>• Private repositories or activity</li>
+                  <li>• Limited public activity</li>
+                  <li>• GitHub API rate limits</li>
+                </ul>
+              </div>
+            )}
+
+            {/* No User Found */}
+            {!loadingAnalytics && !userAnalytics && searchResults.users.length === 0 && (
+              <div className="text-center py-12">
+                <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">User Not Found</h2>
+                <p className="text-gray-600 mb-4">
+                  No user data available for "{userParam}"
+                </p>
+                <Button onClick={() => setSearchModalOpen(true)}>
+                  Try Different Search
+                </Button>
               </div>
             )}
 
