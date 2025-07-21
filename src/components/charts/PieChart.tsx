@@ -11,16 +11,26 @@ export interface PieChartProps extends Omit<EChartsBaseProps, 'option'> {
   colors?: string[];
 }
 
+const githubColors = [
+  '#24292e',
+  '#6e5494',
+  '#2ea44f',
+  '#f6f8fa',
+  '#0366d6',
+  '#d73a49',
+  '#ffd33d',
+  '#e36209',
+];
+
 export default function PieChart({
   data,
   title,
   showLabels = true,
   showPercentage = true,
   radius = ['40%', '70%'],
-  colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4'],
+  colors = githubColors,
   ...chartProps
 }: PieChartProps) {
-  // Add colors to data if not provided
   const dataWithColors = data.map((item, index) => ({
     ...item,
     itemStyle: {
@@ -29,14 +39,7 @@ export default function PieChart({
   }));
 
   const option: EChartsOption = {
-    title: title ? {
-      text: title,
-      left: 'center',
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold'
-      }
-    } : undefined,
+    title: undefined,
     tooltip: {
       trigger: 'item',
       formatter: (params: any) => {
@@ -80,5 +83,12 @@ export default function PieChart({
     ]
   };
 
-  return <EChartsBase option={option} {...chartProps} />;
+  return (
+    <div className="w-full flex flex-col items-center">
+      {title && (
+        <h2 className="text-center text-lg font-bold mb-2">{title}</h2>
+      )}
+      <EChartsBase option={option} {...chartProps} />
+    </div>
+  );
 }
