@@ -12,7 +12,7 @@ import { SidebarSearch, SidebarToggle } from "@/components/layout/SidebarSearch"
 import { useSearchStore, useSidebarState } from "@/stores";
 import { SearchModal } from "@/components/search/SearchModal";
 import { ossInsightClient } from "@/lib/api/oss-insight-client";
-import { Star, GitFork, Eye, ExternalLink, Search, User, Package, Activity, Code, GitPullRequest, AlertCircle, Calendar, UserPlus, BarChart3 } from "lucide-react";
+import { Star, GitFork, Eye, ExternalLink, Search, User, Package, Activity, Code, GitPullRequest, AlertCircle, Calendar, UserPlus, BarChart3, GitCommit, Folder } from "lucide-react";
 import type { TrendingRepo, TopContributor } from "@/types/oss-insight";
 import { AreaChart, BarChart, PieChart, LineChart } from '@/components/charts';
 import ChartWrapper from '@/components/charts/ChartWrapper';
@@ -329,27 +329,48 @@ export default function SearchPage() {
                           />
                         </ChartWrapper>
 
+
                         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border">
-                          <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Total Commits</span>
-                              <span className="font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.commits, 0)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Total Stars</span>
-                              <span className="font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.stars, 0)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Total Repos</span>
-                              <span className="font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.repos, 0)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Primary Language</span>
-                              <span className="font-semibold">{userAnalytics.languages[0]?.name || 'N/A'}</span>
-                            </div>
+                          <div className="flex items-center gap-2 mb-4">
+                            <BarChart3 className="w-5 h-5 text-blue-500" />
+                            <h3 className="text-lg font-semibold">Quick Stats</h3>
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                  <td className="py-3 flex items-center gap-2">
+                                    <GitCommit className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm text-gray-600">Total Commits</span>
+                                  </td>
+                                  <td className="py-3 text-right font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.commits, 0)}</td>
+                                </tr>
+                                <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                  <td className="py-3 flex items-center gap-2">
+                                    <Star className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm text-gray-600">Total Stars</span>
+                                  </td>
+                                  <td className="py-3 text-right font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.stars, 0)}</td>
+                                </tr>
+                                <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                  <td className="py-3 flex items-center gap-2">
+                                    <Folder className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm text-gray-600">Total Repos</span>
+                                  </td>
+                                  <td className="py-3 text-right font-semibold">{userAnalytics.overview.reduce((sum: number, item: any) => sum + item.repos, 0)}</td>
+                                </tr>
+                                <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                  <td className="py-3 flex items-center gap-2">
+                                    <Code className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm text-gray-600">Primary Language</span>
+                                  </td>
+                                  <td className="py-3 text-right font-semibold">{userAnalytics.languages[0]?.name || 'N/A'}</td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
                         </div>
+
                       </div>
                     </div>
 
@@ -375,38 +396,56 @@ export default function SearchPage() {
                         </Card>
 
                         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border">
-                          <h3 className="text-lg font-semibold mb-3">Activity Summary</h3>
-                          <div className="space-y-4">
-                            <div>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-sm text-gray-600">Most Active Day</span>
-                                <span className="font-semibold">
-                                  {userAnalytics.behavior.reduce((max: any, day: any) =>
-                                    (day.commits + day.prs + day.issues) > (max.commits + max.prs + max.issues) ? day : max
-                                  ).day}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-sm text-gray-600">Total Weekly Commits</span>
-                                <span className="font-semibold">
-                                  {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.commits, 0)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-sm text-gray-600">Total Weekly PRs</span>
-                                <span className="font-semibold">
-                                  {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.prs, 0)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-gray-600">Total Weekly Issues</span>
-                                <span className="font-semibold">
-                                  {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.issues, 0)}
-                                </span>
-                              </div>
-                            </div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Activity className="w-5 h-5 text-green-500" />
+                            <h3 className="text-lg font-semibold">Activity Summary</h3>
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                  <td className="py-3 flex items-center gap-2">
+                                    <Calendar className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm text-gray-600">Most Active Day</span>
+                                  </td>
+                                  <td className="py-3 text-right font-semibold">
+                                    {userAnalytics.behavior.reduce((max: any, day: any) =>
+                                      (day.commits + day.prs + day.issues) > (max.commits + max.prs + max.issues) ? day : max
+                                    ).day}
+                                  </td>
+                                </tr>
+                                <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                  <td className="py-3 flex items-center gap-2">
+                                    <GitCommit className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm text-gray-600">Total Weekly Commits</span>
+                                  </td>
+                                  <td className="py-3 text-right font-semibold">
+                                    {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.commits, 0)}
+                                  </td>
+                                </tr>
+                                <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                  <td className="py-3 flex items-center gap-2">
+                                    <GitPullRequest className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm text-gray-600">Total Weekly PRs</span>
+                                  </td>
+                                  <td className="py-3 text-right font-semibold">
+                                    {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.prs, 0)}
+                                  </td>
+                                </tr>
+                                <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                  <td className="py-3 flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm text-gray-600">Total Weekly Issues</span>
+                                  </td>
+                                  <td className="py-3 text-right font-semibold">
+                                    {userAnalytics.behavior.reduce((sum: number, day: any) => sum + day.issues, 0)}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
                         </div>
+
                       </div>
                     </div>
 
