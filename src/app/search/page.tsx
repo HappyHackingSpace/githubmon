@@ -210,12 +210,7 @@ export default function SearchPage() {
               <div className="space-y-8">
                 {/* User Profile Section */}
                 <div>
-                  <div className="flex items-center mb-6">
-                    <User className="w-6 h-6 mr-2" />
-                    <h1 className="text-2xl font-bold">
-                      User Profile: "{userParam}"
-                    </h1>
-                  </div>
+
 
                   <div className="grid gap-4 mb-8">
                     {userAnalytics?.profile && (
@@ -325,12 +320,12 @@ export default function SearchPage() {
                           loading={false}
                           height={200}
                         >
-                          <PieChart
+                          <BarChart
                             data={userAnalytics.languages}
+                            xField="name"
+                            yFields={['value']}
                             height={200}
-                            radius={['30%', '60%']}
-                            showLabels={false}
-                            showPercentage={true}
+                            colors={['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0', '#ffb347']}
                           />
                         </ChartWrapper>
 

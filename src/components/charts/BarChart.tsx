@@ -12,6 +12,7 @@ export interface BarChartProps extends Omit<EChartsBaseProps, 'option'> {
   colors?: string[];
   stack?: boolean;
   horizontal?: boolean;
+  className?: string;
 }
 
 export default function BarChart({
@@ -21,12 +22,14 @@ export default function BarChart({
   xAxisLabel,
   yAxisLabel,
   title,
-  colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de'],
+  colors = ['#0969da', '#1f883d', '#d1242f', '#8250df'],
   stack = false,
   horizontal = false,
+  className = '',
   ...chartProps
 }: BarChartProps) {
   const option: EChartsOption = {
+
     title: title ? {
       text: title,
       left: 'center',
@@ -121,5 +124,9 @@ export default function BarChart({
     }))
   };
 
-  return <EChartsBase option={option} {...chartProps} />;
+  return (
+    <div className={`w-full h-full ${className}`}>
+      <EChartsBase option={option} {...chartProps} />
+    </div>
+  );
 }
