@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button'
 
 
 import { useSidebarState, useAuthStore, useStoreHydration } from '@/stores'
-import {  Flame,  LogOut,  } from 'lucide-react'
+import {  ChevronRight, Clock, Flame,  LogOut, MessageSquare, Sparkles, Star, Target, Zap,  } from 'lucide-react'
+import { Badge } from '../ui/badge'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
 
 interface SidebarProps {
   isOpen: boolean
@@ -76,28 +78,94 @@ export function Sidebar() {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
           {/* Navigation */}
-          <nav className="p-4 space-y-1">
-            {navigationItems.map((item) => {
-              const isActive = pathname === item.href
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`
-                    flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm
-                    ${isActive
-                      ? 'bg-sidebar-accent text-sidebar-primary font-medium'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
-                    }
-                  `}
-                >
-                  <Icon size={18} className="text-foreground" />
-                  <span>{item.label}</span>
+          {/* Navigation Menu with Collapsible */}
+<div className="flex-1 overflow-y-auto p-4">
+    <nav className="space-y-2">
+        {/* Action Required - Active with Collapsible */}
+        <Collapsible defaultOpen={pathname === '/dashboard'}>
+            <CollapsibleTrigger asChild>
+                <Link href="/dashboard" className={`
+                    flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors
+                `}>
+                    <div className="flex items-center gap-3">
+                        <Zap className="w-5 h-5" />
+                        <span>Action Required</span>
+                    </div>  
+                    <ChevronRight className={`w-4 h-4 transition-transform ${pathname === '/dashboard' ? 'rotate-90' : ''}`} />
                 </Link>
-              )
-            })}
-          </nav>
+            </CollapsibleTrigger>
+            
+            {pathname === '/dashboard' && (
+                <CollapsibleContent className="pl-8 space-y-1 mt-1">
+                    <Link href="/dashboard?tab=assigned" className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 rounded">
+                        <Target className="w-4 h-4" />
+                        Assigned
+                        <Badge variant="secondary" className="ml-auto text-xs">0</Badge>
+                    </Link>
+                    <Link href="/dashboard?tab=mentions" className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 rounded">
+                        <MessageSquare className="w-4 h-4" />
+                        Mentions
+                        <Badge variant="secondary" className="ml-auto text-xs">0</Badge>
+                    </Link>
+                    <Link href="/dashboard?tab=stale" className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 rounded">
+                        <Clock className="w-4 h-4" />
+                        Stale PRs
+                        <Badge variant="secondary" className="ml-auto text-xs">0</Badge>
+                    </Link>
+                </CollapsibleContent>
+            )}
+        </Collapsible>
+
+        {/* Coming Soon Items - Disabled Collapsibles */}
+        <Collapsible>
+            <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+                    <div className="flex items-center gap-3">
+                        <Target className="w-5 h-5" />
+                        <span>Quick Wins</span>
+                    </div>
+                    <span className="text-xs">Soon</span>
+                </div>
+            </CollapsibleTrigger>
+        </Collapsible>
+
+        <Collapsible>
+            <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+                    <div className="flex items-center gap-3">
+                        <Star className="w-5 h-5" />
+                        <span>Favorites</span>
+                    </div>
+                    <span className="text-xs">Soon</span>
+                </div>
+            </CollapsibleTrigger>
+        </Collapsible>
+
+        <Collapsible>
+            <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+                    <div className="flex items-center gap-3">
+                        <Clock className="w-5 h-5" />
+                        <span>Recent</span>
+                    </div>
+                    <span className="text-xs">Soon</span>
+                </div>
+            </CollapsibleTrigger>
+        </Collapsible>
+
+        <Collapsible>
+            <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+                    <div className="flex items-center gap-3">
+                        <Sparkles className="w-5 h-5" />
+                        <span>Discovery</span>
+                    </div>
+                    <span className="text-xs">Soon</span>
+                </div>
+            </CollapsibleTrigger>
+        </Collapsible>
+    </nav>
+</div>
         </div>
 
         {/* Logout - Fixed at bottom */}
