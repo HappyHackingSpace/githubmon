@@ -1,7 +1,6 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { usePreferencesStore } from '@/stores'
 
 type Theme = 'dark' | 'light' | 'system'
 
@@ -14,73 +13,54 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
-  actualTheme: 'dark' | 'light' // System resolved theme
+  actualTheme: 'dark' | 'light'
 }
 
-const initialState: ThemeProviderState = {
-  theme: 'system',
-  setTheme: () => null,
-  actualTheme: 'light'
-
-}
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
+const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undefined)
 
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
   storageKey = 'ui-theme',
-  ...props
 }: ThemeProviderProps) {
-  const { theme: zustandTheme, setTheme: setZustandTheme } = usePreferencesStore()
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = (typeof window !== 'undefined') ? localStorage.getItem(storageKey) as Theme | null : null
-    return zustandTheme ?? stored ?? defaultTheme
-  })
+  const [theme, setTheme] = useState<Theme>(defaultTheme)
   const [actualTheme, setActualTheme] = useState<'dark' | 'light'>('light')
 
-
+  // İlk yükleme
   useEffect(() => {
-    setZustandTheme(theme)
-  }, [theme, setZustandTheme])
+    const stored = localStorage.getItem(storageKey) as Theme | null
+    if (stored) {
+      setTheme(stored)
+    }
+  }, [storageKey])
 
+  // Tema değişince DOM'u güncelle
   useEffect(() => {
-    const root = window.document.documentElement
-
+    const root = document.documentElement
     root.classList.remove('light', 'dark')
 
-    let resolvedTheme: 'dark' | 'light' = 'light'
-
     if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light'
-      resolvedTheme = systemTheme
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      root.classList.add(systemTheme)
+      setActualTheme(systemTheme)
     } else {
-      resolvedTheme = theme
+      root.classList.add(theme)
+      setActualTheme(theme)
     }
-
-
-    root.classList.add(resolvedTheme)
-    setActualTheme(resolvedTheme)
-
 
     localStorage.setItem(storageKey, theme)
   }, [theme, storageKey])
 
-
+  // System tema değişikliklerini dinle
   useEffect(() => {
     if (theme !== 'system') return
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      const systemTheme = e.matches ? 'dark' : 'light'
+    const handleChange = () => {
+      const systemTheme = mediaQuery.matches ? 'dark' : 'light'
+      document.documentElement.classList.remove('light', 'dark')
+      document.documentElement.classList.add(systemTheme)
       setActualTheme(systemTheme)
-
-      const root = window.document.documentElement
-      root.classList.remove('light', 'dark')
-      root.classList.add(systemTheme)
     }
 
     mediaQuery.addEventListener('change', handleChange)
@@ -89,14 +69,12 @@ export function ThemeProvider({
 
   const value = {
     theme,
-    setTheme: (newTheme: Theme) => {
-      setTheme(newTheme)
-    },
+    setTheme,
     actualTheme
   }
 
   return (
-    <ThemeProviderContext.Provider value={value} {...props}>
+    <ThemeProviderContext.Provider value={value}>
       {children}
     </ThemeProviderContext.Provider>
   )
@@ -104,9 +82,8 @@ export function ThemeProvider({
 
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext)
-
-  if (context === undefined)
+  if (context === undefined) {
     throw new Error('useTheme must be used within a ThemeProvider')
-
+  }
   return context
 }
