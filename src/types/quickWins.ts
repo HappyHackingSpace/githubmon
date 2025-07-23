@@ -4,7 +4,7 @@ export interface GitHubIssue {
     repository: string
     repositoryUrl: string
     url: string
-    labels: Array
+    labels: GitHubLabel[]
     created_at: string
     updated_at: string
     difficulty: 'easy' | 'medium'
@@ -34,4 +34,9 @@ export interface QuickWinsState {
         goodIssues: string | null
         easyFixes: string | null
     }
+}
+
+interface GitHubLabel {
+    name: string
+    color: string
 }

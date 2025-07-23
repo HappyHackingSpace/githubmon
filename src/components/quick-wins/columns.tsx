@@ -7,6 +7,9 @@ import { ExternalLink, Star, MessageSquare, Calendar } from 'lucide-react'
 import type { GitHubIssue } from '@/types/quickWins'
 import { ReactElement, JSXElementConstructor, ReactNode, ReactPortal, Key } from 'react'
 
+
+
+
 export const createColumns = (): ColumnDef<GitHubIssue>[] => [
     {
         accessorKey: 'title',
