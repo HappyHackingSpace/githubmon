@@ -41,6 +41,9 @@ export interface QuickWinsState {
         goodIssues: string | null
         easyFixes: string | null
     }
+    fetchGoodIssues: () => void
+    fetchEasyFixes: () => void
+
 }
 
 interface GitHubLabel {
