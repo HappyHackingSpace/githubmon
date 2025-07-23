@@ -773,12 +773,11 @@ class OSSInsightClient {
   // ============ ACTION ITEMS API METHODS ============
   
   // Get assigned issues and PRs for the authenticated user
-  async getAssignedItems(username?: string): Promise<any[]> {
+async getAssignedItems(username?: string): Promise<any[]> {
     if (!this.githubToken) {
       console.warn('No GitHub token available for assigned items')
       return []
     }
-
     try {
       const user = username || '@me'
       const endpoint = `/search/issues?q=assignee:${user}+state:open&sort=updated&order=desc&per_page=50`
@@ -787,7 +786,9 @@ class OSSInsightClient {
       return response.items?.map((item: any) => ({
         id: item.id,
         title: item.title,
-        repo: item.repository_url.split('/').slice(-2).join('/'),
+        repo: item.repository_url
+          ? item.repository_url.split('/').slice(-2).join('/')
+          : 'unknown/unknown',
         type: item.pull_request ? 'pr' : 'issue',
         priority: this.calculatePriority(item),
         url: item.html_url,
@@ -838,7 +839,7 @@ class OSSInsightClient {
       })) || []
 
       const reviews = reviewsResponse.items?.map((item: any) => ({
-        id: item.id + 1000000, // Offset to avoid ID collision
+        id: `review-${item.id}`, 
         title: item.title,
         repo: item.repository_url.split('/').slice(-2).join('/'),
         type: 'pr',
