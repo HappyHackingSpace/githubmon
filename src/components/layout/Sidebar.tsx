@@ -41,10 +41,11 @@ export function Sidebar() {
   const currentTab = searchParams.get('tab') || 'assigned'
   const isDashboardPage = pathname.startsWith('/dashboard')
 
-  // Auto-refresh data when component mounts
   useEffect(() => {
     if (hasHydrated && isConnected && orgData?.token) {
-      refreshData()
+      refreshData().catch((error) => {
+        console.error('Failed to refresh action items:', error)
+      })
     }
   }, [hasHydrated, isConnected, orgData?.token, refreshData])
 
