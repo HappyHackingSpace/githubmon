@@ -1,4 +1,4 @@
-// src/components/quick-wins/hooks/useQuickWins.ts
+
 import { useEffect } from 'react'
 import { useQuickWinsStore } from '@/stores/quickWins'
 
@@ -46,8 +46,10 @@ export function useQuickWins() {
         refreshGoodIssues: fetchGoodIssues,
         refreshEasyFixes: fetchEasyFixes,
         refreshAll: async () => {
-            await Promise.resolve(fetchGoodIssues());
-            await Promise.resolve(fetchEasyFixes());
+            await Promise.all([
+                fetchGoodIssues(),
+                fetchEasyFixes()
+            ]);
         },
         totalIssues,
         needsToken: false,
