@@ -306,7 +306,7 @@ export function QuickWinsTable({
                 <div className="flex items-center justify-between space-x-2 py-4">
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                         <span>
-                            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
+                            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize} to{' '}
                             {Math.min(
                                 (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
                                 table.getFilteredRowModel().rows.length
