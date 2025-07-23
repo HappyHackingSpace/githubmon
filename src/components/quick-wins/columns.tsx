@@ -55,7 +55,7 @@ export const createColumns = (): ColumnDef<GitHubIssue>[] => [
         cell: ({ row }) => (
             <div className="flex flex-wrap gap-1 max-w-48" >
                 {
-                    row.original.labels.slice(0, 3).map((label: { color: any; name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined }, index: Key | null | undefined) => (
+                    row.original.labels.slice(0, 3).map((label, index) => (
                         <Badge
                             key={index}
                             variant="outline"

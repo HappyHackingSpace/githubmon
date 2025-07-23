@@ -1,7 +1,14 @@
 // src/components/quick-wins/hooks/useQuickWins.ts
 // Temporary simple version
 
-export function useQuickWinsCount() {
+interface QuickWinsCount {
+    goodIssuesCount: number
+    easyFixesCount: number
+    count: number
+    isLoading: boolean
+}
+
+export function useQuickWinsCount(): QuickWinsCount {
     return {
         goodIssuesCount: 12,
         easyFixesCount: 8,
@@ -9,7 +16,6 @@ export function useQuickWinsCount() {
         isLoading: false
     }
 }
-
 export function useQuickWins() {
     return {
         goodIssues: [],

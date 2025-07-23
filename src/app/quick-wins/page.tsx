@@ -35,10 +35,14 @@ export default function QuickWinsPage() {
     const searchParams = useSearchParams()
     const router = useRouter()
 
-    // Get current tab from URL or default to 'good-issues'
-    const currentTab = searchParams.get('tab') || 'good-issues'
+    const VALID_TABS = ['good-issues', 'easy-fixes'] as const
+    type ValidTab = typeof VALID_TABS[number]
 
-    // Quick wins data and actions
+
+    const tabParam = searchParams.get('tab')
+    const currentTab: ValidTab = VALID_TABS.includes(tabParam as ValidTab)
+        ? (tabParam as ValidTab)
+        : 'good-issues'
     const {
         goodIssues,
         easyFixes,
@@ -55,9 +59,13 @@ export default function QuickWinsPage() {
     } = useQuickWins()
 
     const handleTabChange = (tab: string) => {
-        router.push(`/quick-wins?tab=${tab}`)
-    }
 
+        try {
+            router.push(`/quick-wins?tab=${tab}`)
+        } catch (error) {
+            console.error('Failed to navigate to tab:', tab, error)
+        }
+    }
     const getWelcomeMessage = () => {
         const hour = new Date().getHours()
         const timeOfDay = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
@@ -134,13 +142,13 @@ export default function QuickWinsPage() {
 
                 {/* No Token Warning */}
                 {needsToken && (
-                    <Alert className="border-yellow-200 bg-yellow-50">
+                    <Alert className="border-yellow-200 bg-yellow-50" role="alert" aria-live="polite">
                         <AlertTriangle className="h-4 w-4 text-yellow-600" />
                         <AlertDescription className="text-yellow-800">
                             <strong>GitHub Token Required:</strong> To access more issues and avoid rate limits,
                             please add your GitHub token in the{' '}
                             <Button variant="link" className="h-auto p-0 text-yellow-700 underline" asChild>
-                                <a href="/login">login page</a>
+                                <a href="/login" aria-label="Go to login page to add GitHub token">login page</a>
                             </Button>
                             . Without a token, results may be limited.
                         </AlertDescription>
@@ -194,7 +202,15 @@ export default function QuickWinsPage() {
 
 
                 {/* Quick Wins Tabs */}
-                <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
+                <Tabs
+                    value={currentTab}
+                    onValueChange={(value) => {
+                        if (VALID_TABS.includes(value as ValidTab)) {
+                            handleTabChange(value)
+                        }
+                    }}
+                    className="w-full"
+                >
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="good-issues" className="flex items-center gap-2">
                             <Lightbulb className="w-4 h-4" />
@@ -237,6 +253,6 @@ export default function QuickWinsPage() {
             </div>
 
             <SearchModal />
-        </Layout>
+        </Layout >
     )
 }

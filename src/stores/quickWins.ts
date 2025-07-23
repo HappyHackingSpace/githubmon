@@ -1,15 +1,21 @@
 import { create } from 'zustand'
 
-interface QuickWinsStore {
-    goodIssues: any[]
-    easyFixes: any[]
-    loading: { goodIssues: boolean; easyFixes: boolean }
-
-    // Mock actions
-    fetchGoodIssues: () => void
-    fetchEasyFixes: () => void
+interface GitHubIssue {
+    id: number
+    title: string
+    url: string
+    repository: string
+    labels: Array<{ name: string; color: string }>
+    createdAt: string
+    // Add other relevant GitHub issue properties
 }
 
+interface QuickWinsStore {
+
+    goodIssues: GitHubIssue[]
+    easyFixes: GitHubIssue[]
+    loading: { goodIssues: boolean; easyFixes: boolean }
+}
 export const useQuickWinsStore = create((set) => ({
     goodIssues: [],
     easyFixes: [],
@@ -21,7 +27,7 @@ export const useQuickWinsStore = create((set) => ({
     },
 
     fetchEasyFixes: () => {
-        // Mock data for now  
+        // Mock data for now
         set({ easyFixes: [] })
     }
 }))
