@@ -14,8 +14,10 @@ class OSSInsightClient {
   private githubBaseUrl = 'https://api.github.com'
   private githubToken = process.env.NEXT_PUBLIC_GITHUB_TOKEN || ''
 
-  // Allow setting user token dynamically
-  setUserToken(token: string) {
+ setUserToken(token: string) {
+    if (!token || typeof token !== 'string' || token.trim().length === 0) {
+      throw new Error('Invalid GitHub token: must be a non-empty string')
+    }
     this.githubToken = token
   }
 
