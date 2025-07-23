@@ -4,15 +4,22 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 
-const RefreshButton = () => {
+interface RefreshButtonProps {
+    onRefresh?: () => Promise<void>;
+    disabled?: boolean;
+}
+const RefreshButton = ({ onRefresh, disabled = false }: RefreshButtonProps) => {
     const [loading, setLoading] = useState(false);
 
+
     const refreshAll = async () => {
+        if (!onRefresh) return;
         setLoading(true);
         try {
-            // Buraya senin API çağrılarını yaz
-            console.log("Refreshing data...");
-            await new Promise((res) => setTimeout(res, 2000)); // örnek bekleme
+            await onRefresh();
+        } catch (error) {
+            console.error('Refresh failed:', error);
+            // Optionally show error notification to user
         } finally {
             setLoading(false);
         }
@@ -22,14 +29,16 @@ const RefreshButton = () => {
         <Button
             variant="outline"
             onClick={refreshAll}
-            disabled={loading}
+            disabled={loading || disabled}
             className="px-6 py-2.5 font-medium text-base"
             size="lg"
+            aria-label={loading ? "Refreshing data..." : "Refresh all data"}
+            aria-disabled={loading || disabled}
         >
             <RefreshCw className={`w-6 h-6 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Refresh All
+            {loading ? "Refreshing..." : "Refresh All"}
         </Button>
     );
-};
+}
 
 export default RefreshButton;

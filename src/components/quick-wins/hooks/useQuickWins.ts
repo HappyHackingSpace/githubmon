@@ -45,9 +45,9 @@ export function useQuickWins() {
         easyFixesError: null,
         refreshGoodIssues: fetchGoodIssues,
         refreshEasyFixes: fetchEasyFixes,
-        refreshAll: () => {
-            fetchGoodIssues()
-            fetchEasyFixes()
+        refreshAll: async () => {
+            await Promise.resolve(fetchGoodIssues());
+            await Promise.resolve(fetchEasyFixes());
         },
         totalIssues,
         needsToken: false,

@@ -124,7 +124,7 @@ export default function DashboardPage() {
               <Search className="w-6 h-6 mr-2" />
               Search
             </Button>
-            <RefreshButton />
+            <RefreshButton onRefresh={refreshData} />
             <ThemeToggle />
           </div>
         </div>

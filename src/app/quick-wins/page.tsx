@@ -113,7 +113,7 @@ export default function QuickWinsPage() {
                             Search
                         </Button>
 
-                        <RefreshButton />
+                        <RefreshButton onRefresh={refreshAll} />
 
                         <ThemeToggle />
                     </div>
