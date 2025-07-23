@@ -841,7 +841,9 @@ async getAssignedItems(username?: string): Promise<any[]> {
       const reviews = reviewsResponse.items?.map((item: any) => ({
         id: `review-${item.id}`, 
         title: item.title,
-        repo: item.repository_url.split('/').slice(-2).join('/'),
+       repo: item.repository_url 
+         ? item.repository_url.split('/').slice(-2).join('/')
+          : 'unknown/unknown',
         type: 'pr',
         priority: this.calculatePriority(item),
         url: item.html_url,
@@ -886,7 +888,9 @@ async getAssignedItems(username?: string): Promise<any[]> {
         return {
           id: item.id,
           title: item.title,
-          repo: item.repository_url.split('/').slice(-2).join('/'),
+           repo: item.repository_url 
+            ? item.repository_url.split('/').slice(-2).join('/')
+            : 'unknown/unknown',
           type: 'pr',
           priority: daysStale > 30 ? 'high' : daysStale > 14 ? 'medium' : 'low',
           url: item.html_url,
