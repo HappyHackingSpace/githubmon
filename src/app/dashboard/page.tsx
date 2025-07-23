@@ -16,6 +16,17 @@ import { SearchModal } from '@/components/search/SearchModal'
 import { useSearchStore, useActionItemsStore } from '@/stores'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
+interface ActionItem {
+   id: string | number;
+   title: string;
+   url?: string;
+   repo: string;
+   type: string;
+   author?: string;
+   priority: 'urgent' | 'high' | 'medium' | 'low';
+   daysOld?: number;
+ }
+
 export default function DashboardPage() {
   const { isLoading, orgData } = useRequireAuth()
   const { setSearchModalOpen } = useSearchStore()
@@ -33,11 +44,14 @@ export default function DashboardPage() {
   
   // Get current tab from URL or default to 'assigned'
   const currentTab = searchParams.get('tab') || 'assigned'
+
+
   
-  // Load data when component mounts
-  useEffect(() => {
+ useEffect(() => {
     if (orgData?.token) {
-      refreshData()
+      refreshData().catch((error) => {
+        console.error('Failed to refresh dashboard data:', error)
+      })
     }
   }, [orgData?.token, refreshData])
   
@@ -50,6 +64,15 @@ export default function DashboardPage() {
       default: return []
     }
   }
+
+  const isValidUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && parsed.hostname.includes('github.com');
+  } catch {
+    return false;
+  }
+};
   
   const handleTabChange = (tab: string) => {
     router.push(`/dashboard?tab=${tab}`)
@@ -181,7 +204,7 @@ export default function DashboardPage() {
                   </div>
                 ) : getActionItems('assigned').length > 0 ? (
                   <div className="space-y-3">
-                    {getActionItems('assigned').map((item: any) => (
+                    {getActionItems('assigned').map((item: ActionItem) => (
                       <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 group">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
@@ -193,16 +216,17 @@ export default function DashboardPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <h4 className="font-medium truncate">{item.title}</h4>
-                              {item.url && (
-                                <a 
-                                  href={item.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <ExternalLink className="w-3 h-3 text-gray-500 hover:text-blue-500" />
-                                </a>
-                              )}
+                             {item.url && (
+  <a
+    href={isValidUrl(item.url) ? item.url : '#'}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="opacity-0 group-hover:opacity-100 transition-opacity"
+    onClick={(e) => !isValidUrl(item.url ?? '') && e.preventDefault()}
+  >
+    <ExternalLink className="w-3 h-3 text-gray-500 hover:text-blue-500" />
+  </a>
+)}
                             </div>
                             <p className="text-sm text-gray-500 truncate">{item.repo} • {item.type} • {item.author}</p>
                           </div>
@@ -241,7 +265,7 @@ export default function DashboardPage() {
               <CardContent>
                 {getActionItems('mentions').length > 0 ? (
                   <div className="space-y-3">
-                    {getActionItems('mentions').map((item: any) => (
+                    {getActionItems('mentions').map((item: ActionItem) => (
                       <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
                         <div className="flex items-center gap-3">
                           <div className={`w-2 h-2 rounded-full ${item.priority === 'high' ? 'bg-red-500' : item.priority === 'medium' ? 'bg-yellow-500' : 'bg-gray-400'}`} />
@@ -279,7 +303,7 @@ export default function DashboardPage() {
               <CardContent>
                 {getActionItems('stale').length > 0 ? (
                   <div className="space-y-3">
-                    {getActionItems('stale').map((item: any) => (
+                    {getActionItems('stale').map((item: ActionItem) => (
                       <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
                         <div className="flex items-center gap-3">
                           <div className="w-2 h-2 rounded-full bg-orange-500" />
