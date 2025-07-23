@@ -208,9 +208,9 @@ export function Sidebar() {
                 {pathname.startsWith('/quick-wins') && (
                   <CollapsibleContent className="pl-8 space-y-1 mt-1">
                     <Link
-                      href="/quick-wins?tab=good-first-issues"
+                      href="/quick-wins?tab=good-issues"
                       className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                          ${currentTab === 'good-first-issues'
+                          ${currentTab === 'good-issues'
                           ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
                           : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                         }`}

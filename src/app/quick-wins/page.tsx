@@ -89,7 +89,7 @@ export default function QuickWinsPage() {
 
     return (
         <Layout>
-            <div className="max-w-7xl mx-auto p-6 space-y-6">
+            <div className=" mx-auto p-6 space-y-6">
                 {/* Header */}
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b pb-4">
                     <div>

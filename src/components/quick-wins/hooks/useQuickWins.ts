@@ -1,5 +1,6 @@
 // src/components/quick-wins/hooks/useQuickWins.ts
-// Temporary simple version
+import { useEffect } from 'react'
+import { useQuickWinsStore } from '@/stores/quickWins'
 
 interface QuickWinsCount {
     goodIssuesCount: number
@@ -16,19 +17,40 @@ export function useQuickWinsCount(): QuickWinsCount {
         isLoading: false
     }
 }
+
 export function useQuickWins() {
+    const {
+        goodIssues,
+        easyFixes,
+        loading,
+        fetchGoodIssues,
+        fetchEasyFixes
+    } = useQuickWinsStore()
+
+    // Fetch data on mount
+    useEffect(() => {
+        fetchGoodIssues()
+        fetchEasyFixes()
+    }, [fetchGoodIssues, fetchEasyFixes])
+
+    const totalIssues = goodIssues.length + easyFixes.length
+    const hasData = totalIssues > 0
+
     return {
-        goodIssues: [],
-        easyFixes: [],
-        loadingGoodIssues: false,
-        loadingEasyFixes: false,
+        goodIssues,
+        easyFixes,
+        loadingGoodIssues: loading.goodIssues,
+        loadingEasyFixes: loading.easyFixes,
         goodIssuesError: null,
         easyFixesError: null,
-        refreshGoodIssues: () => { },
-        refreshEasyFixes: () => { },
-        refreshAll: () => { },
-        totalIssues: 20,
+        refreshGoodIssues: fetchGoodIssues,
+        refreshEasyFixes: fetchEasyFixes,
+        refreshAll: () => {
+            fetchGoodIssues()
+            fetchEasyFixes()
+        },
+        totalIssues,
         needsToken: false,
-        hasData: false
+        hasData
     }
 }
