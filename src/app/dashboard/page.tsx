@@ -265,11 +265,24 @@ export default function DashboardPage() {
                 {getActionItems('mentions').length > 0 ? (
                   <div className="space-y-3">
                     {getActionItems('mentions').map((item: ActionItem) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 group">
                         <div className="flex items-center gap-3">
                           <div className={`w-2 h-2 rounded-full ${item.priority === 'high' ? 'bg-red-500' : item.priority === 'medium' ? 'bg-yellow-500' : 'bg-gray-400'}`} />
                           <div>
-                            <h4 className="font-medium">{item.title}</h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium">{item.title}</h4>
+                              {item.url && (
+                                <a
+                                  href={isValidUrl(item.url) ? item.url : '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => !isValidUrl(item.url ?? '') && e.preventDefault()}
+                                >
+                                  <ExternalLink className="w-3 h-3 text-gray-500 hover:text-blue-500" />
+                                </a>
+                              )}
+                            </div>
                             <p className="text-sm text-gray-500">{item.repo} • {item.type}</p>
                           </div>
                         </div>
@@ -303,11 +316,24 @@ export default function DashboardPage() {
                 {getActionItems('stale').length > 0 ? (
                   <div className="space-y-3">
                     {getActionItems('stale').map((item: ActionItem) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 group">
                         <div className="flex items-center gap-3">
                           <div className="w-2 h-2 rounded-full bg-orange-500" />
                           <div>
-                            <h4 className="font-medium">{item.title}</h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium">{item.title}</h4>
+                              {item.url && (
+                                <a
+                                  href={isValidUrl(item.url) ? item.url : '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => !isValidUrl(item.url ?? '') && e.preventDefault()}
+                                >
+                                  <ExternalLink className="w-3 h-3 text-gray-500 hover:text-blue-500" />
+                                </a>
+                              )}
+                            </div>
                             <p className="text-sm text-gray-500">{item.repo} • {item.daysOld} days old</p>
                           </div>
                         </div>
