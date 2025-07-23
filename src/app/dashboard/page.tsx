@@ -15,69 +15,70 @@ import { Target, MessageSquare, Clock, Zap, Search, ExternalLink } from "lucide-
 import { SearchModal } from '@/components/search/SearchModal'
 import { useSearchStore, useActionItemsStore } from '@/stores'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import RefreshButton from "@/components/Refresh/RefreshButton";
 
 interface ActionItem {
-   id: string | number;
-   title: string;
-   url?: string;
-   repo: string;
-   type: string;
-   author?: string;
-   priority: 'urgent' | 'high' | 'medium' | 'low';
-   daysOld?: number;
- }
+  id: string | number;
+  title: string;
+  url?: string;
+  repo: string;
+  type: string;
+  author?: string;
+  priority: 'urgent' | 'high' | 'medium' | 'low';
+  daysOld?: number;
+}
 
 export default function DashboardPage() {
   const { isLoading, orgData } = useRequireAuth()
   const { setSearchModalOpen } = useSearchStore()
-  const { 
-    assignedItems, 
-    mentionItems, 
-    staleItems, 
-    loading, 
-    errors, 
-    refreshData 
+  const {
+    assignedItems,
+    mentionItems,
+    staleItems,
+    loading,
+    errors,
+    refreshData
   } = useActionItemsStore()
-  
+
   const searchParams = useSearchParams()
   const router = useRouter()
-  
+
   // Get current tab from URL or default to 'assigned'
   const currentTab = searchParams.get('tab') || 'assigned'
 
 
-  
- useEffect(() => {
+
+  useEffect(() => {
     if (orgData?.token) {
       refreshData().catch((error) => {
         console.error('Failed to refresh dashboard data:', error)
       })
     }
   }, [orgData?.token, refreshData])
-  
+
   // Real data from store
   const getActionItems = (type: string) => {
     switch (type) {
       case 'assigned': return assignedItems
-      case 'mentions': return mentionItems  
+      case 'mentions': return mentionItems
       case 'stale': return staleItems
       default: return []
     }
   }
 
   const isValidUrl = (url: string) => {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'https:' && parsed.hostname.includes('github.com');
-  } catch {
-    return false;
-  }
-};
-  
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'https:' && parsed.hostname.includes('github.com');
+    } catch {
+      return false;
+    }
+  };
+
   const handleTabChange = (tab: string) => {
     router.push(`/dashboard?tab=${tab}`)
   }
-  
+
   const getWelcomeMessage = () => {
     const hour = new Date().getHours()
     const timeOfDay = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
@@ -103,7 +104,7 @@ export default function DashboardPage() {
     <Layout>
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Header */}
-<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b pb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b pb-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {getWelcomeMessage()}
@@ -123,13 +124,12 @@ export default function DashboardPage() {
               <Search className="w-6 h-6 mr-2" />
               Search
             </Button>
-
+            <RefreshButton />
             <ThemeToggle />
-
           </div>
         </div>
 
-        
+
 
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
@@ -193,9 +193,9 @@ export default function DashboardPage() {
                     <Target className="w-12 h-12 mx-auto mb-4 text-red-300" />
                     <p>Failed to load assigned items</p>
                     <p className="text-sm mt-2">{errors.assigned}</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="mt-3"
                       onClick={() => refreshData('assigned')}
                     >
@@ -207,35 +207,34 @@ export default function DashboardPage() {
                     {getActionItems('assigned').map((item: ActionItem) => (
                       <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 group">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                            item.priority === 'urgent' ? 'bg-red-600' : 
-                            item.priority === 'high' ? 'bg-red-500' : 
-                            item.priority === 'medium' ? 'bg-yellow-500' : 
-                            'bg-gray-400'
-                          }`} />
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${item.priority === 'urgent' ? 'bg-red-600' :
+                            item.priority === 'high' ? 'bg-red-500' :
+                              item.priority === 'medium' ? 'bg-yellow-500' :
+                                'bg-gray-400'
+                            }`} />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <h4 className="font-medium truncate">{item.title}</h4>
-                             {item.url && (
-  <a
-    href={isValidUrl(item.url) ? item.url : '#'}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="opacity-0 group-hover:opacity-100 transition-opacity"
-    onClick={(e) => !isValidUrl(item.url ?? '') && e.preventDefault()}
-  >
-    <ExternalLink className="w-3 h-3 text-gray-500 hover:text-blue-500" />
-  </a>
-)}
+                              {item.url && (
+                                <a
+                                  href={isValidUrl(item.url) ? item.url : '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => !isValidUrl(item.url ?? '') && e.preventDefault()}
+                                >
+                                  <ExternalLink className="w-3 h-3 text-gray-500 hover:text-blue-500" />
+                                </a>
+                              )}
                             </div>
                             <p className="text-sm text-gray-500 truncate">{item.repo} • {item.type} • {item.author}</p>
                           </div>
                         </div>
                         <Badge variant={
-                          item.priority === 'urgent' ? 'destructive' : 
-                          item.priority === 'high' ? 'destructive' : 
-                          item.priority === 'medium' ? 'default' : 
-                          'secondary'
+                          item.priority === 'urgent' ? 'destructive' :
+                            item.priority === 'high' ? 'destructive' :
+                              item.priority === 'medium' ? 'default' :
+                                'secondary'
                         } className="ml-2 flex-shrink-0">
                           {item.priority}
                         </Badge>

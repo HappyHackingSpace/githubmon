@@ -15,6 +15,7 @@ import { useQuickWins } from '@/components/quick-wins/hooks/useQuickWins'
 import { QuickWinsTable } from '@/components/quick-wins/QuickWinsTable'
 import { SearchModal } from '@/components/search/SearchModal'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import RefreshButton from "@/components/Refresh/RefreshButton";
 
 import {
     Lightbulb,
@@ -112,16 +113,7 @@ export default function QuickWinsPage() {
                             Search
                         </Button>
 
-                        <Button
-                            variant="outline"
-                            onClick={refreshAll}
-                            disabled={loadingGoodIssues || loadingEasyFixes}
-                            className="px-6 py-2.5 font-medium text-base"
-                            size="lg"
-                        >
-                            <RefreshCw className={`w-6 h-6 mr-2 ${(loadingGoodIssues || loadingEasyFixes) ? 'animate-spin' : ''}`} />
-                            Refresh All
-                        </Button>
+                        <RefreshButton />
 
                         <ThemeToggle />
                     </div>
