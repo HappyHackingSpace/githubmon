@@ -12,6 +12,7 @@ export { usePreferencesStore } from './preferences'
 export { useSearchStore } from './search'
 export { useDataCacheStore } from './cache'
 export { useAppStore } from './app'
+export { useActionItemsStore } from './actionItems'
 
 // BU SATIRLARI KALDIRDIK - henüz dosyalar yok
 // export { useActionItemsStore } from './actionItems'  ❌ KALDIRDIK

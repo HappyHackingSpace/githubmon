@@ -14,6 +14,13 @@ class OSSInsightClient {
   private githubBaseUrl = 'https://api.github.com'
   private githubToken = process.env.NEXT_PUBLIC_GITHUB_TOKEN || ''
 
+ setUserToken(token: string) {
+    if (!token || typeof token !== 'string' || token.trim().length === 0) {
+      throw new Error('Invalid GitHub token: must be a non-empty string')
+    }
+    this.githubToken = token
+  }
+
   private async fetchWithCache<T>(endpoint: string, useGithub = false): Promise<T> {
     const cacheKey = endpoint
     const cached = this.cache.get(cacheKey)
@@ -763,6 +770,174 @@ class OSSInsightClient {
       size: this.cache.size,
       keys: Array.from(this.cache.keys())
     }
+  }
+
+  // ============ ACTION ITEMS API METHODS ============
+  
+  // Get assigned issues and PRs for the authenticated user
+async getAssignedItems(username?: string): Promise<any[]> {
+    if (!this.githubToken) {
+      console.warn('No GitHub token available for assigned items')
+      return []
+    }
+    try {
+      const user = username || '@me'
+      const endpoint = `/search/issues?q=assignee:${user}+state:open&sort=updated&order=desc&per_page=50`
+      const response = await this.fetchWithCache<any>(endpoint, true)
+      
+      return response.items?.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        repo: item.repository_url
+          ? item.repository_url.split('/').slice(-2).join('/')
+          : 'unknown/unknown',
+        type: item.pull_request ? 'pr' : 'issue',
+        priority: this.calculatePriority(item),
+        url: item.html_url,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        assignee: item.assignee?.login,
+        author: item.user?.login,
+        labels: item.labels?.map((l: any) => l.name) || [],
+        assignedAt: item.created_at // Approximation
+      })) || []
+    } catch (error) {
+      console.error('Failed to fetch assigned items:', error)
+      return []
+    }
+  }
+
+  // Get mentions and review requests for the authenticated user
+  async getMentionItems(username?: string): Promise<any[]> {
+    if (!this.githubToken) {
+      console.warn('No GitHub token available for mentions')
+      return []
+    }
+
+    try {
+      const user = username || '@me'
+      // Get mentions in issues and PRs
+      const mentionsEndpoint = `/search/issues?q=mentions:${user}+state:open&sort=updated&order=desc&per_page=25`
+      const reviewRequestsEndpoint = `/search/issues?q=review-requested:${user}+state:open&sort=updated&order=desc&per_page=25`
+      
+      const [mentionsResponse, reviewsResponse] = await Promise.all([
+        this.fetchWithCache<any>(mentionsEndpoint, true),
+        this.fetchWithCache<any>(reviewRequestsEndpoint, true)
+      ])
+
+      const mentions = mentionsResponse.items?.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        repo: item.repository_url.split('/').slice(-2).join('/'),
+        type: item.pull_request ? 'pr' : 'issue',
+        priority: this.calculatePriority(item),
+        url: item.html_url,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        author: item.user?.login,
+        labels: item.labels?.map((l: any) => l.name) || [],
+        mentionType: 'mention',
+        mentionedAt: item.updated_at
+      })) || []
+
+      const reviews = reviewsResponse.items?.map((item: any) => ({
+        id: `review-${item.id}`, 
+        title: item.title,
+       repo: item.repository_url 
+         ? item.repository_url.split('/').slice(-2).join('/')
+          : 'unknown/unknown',
+        type: 'pr',
+        priority: this.calculatePriority(item),
+        url: item.html_url,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        author: item.user?.login,
+        labels: item.labels?.map((l: any) => l.name) || [],
+        mentionType: 'review_request',
+        mentionedAt: item.updated_at
+      })) || []
+
+      return [...mentions, ...reviews].sort((a, b) => 
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
+    } catch (error) {
+      console.error('Failed to fetch mentions:', error)
+      return []
+    }
+  }
+
+  // Get stale PRs (older than 7 days without activity)
+  async getStaleItems(username?: string, daysOld: number = 7): Promise<any[]> {
+    if (!this.githubToken) {
+      console.warn('No GitHub token available for stale items')
+      return []
+    }
+
+    try {
+      const user = username || '@me'
+      const date = new Date()
+      date.setDate(date.getDate() - daysOld)
+      const dateString = date.toISOString().split('T')[0]
+      
+      // Search for PRs authored by user that are still open and haven't been updated recently
+      const endpoint = `/search/issues?q=author:${user}+type:pr+state:open+updated:<${dateString}&sort=updated&order=asc&per_page=50`
+      const response = await this.fetchWithCache<any>(endpoint, true)
+      
+      return response.items?.map((item: any) => {
+        const lastActivity = new Date(item.updated_at)
+        const daysStale = Math.floor((Date.now() - lastActivity.getTime()) / (1000 * 60 * 60 * 24))
+        
+        return {
+          id: item.id,
+          title: item.title,
+           repo: item.repository_url 
+            ? item.repository_url.split('/').slice(-2).join('/')
+            : 'unknown/unknown',
+          type: 'pr',
+          priority: daysStale > 30 ? 'high' : daysStale > 14 ? 'medium' : 'low',
+          url: item.html_url,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+          author: item.user?.login,
+          labels: item.labels?.map((l: any) => l.name) || [],
+          lastActivity: item.updated_at,
+          daysStale,
+          daysOld: daysStale,
+          reviewStatus: 'pending' // We'd need additional API calls to get accurate review status
+        }
+      }) || []
+    } catch (error) {
+      console.error('Failed to fetch stale items:', error)
+      return []
+    }
+  }
+
+  // Helper method to calculate priority based on issue/PR data
+  private calculatePriority(item: any): 'low' | 'medium' | 'high' | 'urgent' {
+    const labels = item.labels?.map((l: any) => l.name.toLowerCase()) || []
+    const commentCount = item.comments || 0
+    const daysSinceUpdate = Math.floor((Date.now() - new Date(item.updated_at).getTime()) / (1000 * 60 * 60 * 24))
+    
+    // Check for priority labels
+    if (labels.some((l: string) => l.includes('critical') || l.includes('urgent') || l.includes('p0'))) {
+      return 'urgent'
+    }
+    if (labels.some((l: string) => l.includes('high') || l.includes('p1') || l.includes('bug'))) {
+      return 'high'
+    }
+    if (labels.some((l: string) => l.includes('low') || l.includes('p3') || l.includes('enhancement'))) {
+      return 'low'
+    }
+    
+    // Priority based on activity
+    if (commentCount > 10 || daysSinceUpdate < 1) {
+      return 'high'
+    }
+    if (commentCount > 5 || daysSinceUpdate < 3) {
+      return 'medium'
+    }
+    
+    return 'low'
   }
 }
 
