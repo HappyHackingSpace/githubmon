@@ -195,7 +195,6 @@ export default function SearchPage() {
       }
     }
   }, [userParam, repoParam, setCurrentQuery, setCurrentSearchType]);
-
   const performSearch = async (query: string, type: "users" | "repos") => {
     setSearchResults((prev) => ({ ...prev, loading: true, error: null }));
 
@@ -611,12 +610,12 @@ export default function SearchPage() {
                                     {/* Most Active Day calculation */}
                                     {userAnalytics.behavior?.length > 0
                                       ? userAnalytics.behavior.reduce(
-                                          (max: any, day: any) =>
-                                            day.commits + day.prs + day.issues >
+                                        (max: any, day: any) =>
+                                          day.commits + day.prs + day.issues >
                                             max.commits + max.prs + max.issues
-                                              ? day
-                                              : max
-                                        ).day
+                                            ? day
+                                            : max
+                                      ).day
                                       : "N/A"}
                                   </td>
                                 </tr>

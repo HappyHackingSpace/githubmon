@@ -1,4 +1,4 @@
-// stores/index.ts
+// stores/index.ts - Sadece mevcut olanları export et
 import { useEffect, useState } from 'react'
 import { useAuthStore } from './auth'
 import { usePreferencesStore } from './preferences'
@@ -6,8 +6,7 @@ import { useSearchStore } from './search'
 import { useDataCacheStore } from './cache'
 import { useAppStore } from './app'
 
-
-// Re-export all stores
+// Re-export all stores (sadece mevcut olanlar)
 export { useAuthStore } from './auth'
 export { usePreferencesStore } from './preferences'
 export { useSearchStore } from './search'
@@ -15,6 +14,9 @@ export { useDataCacheStore } from './cache'
 export { useAppStore } from './app'
 export { useActionItemsStore } from './actionItems'
 
+// BU SATIRLARI KALDIRDIK - henüz dosyalar yok
+// export { useActionItemsStore } from './actionItems'  ❌ KALDIRDIK
+// export { useQuickWinsStore } from './quickWins'       ❌ KALDIRDIK
 
 // ============ HYDRATION HOOK ============
 // Singleton hydration state
@@ -186,13 +188,11 @@ export const useTheme = () => {
 }
 
 export const useSidebarState = () => {
-
   const { sidebarOpen: isOpen, setSidebarOpen: setOpen } = useApp()
   return { isOpen, setOpen }
 }
 
 export const useNotifications = () => {
   const { notifications, addNotification: add, removeNotification: remove, clearNotifications: clear } = useApp()
-
   return { notifications, add, remove, clear }
 }

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 
 
 import { useSidebarState, useAuthStore, useStoreHydration, useActionItemsStore } from '@/stores'
-import {  ChevronRight, Clock, Flame,  LogOut, MessageSquare, Sparkles, Star, Target, Zap,  } from 'lucide-react'
+import { ChevronRight, Clock, Flame, LogOut, MessageSquare, Sparkles, Star, Target, Zap, } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
 
@@ -51,7 +51,7 @@ export function Sidebar() {
 
   const getBadgeCount = (type: 'assigned' | 'mentions' | 'stale') => getCountByType(type)
   const getTotalActionCount = () => getTotalCount()
-  
+
   // Show loading state in badges
   const getBadgeContent = (type: 'assigned' | 'mentions' | 'stale') => {
     if (loading[type]) return '...'
@@ -104,138 +104,173 @@ export function Sidebar() {
         <div className="flex-1 overflow-y-auto">
           {/* Navigation */}
           {/* Navigation Menu with Collapsible */}
-<div className="flex-1 overflow-y-auto p-4">
-    <nav className="space-y-2">
-        {/* Action Required - Active with Collapsible */}
-        <Collapsible defaultOpen={isDashboardPage}>
-            <CollapsibleTrigger asChild>
-                <Link href="/dashboard" className={`
+          <div className="flex-1 overflow-y-auto p-4">
+            <nav className="space-y-2">
+              {/* Action Required - Active with Collapsible */}
+              <Collapsible defaultOpen={isDashboardPage}>
+                <CollapsibleTrigger asChild>
+                  <Link href="/dashboard" className={`
                     flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors
-                    ${isDashboardPage 
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
+                    ${isDashboardPage
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                       : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                     }
                 `}>
                     <div className="flex items-center gap-3">
-                        <Zap className="w-5 h-5" />
-                        <span>Action Required</span>
-                        {getTotalActionCount() > 0 && (
-                          <Badge variant="destructive" className="ml-1 text-xs min-w-[1.25rem] h-5">
-                            {getTotalActionCount()}
-                          </Badge>
-                        )}
-                    </div>  
-                    <ChevronRight className={`w-4 h-4 transition-transform ${isDashboardPage ? 'rotate-90' : ''}`} />
-                </Link>
-            </CollapsibleTrigger>
-            
-            {isDashboardPage && (
-                <CollapsibleContent className="pl-8 space-y-1 mt-1">
-                    <Link 
-                        href="/dashboard?tab=assigned" 
-                        className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                          ${currentTab === 'assigned' 
-                            ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
-                            : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
-                          }`}
-                    >
-                        <Target className="w-4 h-4" />
-                        Assigned
-                        <Badge 
-                            variant={getBadgeCount('assigned') > 0 ? "default" : "secondary"} 
-                            className="ml-auto text-xs"
-                        >
-                            {getBadgeContent('assigned')}
+                      <Zap className="w-5 h-5" />
+                      <span>Action Required</span>
+                      {getTotalActionCount() > 0 && (
+                        <Badge variant="destructive" className="ml-1 text-xs min-w-[1.25rem] h-5">
+                          {getTotalActionCount()}
                         </Badge>
-                    </Link>
-                    <Link 
-                        href="/dashboard?tab=mentions" 
-                        className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                          ${currentTab === 'mentions' 
-                            ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
-                            : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
-                          }`}
+                      )}
+                    </div>
+                    <ChevronRight />
+                  </Link>
+                </CollapsibleTrigger>
+
+                {isDashboardPage && (
+                  <CollapsibleContent className="pl-8 space-y-1 mt-1">
+                    <Link
+                      href="/dashboard?tab=assigned"
+                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
+                          ${currentTab === 'assigned'
+                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                          : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
                     >
-                        <MessageSquare className="w-4 h-4" />
-                        Mentions
-                        <Badge 
-                            variant={getBadgeCount('mentions') > 0 ? "default" : "secondary"} 
-                            className="ml-auto text-xs"
-                        >
-                            {getBadgeContent('mentions')}
-                        </Badge>
+                      <Target className="w-4 h-4" />
+                      Assigned
+                      <Badge
+                        variant={getBadgeCount('assigned') > 0 ? "default" : "secondary"}
+                        className="ml-auto text-xs"
+                      >
+                        {getBadgeContent('assigned')}
+                      </Badge>
                     </Link>
-                    <Link 
-                        href="/dashboard?tab=stale" 
-                        className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                          ${currentTab === 'stale' 
-                            ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
-                            : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
-                          }`}
+                    <Link
+                      href="/dashboard?tab=mentions"
+                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
+                          ${currentTab === 'mentions'
+                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                          : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
                     >
-                        <Clock className="w-4 h-4" />
-                        Stale PRs
-                        <Badge 
-                            variant={getBadgeCount('stale') > 0 ? "destructive" : "secondary"} 
-                            className="ml-auto text-xs"
-                        >
-                            {getBadgeContent('stale')}
-                        </Badge>
+                      <MessageSquare className="w-4 h-4" />
+                      Mentions
+                      <Badge
+                        variant={getBadgeCount('mentions') > 0 ? "default" : "secondary"}
+                        className="ml-auto text-xs"
+                      >
+                        {getBadgeContent('mentions')}
+                      </Badge>
                     </Link>
-                </CollapsibleContent>
-            )}
-        </Collapsible>
+                    <Link
+                      href="/dashboard?tab=stale"
+                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
+                          ${currentTab === 'stale'
+                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                          : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                    >
+                      <Clock className="w-4 h-4" />
+                      Stale PRs
+                      <Badge
+                        variant={getBadgeCount('stale') > 0 ? "destructive" : "secondary"}
+                        className="ml-auto text-xs"
+                      >
+                        {getBadgeContent('stale')}
+                      </Badge>
+                    </Link>
+                  </CollapsibleContent>
+                )}
+              </Collapsible>
 
-        {/* Coming Soon Items - Disabled Collapsibles */}
-        <Collapsible>
-            <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+              {/* Coming Soon Items - Disabled Collapsibles */}
+
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Link href="/quick-wins" className={`
+                    flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors
+                    ${pathname.startsWith('/quick-wins')
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                    }
+                `}>
                     <div className="flex items-center gap-3">
-                        <Target className="w-5 h-5" />
-                        <span>Quick Wins</span>
+                      <Target className="w-5 h-5" />
+                      <span>Quick Wins</span>
+                    </div>
+                    <ChevronRight />
+                  </Link>
+                </CollapsibleTrigger>
+
+                {pathname.startsWith('/quick-wins') && (
+                  <CollapsibleContent className="pl-8 space-y-1 mt-1">
+                    <Link
+                      href="/quick-wins?tab=good-issues"
+                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
+                          ${currentTab === 'good-issues'
+                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                          : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Good First Issues
+                    </Link>
+                    <Link
+                      href="/quick-wins?tab=easy-fixes"
+                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
+                          ${currentTab === 'easy-fixes'
+                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                          : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                    >
+                      <Zap className="w-4 h-4" />
+                      Easy Fixes
+                    </Link>
+                  </CollapsibleContent>
+                )}
+              </Collapsible>
+
+
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+                    <div className="flex items-center gap-3">
+                      <Star className="w-5 h-5" />
+                      <span>Favorites</span>
                     </div>
                     <span className="text-xs">Soon</span>
-                </div>
-            </CollapsibleTrigger>
-        </Collapsible>
+                  </div>
+                </CollapsibleTrigger>
+              </Collapsible>
 
-        <Collapsible>
-            <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
                     <div className="flex items-center gap-3">
-                        <Star className="w-5 h-5" />
-                        <span>Favorites</span>
+                      <Clock className="w-5 h-5" />
+                      <span>Recent</span>
                     </div>
                     <span className="text-xs">Soon</span>
-                </div>
-            </CollapsibleTrigger>
-        </Collapsible>
+                  </div>
+                </CollapsibleTrigger>
+              </Collapsible>
 
-        <Collapsible>
-            <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
                     <div className="flex items-center gap-3">
-                        <Clock className="w-5 h-5" />
-                        <span>Recent</span>
+                      <Sparkles className="w-5 h-5" />
+                      <span>Discovery</span>
                     </div>
                     <span className="text-xs">Soon</span>
-                </div>
-            </CollapsibleTrigger>
-        </Collapsible>
-
-        <Collapsible>
-            <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
-                    <div className="flex items-center gap-3">
-                        <Sparkles className="w-5 h-5" />
-                        <span>Discovery</span>
-                    </div>
-                    <span className="text-xs">Soon</span>
-                </div>
-            </CollapsibleTrigger>
-        </Collapsible>
-    </nav>
-</div>
+                  </div>
+                </CollapsibleTrigger>
+              </Collapsible>
+            </nav>
+          </div>
         </div>
 
         {/* Logout - Fixed at bottom */}
