@@ -26,6 +26,7 @@ import {
     Github
 } from 'lucide-react'
 import { useSearchStore } from '@/stores'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default function QuickWinsPage() {
     const { isLoading, orgData } = useRequireAuth()
@@ -190,14 +191,7 @@ export default function QuickWinsPage() {
                     </div>
                 )}
 
-                {/* Info Alert */}
-                <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                        <strong>Tips:</strong> Look for issues with labels like "good first issue", "help wanted",
-                        or "beginner friendly". These are typically well-documented and perfect for new contributors.
-                    </AlertDescription>
-                </Alert>
+
 
                 {/* Quick Wins Tabs */}
                 <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
@@ -239,52 +233,7 @@ export default function QuickWinsPage() {
                     </TabsContent>
                 </Tabs>
 
-                {/* Getting Started Tips */}
-                {!hasData && !loadingGoodIssues && !loadingEasyFixes && (
-                    <Card className="mt-8">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Info className="w-5 h-5 text-blue-500" />
-                                Getting Started with Open Source
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <div>
-                                    <h4 className="font-semibold mb-2">1. Add Your GitHub Token</h4>
-                                    <p className="text-sm text-gray-600">
-                                        To access more issues and repositories, add your GitHub personal access token
-                                        in the login page. This increases your API rate limit significantly.
-                                    </p>
-                                </div>
 
-                                <div>
-                                    <h4 className="font-semibold mb-2">2. Look for Beginner-Friendly Labels</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        <Badge variant="outline">good first issue</Badge>
-                                        <Badge variant="outline">help wanted</Badge>
-                                        <Badge variant="outline">beginner friendly</Badge>
-                                        <Badge variant="outline">easy</Badge>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h4 className="font-semibold mb-2">3. Choose Your Technology</h4>
-                                    <p className="text-sm text-gray-600">
-                                        Filter by programming language to find issues in technologies you're comfortable with.
-                                    </p>
-                                </div>
-
-                                <div className="pt-4 border-t">
-                                    <Button onClick={refreshAll} className="w-full">
-                                        <RefreshCw className="w-4 h-4 mr-2" />
-                                        Load Quick Wins
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
             </div>
 
             <SearchModal />
