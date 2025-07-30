@@ -205,9 +205,6 @@ export function QuickWinsTable({
             <CardContent>
                 {/* Filters */}
                 <div className="flex gap-4 mb-6">
-                    <div className="flex-1">
-
-                    </div>
 
                     <Select value={languageFilter} onValueChange={setLanguageFilter}>
                         <SelectTrigger className="w-40">
