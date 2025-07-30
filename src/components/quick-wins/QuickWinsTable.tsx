@@ -90,7 +90,7 @@ export function QuickWinsTable({
 
     // Get unique languages for filter dropdown
     const availableLanguages = useMemo(() => {
-        const languages = [...new Set(data.map(item => item.language).filter((lang): lang is string => typeof lang === 'string'))]
+        const languages = [...new Set(data.map(item => item.language).filter((lang): lang is string => typeof lang === 'string' && lang.trim() !== ''))]
         return languages.sort()
     }, [data])
 
