@@ -86,7 +86,7 @@ interface ActionItemsState {
 
   // Utility actions
   markAsRead: (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes', id: number) => void
-  refreshData: (type?: 'assigned' | 'mentions' | 'stale') => Promise<void>
+  refreshData: (type?: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => Promise<void>
   clearAll: () => void
 }
 
@@ -237,11 +237,11 @@ export const useActionItemsStore = create<ActionItemsState>()(
                 })))
                 break
               case 'goodFirstIssues':
-                items = await ossInsightClient.getGoodFirstIssues(username)
+                items = await ossInsightClient.getGoodFirstIssues() // Don't pass username as language
                 get().setGoodFirstIssues(items)
                 break
               case 'easyFixes':
-                items = await ossInsightClient.getEasyFixes(username)
+                items = await ossInsightClient.getEasyFixes() // Don't pass username as language
                 get().setEasyFixes(items)
                 break
             }
