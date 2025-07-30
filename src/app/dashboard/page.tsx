@@ -19,14 +19,14 @@ function mapActionItemToGitHubIssue(item: any): GitHubIssue {
     labels: (item.labels || []).map((name: string) => ({ name, color: '999999' })),
     created_at: item.createdAt || '',
     updated_at: item.updatedAt || '',
-    difficulty: 'easy',
-    language: '',
+    difficulty: item.difficulty || 'medium', // Don't assume all items are 'easy'
+    language: item.language || 'unknown',
     stars: 0,
     author: { login: item.author || '', avatar_url: '' },
     comments: 0,
     state: 'open',
     assignee: null,
-    priority: (item.priority as any) || 'low',
+    priority: ['urgent', 'high', 'medium', 'low'].includes(item.priority) ? item.priority : 'low',
   }
 }
 import { Button } from '@/components/ui/button'
