@@ -1,6 +1,5 @@
 import { create } from 'zustand'
-
-
+import { fetchIssuesFromGitHub } from '@/lib/api/github'
 import { GitHubIssue } from '@/types/quickWins'
 
 interface QuickWinsState {
@@ -20,153 +19,99 @@ export const useQuickWinsStore = create<QuickWinsState>((set) => ({
     loading: { goodIssues: false, easyFixes: false },
 
 
-    fetchGoodIssues: () => {
+    fetchGoodIssues: async () => {
         set((state) => ({
             loading: { ...state.loading, goodIssues: true }
         }));
-
-        setTimeout(() => {
+        try {
+            // 1. Popüler 50 repo çek
+            const repoRes = await fetch('https://api.github.com/search/repositories?q=stars:%3E10000&sort=stars&order=desc&per_page=50');
+            const repoData = await repoRes.json();
+            if (!repoData.items || !Array.isArray(repoData.items)) throw new Error('Repo bulunamadı');
+            // 2. Her repo için 'good first issue' label'lı issue çek
+            const userToken = window.localStorage.getItem('github_token') || '';
+            const allIssues = await Promise.all(
+                repoData.items.map(async (repo: any) => {
+                    const issues = await fetchIssuesFromGitHub({
+                        owner: repo.owner.login,
+                        repo: repo.name,
+                        labels: 'good first issue',
+                        per_page: 10,
+                        state: 'open',
+                        token: userToken,
+                    });
+                    // Avatarları issue.user'dan al
+                    return issues.map(issue => {
+                        if (issue && issue.author && repo.owner.avatar_url) {
+                            issue.author.avatar_url = issue.author.avatar_url || repo.owner.avatar_url;
+                        }
+                        return issue;
+                    });
+                })
+            );
+            // Düzleştir ve ilk 50'yi al
+            const flatIssues = allIssues.flat().filter(Boolean).slice(0, 50);
             set((state) => ({
-                goodIssues: [
-                    {
-                        id: 101,
-                        title: "Fix login bug",
-                        repository: "example/repo1",
-                        repositoryUrl: "https://github.com/example/repo1",
-                        url: "https://github.com/example/repo1/issues/101",
-                        labels: [
-                            { name: "bug", color: "d73a4a" },
-                            { name: "good first issue", color: "7057ff" }
-                        ],
-                        created_at: "2023-07-01T10:00:00Z",
-                        updated_at: "2023-07-01T12:00:00Z",
-                        difficulty: 'easy',
-                        language: "TypeScript",
-                        stars: 123,
-                        author: {
-                            login: "octocat",
-                            avatar_url: "https://avatars.githubusercontent.com/u/1?v=4"
-                        },
-                        comments: 2,
-                        state: 'open',
-                        assignee: null,
-                        priority: 'high'
-                    },
-                    {
-                        id: 102,
-                        title: "Improve loading time",
-                        repository: "example/repo2",
-                        repositoryUrl: "https://github.com/example/repo2",
-                        url: "https://github.com/example/repo2/issues/102",
-                        labels: [
-                            { name: "enhancement", color: "a2eeef" },
-                            { name: "good first issue", color: "7057ff" }
-                        ],
-                        created_at: "2023-07-02T09:00:00Z",
-                        updated_at: "2023-07-02T10:00:00Z",
-                        difficulty: 'medium',
-                        language: "JavaScript",
-                        stars: 99,
-                        author: {
-                            login: "hubot",
-                            avatar_url: "https://avatars.githubusercontent.com/u/2?v=4"
-                        },
-                        comments: 1,
-                        state: 'open',
-                        assignee: null,
-                        priority: 'medium'
-                    },
-                    {
-                        id: 103,
-                        title: "Add unit tests",
-                        repository: "example/repo3",
-                        repositoryUrl: "https://github.com/example/repo3",
-                        url: "https://github.com/example/repo3/issues/103",
-                        labels: [
-                            { name: "testing", color: "e4e669" },
-                            { name: "good first issue", color: "7057ff" }
-                        ],
-                        created_at: "2023-07-03T08:00:00Z",
-                        updated_at: "2023-07-03T09:00:00Z",
-                        difficulty: 'easy',
-                        language: "Go",
-                        stars: 45,
-                        author: {
-                            login: "testuser",
-                            avatar_url: "https://avatars.githubusercontent.com/u/3?v=4"
-                        },
-                        comments: 0,
-                        state: 'open',
-                        assignee: null,
-                        priority: 'low'
-                    }
-                ],
+                goodIssues: flatIssues,
                 loading: { ...state.loading, goodIssues: false }
             }));
-        }, 1000);
+        } catch (e) {
+            set((state) => ({
+                goodIssues: [],
+                loading: { ...state.loading, goodIssues: false }
+            }));
+        }
     },
 
 
-    fetchEasyFixes: () => {
+    fetchEasyFixes: async () => {
         set((state) => ({
             loading: { ...state.loading, easyFixes: true }
         }));
-
-        setTimeout(() => {
-            set((state) => ({
-                easyFixes: [
-                    {
-                        id: 201,
-                        title: "Fix typo in README",
-                        repository: "example/repo1",
-                        repositoryUrl: "https://github.com/example/repo1",
-                        url: "https://github.com/example/repo1/issues/201",
-                        labels: [
-                            { name: "documentation", color: "0075ca" },
-                            { name: "easy", color: "bfe5bf" }
-                        ],
-                        created_at: "2023-07-04T11:00:00Z",
-                        updated_at: "2023-07-04T12:00:00Z",
-                        difficulty: 'easy',
-                        language: "Markdown",
-                        stars: 10,
-                        author: {
-                            login: "typo-fixer",
-                            avatar_url: "https://avatars.githubusercontent.com/u/4?v=4"
-                        },
-                        comments: 0,
-                        state: 'open',
-                        assignee: null,
-                        priority: 'low'
-                    },
-                    {
-                        id: 202,
-                        title: "Update package version",
-                        repository: "example/repo2",
-                        repositoryUrl: "https://github.com/example/repo2",
-                        url: "https://github.com/example/repo2/issues/202",
-                        labels: [
-                            { name: "maintenance", color: "cfd3d7" },
-                            { name: "easy", color: "bfe5bf" }
-                        ],
-                        created_at: "2023-07-05T10:00:00Z",
-                        updated_at: "2023-07-05T11:00:00Z",
-                        difficulty: 'easy',
-                        language: "JSON",
-                        stars: 5,
-                        author: {
-                            login: "maintainer",
-                            avatar_url: "https://avatars.githubusercontent.com/u/5?v=4"
-                        },
-                        comments: 1,
-                        state: 'open',
-                        assignee: null,
-                        priority: 'medium'
+        try {
+            // 1. Popüler 50 repo çek
+            const repoRes = await fetch('https://api.github.com/search/repositories?q=stars:%3E10000&sort=stars&order=desc&per_page=50');
+            const repoData = await repoRes.json();
+            if (!repoData.items || !Array.isArray(repoData.items)) throw new Error('Repo bulunamadı');
+            // 2. Her repo için yaygın kolay etiketleri ayrı ayrı arayarak issue çek (OR mantığı)
+            const easyLabels = ['easy', 'good first issue', 'help wanted', 'beginner', 'starter'];
+            const userToken = window.localStorage.getItem('github_token') || '';
+            const allIssues = await Promise.all(
+                repoData.items.map(async (repo: any) => {
+                    let issues: any[] = [];
+                    for (const label of easyLabels) {
+                        const found = await fetchIssuesFromGitHub({
+                            owner: repo.owner.login,
+                            repo: repo.name,
+                            labels: label,
+                            per_page: 5,
+                            state: 'open',
+                            token: userToken,
+                        });
+                        issues = issues.concat(found);
+                        if (issues.length >= 10) break;
                     }
-                ],
+                    const unique = issues.filter((item, idx, arr) => arr.findIndex(i => i.id === item.id) === idx);
+                    return unique.map(issue => {
+                        if (issue && issue.author && repo.owner.avatar_url) {
+                            issue.author.avatar_url = issue.author.avatar_url || repo.owner.avatar_url;
+                        }
+                        return issue;
+                    });
+                })
+            );
+            // Düzleştir ve ilk 50'yi al
+            const flatIssues = allIssues.flat().filter(Boolean).slice(0, 50);
+            set((state) => ({
+                easyFixes: flatIssues,
                 loading: { ...state.loading, easyFixes: false }
             }));
-        }, 500);
+        } catch (e) {
+            set((state) => ({
+                easyFixes: [],
+                loading: { ...state.loading, easyFixes: false }
+            }));
+        }
     },
 
 }))
