@@ -90,7 +90,7 @@ export function QuickWinsTable({
 
     // Get unique languages for filter dropdown
     const availableLanguages = useMemo(() => {
-        const languages = [...new Set(data.map(item => item.language).filter((lang): lang is string => typeof lang === 'string'))]
+        const languages = [...new Set(data.map(item => item.language).filter((lang): lang is string => typeof lang === 'string' && lang.trim() !== ''))]
         return languages.sort()
     }, [data])
 
@@ -205,17 +205,6 @@ export function QuickWinsTable({
             <CardContent>
                 {/* Filters */}
                 <div className="flex gap-4 mb-6">
-                    <div className="flex-1">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                            <Input
-                                placeholder="Search issues..."
-                                value={globalFilter ?? ''}
-                                onChange={(e) => setGlobalFilter(e.target.value)}
-                                className="pl-10"
-                            />
-                        </div>
-                    </div>
 
                     <Select value={languageFilter} onValueChange={setLanguageFilter}>
                         <SelectTrigger className="w-40">

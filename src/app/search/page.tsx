@@ -143,53 +143,41 @@ export default function SearchPage() {
   );
 
   // Scroll spy effect
- useEffect(() => {
-  const handleScroll = throttle(() => {
-    const sections = [
-      { id: "overview", ref: overviewRef },
-      { id: "behavior", ref: behaviorRef },
-      { id: "star", ref: starRef },
-      { id: "code", ref: codeRef },
-      { id: "code-review", ref: codeReviewRef },
-      { id: "issue", ref: issueRef },
-      { id: "monthly-stats", ref: monthlyStatsRef },
-      { id: "contribution-activities", ref: contributionActivitiesRef },
-    ];
+  useEffect(() => {
+    const handleScroll = throttle(() => {
+      const sections = [
+        { id: "overview", ref: overviewRef },
+        { id: "behavior", ref: behaviorRef },
+        { id: "star", ref: starRef },
+        { id: "code", ref: codeRef },
+        { id: "code-review", ref: codeReviewRef },
+        { id: "issue", ref: issueRef },
+        { id: "monthly-stats", ref: monthlyStatsRef },
+        { id: "contribution-activities", ref: contributionActivitiesRef },
+      ];
+      const scrollPosition = window.scrollY + 200; // 200px offset
+      let currentSection = sections[0].id;
 
-    const scrollPosition = window.scrollY;
-    const windowHeight = window.innerHeight;
-    const documentHeight = document.documentElement.scrollHeight;
-    const offset = 100;
-
-    let currentSection = sections[0].id;
-
-    // Eğer sayfanın en altındaysak, son section'ı aktif yap
-    if (scrollPosition + windowHeight >= documentHeight - 50) {
-      currentSection = sections[sections.length - 1].id;
-    } else {
-      // Normal scroll spy mantığı
+      // En alttaki section'ı bul
       for (let i = sections.length - 1; i >= 0; i--) {
         const element = sections[i].ref.current;
         if (element) {
           const rect = element.getBoundingClientRect();
-          const elementTop = scrollPosition + rect.top;
-          
-          if (scrollPosition + offset >= elementTop) {
+          const elementTop = element.offsetTop;
+
+          if (scrollPosition >= elementTop) {
             currentSection = sections[i].id;
             break;
           }
         }
       }
-    }
 
-    setActiveSection(currentSection);
-  }, 100);
+      setActiveSection(currentSection);
+    }, 100);
 
-  window.addEventListener("scroll", handleScroll, { passive: true });
-  handleScroll(); // İlk yükleme için
-  
-  return () => window.removeEventListener("scroll", handleScroll);
-}, [throttle]);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [throttle]);
 
   useEffect(() => {
     if (userParam || repoParam) {

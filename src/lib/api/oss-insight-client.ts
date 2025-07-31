@@ -8,13 +8,15 @@ import type {
 } from '@/types/oss-insight'
 
 class OSSInsightClient {
+
+  // ...existing code...
   private baseUrl = 'https://api.github.com'
   private cache = new Map<string, { data: any; timestamp: number }>()
   private cacheTimeout = 5 * 60 * 1000 // 5 minutes
   private githubBaseUrl = 'https://api.github.com'
   private githubToken = process.env.NEXT_PUBLIC_GITHUB_TOKEN || ''
 
- setUserToken(token: string) {
+  setUserToken(token: string) {
     if (!token || typeof token !== 'string' || token.trim().length === 0) {
       throw new Error('Invalid GitHub token: must be a non-empty string')
     }
@@ -773,9 +775,9 @@ class OSSInsightClient {
   }
 
   // ============ ACTION ITEMS API METHODS ============
-  
+
   // Get assigned issues and PRs for the authenticated user
-async getAssignedItems(username?: string): Promise<any[]> {
+  async getAssignedItems(username?: string): Promise<any[]> {
     if (!this.githubToken) {
       console.warn('No GitHub token available for assigned items')
       return []
@@ -784,7 +786,7 @@ async getAssignedItems(username?: string): Promise<any[]> {
       const user = username || '@me'
       const endpoint = `/search/issues?q=assignee:${user}+state:open&sort=updated&order=desc&per_page=50`
       const response = await this.fetchWithCache<any>(endpoint, true)
-      
+
       return response.items?.map((item: any) => ({
         id: item.id,
         title: item.title,
@@ -819,7 +821,7 @@ async getAssignedItems(username?: string): Promise<any[]> {
       // Get mentions in issues and PRs
       const mentionsEndpoint = `/search/issues?q=mentions:${user}+state:open&sort=updated&order=desc&per_page=25`
       const reviewRequestsEndpoint = `/search/issues?q=review-requested:${user}+state:open&sort=updated&order=desc&per_page=25`
-      
+
       const [mentionsResponse, reviewsResponse] = await Promise.all([
         this.fetchWithCache<any>(mentionsEndpoint, true),
         this.fetchWithCache<any>(reviewRequestsEndpoint, true)
@@ -841,10 +843,10 @@ async getAssignedItems(username?: string): Promise<any[]> {
       })) || []
 
       const reviews = reviewsResponse.items?.map((item: any) => ({
-        id: `review-${item.id}`, 
+        id: `review-${item.id}`,
         title: item.title,
-       repo: item.repository_url 
-         ? item.repository_url.split('/').slice(-2).join('/')
+        repo: item.repository_url
+          ? item.repository_url.split('/').slice(-2).join('/')
           : 'unknown/unknown',
         type: 'pr',
         priority: this.calculatePriority(item),
@@ -857,7 +859,7 @@ async getAssignedItems(username?: string): Promise<any[]> {
         mentionedAt: item.updated_at
       })) || []
 
-      return [...mentions, ...reviews].sort((a, b) => 
+      return [...mentions, ...reviews].sort((a, b) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       )
     } catch (error) {
@@ -878,19 +880,19 @@ async getAssignedItems(username?: string): Promise<any[]> {
       const date = new Date()
       date.setDate(date.getDate() - daysOld)
       const dateString = date.toISOString().split('T')[0]
-      
+
       // Search for PRs authored by user that are still open and haven't been updated recently
       const endpoint = `/search/issues?q=author:${user}+type:pr+state:open+updated:<${dateString}&sort=updated&order=asc&per_page=50`
       const response = await this.fetchWithCache<any>(endpoint, true)
-      
+
       return response.items?.map((item: any) => {
         const lastActivity = new Date(item.updated_at)
         const daysStale = Math.floor((Date.now() - lastActivity.getTime()) / (1000 * 60 * 60 * 24))
-        
+
         return {
           id: item.id,
           title: item.title,
-           repo: item.repository_url 
+          repo: item.repository_url
             ? item.repository_url.split('/').slice(-2).join('/')
             : 'unknown/unknown',
           type: 'pr',
@@ -912,12 +914,79 @@ async getAssignedItems(username?: string): Promise<any[]> {
     }
   }
 
+  private mapGitHubIssueToActionItem(issue: any, language?: string): any {
+    return {
+      id: issue.id,
+      title: issue.title,
+      repo: issue.repository_url ? issue.repository_url.split('/').slice(-2).join('/') : 'unknown/unknown',
+      type: 'issue',
+      priority: this.calculatePriority(issue),
+      url: issue.html_url,
+      createdAt: issue.created_at,
+      updatedAt: issue.updated_at,
+      author: issue.user?.login,
+      labels: issue.labels?.map((l: any) => l.name) || [],
+      language: language || 'Unknown',
+      stars: 0,
+      comments: issue.comments || 0,
+      difficulty: 'Easy'
+    };
+  }
+
+  // Good First Issues - Yeni başlayanlar için uygun issue'lar
+  async getGoodFirstIssues(language?: string, limit = 20): Promise<any[]> {
+    if (!this.githubToken) {
+      console.warn('No GitHub token available for good first issues')
+      return []
+    }
+
+    try {
+      let query = 'label:"good first issue" state:open'
+      if (language) {
+        query += ` language:${language}`
+      }
+
+      const endpoint = `/search/issues?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=${limit}`
+      const response = await this.fetchWithCache<any>(endpoint, true)
+
+      return response.items?.map((issue: any) => this.mapGitHubIssueToActionItem(issue, language)) || []
+    } catch (error) {
+      console.error('Failed to fetch good first issues:', error)
+      return []
+    }
+  }
+
+  // Easy Fixes - Basit düzeltmeler (documentation, typos, etc.)
+  async getEasyFixes(language?: string, limit = 50): Promise<any[]> {
+    if (!this.githubToken) {
+      console.warn('No GitHub token available for easy fixes')
+      return []
+    }
+
+    try {
+      const labels = ['documentation', 'typo', 'easy', 'beginner', 'help wanted']
+      const labelQuery = labels.map(label => `label:"${label}"`).join(' OR ')
+      let query = `(${labelQuery}) state:open`
+
+      if (language) {
+        query += ` language:${language}`
+      }
+
+      const endpoint = `/search/issues?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=${limit}`
+      const response = await this.fetchWithCache<any>(endpoint, true)
+
+      return response.items?.map((issue: any) => this.mapGitHubIssueToActionItem(issue, language)) || []
+    } catch (error) {
+      console.error('Failed to fetch easy fixes:', error)
+      return []
+    }
+  }
   // Helper method to calculate priority based on issue/PR data
   private calculatePriority(item: any): 'low' | 'medium' | 'high' | 'urgent' {
     const labels = item.labels?.map((l: any) => l.name.toLowerCase()) || []
     const commentCount = item.comments || 0
     const daysSinceUpdate = Math.floor((Date.now() - new Date(item.updated_at).getTime()) / (1000 * 60 * 60 * 24))
-    
+
     // Check for priority labels
     if (labels.some((l: string) => l.includes('critical') || l.includes('urgent') || l.includes('p0'))) {
       return 'urgent'
@@ -928,7 +997,7 @@ async getAssignedItems(username?: string): Promise<any[]> {
     if (labels.some((l: string) => l.includes('low') || l.includes('p3') || l.includes('enhancement'))) {
       return 'low'
     }
-    
+
     // Priority based on activity
     if (commentCount > 10 || daysSinceUpdate < 1) {
       return 'high'
@@ -936,7 +1005,7 @@ async getAssignedItems(username?: string): Promise<any[]> {
     if (commentCount > 5 || daysSinceUpdate < 3) {
       return 'medium'
     }
-    
+
     return 'low'
   }
 }
@@ -1148,12 +1217,6 @@ export const categorizeRepositories = (repos: TrendingRepo[]) => {
 }
 
 
-
-
-
-
-
-// Error handling utilities
 export const handleAPIError = (error: any, context: string) => {
   console.error(`OSS Insight API Error in ${context}:`, error)
 
