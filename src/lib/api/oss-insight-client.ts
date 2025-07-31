@@ -9,25 +9,7 @@ import type {
 
 class OSSInsightClient {
 
-  // Helper to map GitHub issue to action item format (for easy fixes)
-  private mapGitHubIssueToActionItem(issue: any, language?: string) {
-    return {
-      id: issue.id,
-      title: issue.title,
-      repo: issue.repository_url ? issue.repository_url.split('/').slice(-2).join('/') : 'unknown/unknown',
-      type: 'issue',
-      priority: this.calculatePriority(issue),
-      url: issue.html_url,
-      createdAt: issue.created_at,
-      updatedAt: issue.updated_at,
-      author: issue.user?.login,
-      labels: issue.labels?.map((l: any) => l.name) || [],
-      language: language || 'Unknown',
-      stars: 0,
-      comments: issue.comments || 0,
-      difficulty: 'Easy'
-    }
-  }
+  // ...existing code...
   private baseUrl = 'https://api.github.com'
   private cache = new Map<string, { data: any; timestamp: number }>()
   private cacheTimeout = 5 * 60 * 1000 // 5 minutes
@@ -932,7 +914,24 @@ class OSSInsightClient {
     }
   }
 
-  // ============ QUICK WINS API METHODS ============
+  private mapGitHubIssueToActionItem(issue: any, language?: string): any {
+    return {
+      id: issue.id,
+      title: issue.title,
+      repo: issue.repository_url ? issue.repository_url.split('/').slice(-2).join('/') : 'unknown/unknown',
+      type: 'issue',
+      priority: this.calculatePriority(issue),
+      url: issue.html_url,
+      createdAt: issue.created_at,
+      updatedAt: issue.updated_at,
+      author: issue.user?.login,
+      labels: issue.labels?.map((l: any) => l.name) || [],
+      language: language || 'Unknown',
+      stars: 0,
+      comments: issue.comments || 0,
+      difficulty: 'Easy'
+    };
+  }
 
   // Good First Issues - Yeni başlayanlar için uygun issue'lar
   async getGoodFirstIssues(language?: string, limit = 20): Promise<any[]> {
@@ -976,22 +975,7 @@ class OSSInsightClient {
       const endpoint = `/search/issues?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=${limit}`
       const response = await this.fetchWithCache<any>(endpoint, true)
 
-      return response.items?.map((issue: any) => ({
-        id: issue.id,
-        title: issue.title,
-        repo: issue.repository_url ? issue.repository_url.split('/').slice(-2).join('/') : 'unknown/unknown',
-        type: 'issue',
-        priority: this.calculatePriority(issue),
-        url: issue.html_url,
-        createdAt: issue.created_at,
-        updatedAt: issue.updated_at,
-        author: issue.user?.login,
-        labels: issue.labels?.map((l: any) => l.name) || [],
-        language: language || 'Unknown',
-        stars: 0,
-        comments: issue.comments || 0,
-        difficulty: 'Easy'
-      })) || []
+      return response.items?.map((issue: any) => this.mapGitHubIssueToActionItem(issue, language)) || []
     } catch (error) {
       console.error('Failed to fetch easy fixes:', error)
       return []
