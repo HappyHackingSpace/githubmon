@@ -950,6 +950,32 @@ class OSSInsightClient {
       const endpoint = `/search/issues?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=${limit}`
       const response = await this.fetchWithCache<any>(endpoint, true)
 
+      return response.items?.map((issue: any) => this.mapGitHubIssueToActionItem(issue, language)) || []
+    } catch (error) {
+      console.error('Failed to fetch good first issues:', error)
+      return []
+    }
+  }
+
+  // Easy Fixes - Basit düzeltmeler (documentation, typos, etc.)
+  async getEasyFixes(language?: string, limit = 50): Promise<any[]> {
+    if (!this.githubToken) {
+      console.warn('No GitHub token available for easy fixes')
+      return []
+    }
+
+    try {
+      const labels = ['documentation', 'typo', 'easy', 'beginner', 'help wanted']
+      const labelQuery = labels.map(label => `label:"${label}"`).join(' OR ')
+      let query = `(${labelQuery}) state:open`
+
+      if (language) {
+        query += ` language:${language}`
+      }
+
+      const endpoint = `/search/issues?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=${limit}`
+      const response = await this.fetchWithCache<any>(endpoint, true)
+
       return response.items?.map((issue: any) => ({
         id: issue.id,
         title: issue.title,
@@ -967,38 +993,10 @@ class OSSInsightClient {
         difficulty: 'Easy'
       })) || []
     } catch (error) {
-      console.error('Failed to fetch good first issues:', error)
-      return []
-    }
-  }
-
-  // Easy Fixes - Basit düzeltmeler (documentation, typos, etc.)
-  async getEasyFixes(language?: string, limit = 20): Promise<any[]> {
-    if (!this.githubToken) {
-      console.warn('No GitHub token available for easy fixes')
-      return []
-    }
-
-    try {
-      const labels = ['documentation', 'typo', 'easy', 'beginner', 'help wanted']
-      // Use parentheses to group OR label queries for GitHub search
-      const labelQuery = labels.map(label => `label:\"${label}\"`).join(' OR ')
-      let query = `(${labelQuery}) state:open`
-
-      if (language) {
-        query += ` language:${language}`
-      }
-
-      const endpoint = `/search/issues?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=${limit}`
-      const response = await this.fetchWithCache<any>(endpoint, true)
-
-      return response.items?.map((issue: any) => this.mapGitHubIssueToActionItem(issue, language)) || []
-    } catch (error) {
       console.error('Failed to fetch easy fixes:', error)
       return []
     }
   }
-
   // Helper method to calculate priority based on issue/PR data
   private calculatePriority(item: any): 'low' | 'medium' | 'high' | 'urgent' {
     const labels = item.labels?.map((l: any) => l.name.toLowerCase()) || []

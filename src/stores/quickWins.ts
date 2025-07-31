@@ -1,36 +1,58 @@
+import { create } from 'zustand'
+import { fetchIssuesFromGitHub } from '@/lib/api/github'
+import { GitHubIssue } from '@/types/quickWins'
+
 // Helper method to fetch issues from popular repos
 async function fetchIssuesFromPopularRepos(
     labelQuery: string,
     issuesPerRepo: number = 10
 ): Promise<GitHubIssue[]> {
-    const repoRes = await fetch('https://api.github.com/search/repositories?q=stars:%3E10000&sort=stars&order=desc&per_page=50');
-    const repoData = await repoRes.json();
-    if (!repoData.items || !Array.isArray(repoData.items)) throw new Error('Repo bulunamadı');
-    const userToken = window.localStorage.getItem('github_token') || '';
-    const batchSize = 5;
-    const allIssues = [];
-    for (let i = 0; i < repoData.items.length; i += batchSize) {
-        const batch = repoData.items.slice(i, i + batchSize);
-        const batchResults = await Promise.all(
-            batch.map(async (repo: any) => {
-                const issues = await fetchIssuesFromGitHub({
-                    owner: repo.owner.login,
-                    repo: repo.name,
-                    labels: labelQuery,
-                    per_page: issuesPerRepo,
-                    state: 'open',
-                    token: userToken,
-                });
-                return issues;
-            })
-        );
-        allIssues.push(...batchResults);
+    try {
+        const repoRes = await fetch('https://api.github.com/search/repositories?q=stars:%3E10000&sort=stars&order=desc&per_page=50');
+
+        if (!repoRes.ok) {
+            throw new Error(`GitHub API error: ${repoRes.status}`);
+        }
+
+        const repoData = await repoRes.json();
+
+        if (!repoData.items || !Array.isArray(repoData.items)) {
+            throw new Error('Repo bulunamadı');
+        }
+
+        const userToken = window.localStorage.getItem('github_token') || '';
+        const batchSize = 5;
+        const allIssues: GitHubIssue[][] = [];
+
+        for (let i = 0; i < repoData.items.length; i += batchSize) {
+            const batch = repoData.items.slice(i, i + batchSize);
+            const batchResults = await Promise.all(
+                batch.map(async (repo: any) => {
+                    try {
+                        const issues = await fetchIssuesFromGitHub({
+                            owner: repo.owner.login,
+                            repo: repo.name,
+                            labels: labelQuery,
+                            per_page: issuesPerRepo,
+                            state: 'open',
+                            token: userToken,
+                        });
+                        return issues;
+                    } catch (error) {
+                        console.warn(`Failed to fetch issues from ${repo.name}:`, error);
+                        return [];
+                    }
+                })
+            );
+            allIssues.push(...batchResults);
+        }
+
+        return allIssues.flat().filter(Boolean).slice(0, 50);
+    } catch (error) {
+        console.error('Error fetching issues from popular repos:', error);
+        throw error;
     }
-    return allIssues.flat().filter(Boolean).slice(0, 50);
 }
-import { create } from 'zustand'
-import { fetchIssuesFromGitHub } from '@/lib/api/github'
-import { GitHubIssue } from '@/types/quickWins'
 
 interface QuickWinsState {
     goodIssues: GitHubIssue[]
@@ -39,79 +61,63 @@ interface QuickWinsState {
         goodIssues: boolean
         easyFixes: boolean
     }
-    fetchGoodIssues: () => void
-    fetchEasyFixes: () => void
+    error: {
+        goodIssues: string | null
+        easyFixes: string | null
+    }
+    fetchGoodIssues: () => Promise<void>
+    fetchEasyFixes: () => Promise<void>
 }
 
 export const useQuickWinsStore = create<QuickWinsState>((set) => ({
     goodIssues: [],
     easyFixes: [],
     loading: { goodIssues: false, easyFixes: false },
-
+    error: { goodIssues: null, easyFixes: null },
 
     fetchGoodIssues: async () => {
         set((state) => ({
-            loading: { ...state.loading, goodIssues: true }
+            loading: { ...state.loading, goodIssues: true },
+            error: { ...state.error, goodIssues: null }
         }));
+
         try {
-            const repoRes = await fetch('https://api.github.com/search/repositories?q=stars:%3E10000&sort=stars&order=desc&per_page=50');
-            const repoData = await repoRes.json();
-            if (!repoData.items || !Array.isArray(repoData.items)) throw new Error('Repo bulunamadı');
-            // 2. Her repo için 'good first issue' label'lı issue çek
-            const userToken = window.localStorage.getItem('github_token') || '';
-            // Process in smaller batches to avoid rate limits
-            const batchSize = 5;
-            const allIssues = [];
-            for (let i = 0; i < repoData.items.length; i += batchSize) {
-                const batch = repoData.items.slice(i, i + batchSize);
-                const batchResults = await Promise.all(
-                    batch.map(async (repo: any) => {
-                        const issues = await fetchIssuesFromGitHub({
-                            owner: repo.owner.login,
-                            repo: repo.name,
-                            labels: 'good first issue',
-                            per_page: 10,
-                            state: 'open',
-                            token: userToken,
-                        });
-                        // ... existing mapping logic ...
-                        return issues;
-                    })
-                );
-                allIssues.push(...batchResults);
-            }
-            // Düzleştir ve ilk 50'yi al
-            const flatIssues = allIssues.flat().filter(Boolean).slice(0, 50);
+            const flatIssues = await fetchIssuesFromPopularRepos('good first issue', 10);
             set((state) => ({
                 goodIssues: flatIssues,
-                loading: { ...state.loading, goodIssues: false }
+                loading: { ...state.loading, goodIssues: false },
+                error: { ...state.error, goodIssues: null }
             }));
-        } catch (e) {
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
             set((state) => ({
                 goodIssues: [],
-                loading: { ...state.loading, goodIssues: false }
+                loading: { ...state.loading, goodIssues: false },
+                error: { ...state.error, goodIssues: errorMessage }
             }));
         }
     },
 
     fetchEasyFixes: async () => {
         set((state) => ({
-            loading: { ...state.loading, easyFixes: true }
+            loading: { ...state.loading, easyFixes: true },
+            error: { ...state.error, easyFixes: null }
         }));
+
         try {
-            // Use GitHub's OR syntax in a single query
-            const labelQuery = 'label:easy OR label:"good first issue" OR label:"help wanted" OR label:beginner OR label:starter';
-            const issues = await fetchIssuesFromPopularRepos(labelQuery, 10);
+            const flatIssues = await fetchIssuesFromPopularRepos('easy fix', 10);
             set((state) => ({
-                easyFixes: issues,
-                loading: { ...state.loading, easyFixes: false }
+                easyFixes: flatIssues,
+                loading: { ...state.loading, easyFixes: false },
+                error: { ...state.error, easyFixes: null }
             }));
-        } catch (e) {
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
             set((state) => ({
                 easyFixes: [],
-                loading: { ...state.loading, easyFixes: false }
+                loading: { ...state.loading, easyFixes: false },
+                error: { ...state.error, easyFixes: errorMessage }
             }));
         }
-    },
-
-}))
+    }
+}));

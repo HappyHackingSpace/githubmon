@@ -184,7 +184,7 @@ export function Sidebar() {
 
               <Collapsible defaultOpen={isQuickWinsTab}>
                 <CollapsibleTrigger asChild>
-                  <Link href="/quick-wins?tab=good-issues" className={`
+                  <Link href="/dashboard?tab=good-first-issues" className={`
                     flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors
                     ${isQuickWinsTab
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
