@@ -3,17 +3,14 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
 interface UserPreferencesState {
-  // Theme (sync with ThemeProvider)
   theme: 'light' | 'dark' | 'system'
 
-  // Search preferences
   defaultSearchType: 'all' | 'repos' | 'users'
   searchResultsPerPage: number
 
-  // Dashboard preferences
   defaultPeriod: '24h' | '7d' | '30d'
   favoriteLanguages: string[]
-  pinnedRepos: string[] // repo full_names
+  pinnedRepos: string[] 
 
   // UI preferences
   sidebarCollapsed: boolean

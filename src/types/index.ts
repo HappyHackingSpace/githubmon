@@ -41,7 +41,6 @@ export type {
   GitHubAPIHeaders,
   GitHubResponseHeaders,
   GitHubClientConfig,
-  OSSInsightClientConfig,
   APIClient,
   RequestConfig,
   APIResponse as GenericAPIResponse,

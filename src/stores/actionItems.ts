@@ -1,7 +1,7 @@
 // stores/actionItems.ts
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { ossInsightClient } from '@/lib/api/oss-insight-client'
+import { githubAPIClient } from '@/lib/api/github-api-client'
 import { useAuthStore } from './auth'
 
 export interface ActionItem {
@@ -171,7 +171,7 @@ export const useActionItemsStore = create<ActionItemsState>()(
         }
         
         // Set the user token in the API client
-        ossInsightClient.setUserToken(userToken)
+        githubAPIClient.setUserToken(userToken)
         
         const types = type ? [type] : ['assigned', 'mentions', 'stale'] as const
         
@@ -183,11 +183,11 @@ export const useActionItemsStore = create<ActionItemsState>()(
             
             switch (t) {
               case 'assigned':
-                items = await ossInsightClient.getAssignedItems(username)
+                items = await githubAPIClient.getAssignedItems(username)
                 get().setAssignedItems(items.map(item => ({ ...item, assignedAt: item.assignedAt || item.createdAt })))
                 break
               case 'mentions':
-                items = await ossInsightClient.getMentionItems(username)
+                items = await githubAPIClient.getMentionItems(username)
                 get().setMentionItems(items.map(item => ({ 
                   ...item, 
                   mentionType: item.mentionType || 'mention',
@@ -195,7 +195,7 @@ export const useActionItemsStore = create<ActionItemsState>()(
                 })))
                 break
               case 'stale':
-                items = await ossInsightClient.getStaleItems(username)
+                items = await githubAPIClient.getStaleItems(username)
                 get().setStaleItems(items.map(item => ({ 
                   ...item, 
                   lastActivity: item.lastActivity || item.updatedAt,

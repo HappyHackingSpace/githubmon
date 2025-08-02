@@ -268,13 +268,6 @@ export interface GitHubClientConfig {
   userAgent?: string
 }
 
-export interface OSSInsightClientConfig {
-  baseUrl?: string
-  timeout?: number
-  retries?: number
-  cacheTimeout?: number
-}
-
 // Generic API Types
 export interface APIClient {
   get<T>(endpoint: string, config?: RequestConfig): Promise<T>

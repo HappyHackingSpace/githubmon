@@ -1,12 +1,10 @@
-// stores/index.ts - Sadece mevcut olanları export et
+
 import { useEffect, useState } from 'react'
 import { useAuthStore } from './auth'
 import { usePreferencesStore } from './preferences'
 import { useSearchStore } from './search'
 import { useDataCacheStore } from './cache'
 import { useAppStore } from './app'
-
-// Re-export all stores (sadece mevcut olanlar)
 export { useAuthStore } from './auth'
 export { usePreferencesStore } from './preferences'
 export { useSearchStore } from './search'
@@ -14,12 +12,9 @@ export { useDataCacheStore } from './cache'
 export { useAppStore } from './app'
 export { useActionItemsStore } from './actionItems'
 
-// BU SATIRLARI KALDIRDIK - henüz dosyalar yok
-// export { useActionItemsStore } from './actionItems'  ❌ KALDIRDIK
-// export { useQuickWinsStore } from './quickWins'       ❌ KALDIRDIK
 
 // ============ HYDRATION HOOK ============
-// Singleton hydration state
+
 let hydrationPromise: Promise<void> | null = null
 let isHydrated = false
 
@@ -142,15 +137,7 @@ export const useDataCache = () => {
 
   if (!hasHydrated) {
     return {
-      trendingRepos_24h: null,
-      trendingRepos_7d: null,
-      trendingRepos_30d: null,
-      topLanguages: null,
-      contributors: null,
       rateLimitInfo: null,
-      setCachedData: () => { },
-      getCachedData: () => null,
-      clearCache: () => { },
       setRateLimit: () => { }
     }
   }
