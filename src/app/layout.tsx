@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
+import { AuthProvider } from '@/components/providers/AuthProvider'
+import { OAuthSessionSync } from '@/components/providers/OAuthSessionSync'
 
 import { HydrationBoundary } from "@/components/providers/HydrationBoundary";
 import { NotificationProvider } from "@/components/common/NotificationProvider";
@@ -33,12 +35,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider defaultTheme="system" storageKey="githubmon-theme">
-   <HydrationBoundary>
-      {children}
-       <NotificationProvider />
-    </HydrationBoundary>
-  </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider defaultTheme="system" storageKey="githubmon-theme">
+            <HydrationBoundary>
+              <OAuthSessionSync />
+              {children}
+              <NotificationProvider />
+            </HydrationBoundary>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
