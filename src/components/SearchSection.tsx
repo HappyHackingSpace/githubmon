@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { ossInsightClient } from '@/lib/api/oss-insight-client'
+import { githubAPIClient } from '@/lib/api/github-api-client'
 
 interface SearchSectionProps {
   onSearchResults?: (results: any[]) => void
@@ -25,9 +25,9 @@ export function SearchSection({ onSearchResults, className }: SearchSectionProps
       let results: unknown[] = []
 
       if (searchType === 'repos') {
-        results = await ossInsightClient.searchRepositories(searchQuery)
+        results = await githubAPIClient.searchRepositories(searchQuery)
       } else {
-        results = await ossInsightClient.searchUsers(searchQuery, searchType === 'users' ? 'users' : 'orgs')
+        results = await githubAPIClient.searchUsers(searchQuery, searchType === 'users' ? 'users' : 'orgs')
       }
 
       onSearchResults?.(results)

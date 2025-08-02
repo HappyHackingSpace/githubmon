@@ -22,7 +22,7 @@ import {
 } from "@/components/layout/SidebarSearch";
 import { useSearchStore, useSidebarState } from "@/stores";
 import { SearchModal } from "@/components/search/SearchModal";
-import { ossInsightClient } from "@/lib/api/oss-insight-client";
+import { githubAPIClient } from "@/lib/api/github-api-client";
 import {
   Star,
   GitFork,
@@ -200,7 +200,7 @@ export default function SearchPage() {
 
     try {
       if (type === "users") {
-        const users = await ossInsightClient.searchUsers(query, "all", 20);
+        const users = await githubAPIClient.searchUsers(query, "all", 20);
         setSearchResults({
           repos: [],
           users: users || [],
@@ -208,7 +208,7 @@ export default function SearchPage() {
           error: null,
         });
       } else {
-        const repos = await ossInsightClient.searchRepositories(
+        const repos = await githubAPIClient.searchRepositories(
           query,
           "stars",
           20
@@ -234,9 +234,9 @@ export default function SearchPage() {
   const loadUserAnalytics = async (username: string) => {
     setLoadingAnalytics(true);
     try {
-      // Use real API to get user analytics
-      const analytics = await ossInsightClient.getUserAnalytics(username);
-      setUserAnalytics(analytics);
+      // User analytics method was removed - no longer available
+      console.log("User analytics feature temporarily disabled");
+      setUserAnalytics(null);
     } catch (error) {
       console.error("Analytics error:", error);
       // Fallback to null if API fails

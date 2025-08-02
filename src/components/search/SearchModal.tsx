@@ -17,7 +17,7 @@ import {
   GitBranch,
   Users,
 } from "lucide-react";
-import { ossInsightClient } from "@/lib/api/oss-insight-client";
+import { githubAPIClient } from "@/lib/api/github-api-client";
 import {
   useSearchStore,
   usePreferencesStore,
@@ -83,10 +83,10 @@ export function SearchModal() {
     try {
       const promises: [Promise<TrendingRepo[]>, Promise<TopContributor[]>] = [
         type === "all" || type === "repos"
-          ? ossInsightClient.searchRepositories(searchQuery, "stars", 10)
+          ? githubAPIClient.searchRepositories(searchQuery, "stars", 10)
           : Promise.resolve([]),
         type === "all" || type === "users"
-          ? ossInsightClient.searchUsers(searchQuery, "all", 10)
+          ? githubAPIClient.searchUsers(searchQuery, "all", 10)
           : Promise.resolve([]),
       ];
 
