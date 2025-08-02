@@ -8,11 +8,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { isOpen, setOpen } = useSidebarState()
 
   return (
-    <div className="flex  overflow-hidden">
+    <div className="flex">
       <Sidebar />
       <SidebarToggle onClick={() => setOpen(true)} />
 
-      <main className="flex-1 overflow-y-auto lg:ml-0">
+      <main>
         {children}
       </main>
     </div>

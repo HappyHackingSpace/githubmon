@@ -14,30 +14,16 @@ import { Search, User, LogOut, BarChart3 } from 'lucide-react'
 
 export function Header() {
   const {
-    currentQuery,
-    currentSearchType,
     setSearchModalOpen,
-    setCurrentQuery,
-    setCurrentSearchType
+ 
   } = useSearchStore()
 
-  const { isConnected, orgData, logout } = useAuthStore()
-  const hasHydrated = useStoreHydration()
+
   const router = useRouter()
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    setSearchModalOpen(true)
-  }
 
-  const handleInputClick = () => {
-    setSearchModalOpen(true)
-  }
 
-  const handleLogout = () => {
-    logout()
-    router.push('/')
-  }
+
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">
