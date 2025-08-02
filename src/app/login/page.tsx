@@ -1,229 +1,69 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-
-import { useAuthStore } from '@/stores'
 import { useRequireGuest } from '@/hooks/useAuth'
 
 export default function LoginPage() {
-  const [token, setToken] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const router = useRouter()
-  const { isLoading: authLoading } = useRequireGuest()
-  const { setOrgData, setConnected, setTokenExpiry } = useAuthStore()
+  const { isLoading: authLoading, isAuthenticated } = useRequireGuest()
 
-
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError('')
-
-    try {
-      const response = await fetch('https://api.github.com/user', {
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error('Invalid token. Please check your token.')
-      }
-
-      const userData = await response.json()
-
-
-      const expiryDate = new Date()
-      expiryDate.setDate(expiryDate.getDate() + 90) // 90 gün sonra
-
-      setOrgData({
-        orgName: userData.login,
-        token: token.trim()
-      })
-      setTokenExpiry(expiryDate.toISOString())
-      setConnected(true)
-
-      // History replacement - kullanıcının geri gidememesi için
-      router.replace('/dashboard')
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
-    } finally {
-      setIsLoading(false)
-    }
+  // If authenticated, redirect will be handled by middleware
+  if (!authLoading && isAuthenticated) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
+      </div>
+    )
   }
 
-  const continueWithoutToken = () => {
-    setOrgData({ orgName: 'guest', token: '' })
-    setConnected(true)
-    router.replace('/dashboard') // History replacement
+  if (authLoading) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
+      </div>
+    )
   }
 
   return (
-    <div className="h-screen bg-background flex items-center justify-center p-3">
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-4 h-full max-h-[95vh]">
-
-        {/* Left Column - Token Guide */}
-        <Card className="shadow-xl flex flex-col overflow-hidden">
-          <CardHeader className="text-center pb-3 border-b">
-            <h1 className="text-2xl font-bold text-foreground mb-1">GitHubMon</h1>
-            <p className="text-sm text-muted-foreground">GitHub organization analytics</p>
+    <div className="h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <Card className="shadow-xl">
+          <CardHeader className="text-center pb-6 space-y-2">
+            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <CardTitle className="text-2xl font-bold">GitHubMon</CardTitle>
+            <p className="text-muted-foreground text-sm">
+              GitHub organization analytics and monitoring
+            </p>
           </CardHeader>
 
-          <CardContent className="flex-1 p-4 space-y-4 overflow-y-auto">
-            {/* Rate Limits */}
-            <div>
-              <h2 className="text-base font-semibold mb-2 flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                Why GitHub Token?
-              </h2>
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <div className="text-center p-2 border rounded">
-                  <div className="text-xs text-muted-foreground mb-1">Without</div>
-                  <Badge variant="destructive" className="text-xs">60/hour</Badge>
-                </div>
-                <div className="text-center p-2 border rounded">
-                  <div className="text-xs text-muted-foreground mb-1">With</div>
-                  <Badge variant="default" className="text-xs">5,000/hour</Badge>
-                </div>
-              </div>
+          <CardContent className="space-y-6 pb-8">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold">Welcome Back</h3>
+              <p className="text-sm text-muted-foreground">
+                Sign in with your GitHub account to continue
+              </p>
             </div>
 
-            {/* How to Get Token */}
-            <div>
-              <h2 className="text-base font-semibold mb-2 flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                Get Token Steps
-              </h2>
-              <div className="space-y-2">
-                <div className="flex items-start space-x-2 p-2 bg-muted/30 rounded">
-                  <div className="w-5 h-5 flex items-center justify-center bg-primary text-primary-foreground rounded-full text-xs font-bold">1</div>
-                  <div>
-                    <p className="font-medium text-sm">GitHub Settings</p>
-                    <p className="text-xs text-muted-foreground">Developer settings</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-2 p-2 bg-muted/30 rounded">
-                  <div className="w-5 h-5 flex items-center justify-center bg-primary text-primary-foreground rounded-full text-xs font-bold">2</div>
-                  <div>
-                    <p className="font-medium text-sm">Generate token</p>
-                    <p className="text-xs text-muted-foreground">Use "classic" option</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-2 p-2 bg-muted/30 rounded">
-                  <div className="w-5 h-5 flex items-center justify-center bg-primary text-primary-foreground rounded-full text-xs font-bold">3</div>
-                  <div>
-                    <p className="font-medium text-sm">Select permissions</p>
-                    <div className="text-xs text-muted-foreground">
-                      ✅ <code className="bg-background px-1 rounded">repo</code> & <code className="bg-background px-1 rounded">user</code>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3">
-                <a
-                  href="https://github.com/settings/tokens"
-                  target="_blank"
-                  className="inline-flex items-center gap-1 text-primary hover:underline text-sm font-medium"
-                >
-                  Create Token →
-                </a>
-              </div>
-            </div>
+            <Button
+              onClick={() => signIn('github', { callbackUrl: '/dashboard' })}
+              className="w-full h-12 font-semibold text-base"
+              size="lg"
+            >
+              <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
+              </svg>
+              Continue with GitHub
+            </Button>
 
-            {/* Security */}
-            <div>
-              <h2 className="text-base font-semibold mb-2 flex items-center gap-2">
-                <span>🔒</span>
-                Security
-              </h2>
-              <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 bg-primary rounded-full"></div>
-                  Browser only
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 bg-primary rounded-full"></div>
-                  Not sent to servers
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 bg-primary rounded-full"></div>
-                  Auto-delete (1 month)
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 bg-primary rounded-full"></div>
-                  Logout anytime
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Right Column - Login Form */}
-        <Card className="shadow-xl flex flex-col">
-          <CardHeader className="text-center pb-3 border-b">
-            <CardTitle className="text-xl font-bold">Login with GitHub Token</CardTitle>
-            <p className="text-muted-foreground text-sm">Enter your personal access token</p>
-          </CardHeader>
-
-          <CardContent className="flex-1 flex flex-col justify-center p-4">
-            <div className="max-w-md mx-auto w-full space-y-4">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold">
-                    GitHub Personal Access Token
-                  </label>
-                  <Input
-                    type="password"
-                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                    value={token}
-                    onChange={(e) => setToken(e.target.value)}
-                    required
-                    className="font-mono text-sm h-10"
-                  />
-                  {error && (
-                    <div className="p-2 bg-destructive/10 border border-destructive/20 rounded">
-                      <p className="text-destructive text-sm">{error}</p>
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full h-10 font-semibold"
-                  disabled={isLoading || !token.trim()}
-                >
-                  {isLoading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
-                      Verifying...
-                    </div>
-                  ) : (
-                    'Login'
-                  )}
-                </Button>
-              </form>
-
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-3 bg-background text-muted-foreground">or</span>
-                </div>
-              </div>
-              <div className="text-center pt-3">
-                <p className="text-sm text-muted-foreground">
-                  Already have an account? Enter your token above.
-                </p>
-              </div>
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">
+                By signing in, you agree to our terms of service and privacy policy
+              </p>
             </div>
           </CardContent>
         </Card>
