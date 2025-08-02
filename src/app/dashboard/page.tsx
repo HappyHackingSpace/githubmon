@@ -29,7 +29,7 @@ interface ActionItem {
 }
 
 export default function DashboardPage() {
-  const { isLoading, orgData } = useRequireAuth()
+  const { isLoading, orgData, isAuthenticated } = useRequireAuth()
   const { setSearchModalOpen } = useSearchStore()
   const {
     assignedItems,
@@ -46,7 +46,13 @@ export default function DashboardPage() {
   // Get current tab from URL or default to 'assigned'
   const currentTab = searchParams.get('tab') || 'assigned'
 
-
+  // Additional protection - if not authenticated after hydration, redirect
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace('/')
+      return
+    }
+  }, [isLoading, isAuthenticated, router])
 
   useEffect(() => {
     if (orgData?.token) {
