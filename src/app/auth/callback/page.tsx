@@ -5,20 +5,32 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores'
 
+// Type assertion for extended session
+interface ExtendedSession {
+  accessToken?: string
+  user?: {
+    login?: string
+    name?: string | null
+    email?: string | null
+    image?: string | null
+  }
+}
+
 export default function AuthCallback() {
   const { data: session, status } = useSession()
   const router = useRouter()  
   const { setOrgData, setConnected, setTokenExpiry } = useAuthStore()
 
 useEffect(() => {
-    if (status === 'authenticated' && session?.accessToken && session.user) {
+    const extendedSession = session as ExtendedSession
+    if (status === 'authenticated' && extendedSession?.accessToken && extendedSession.user) {
       try {
         // Set auth data from OAuth session
         const expiryDate = new Date()
         expiryDate.setDate(expiryDate.getDate() + 30) // 30 days - more conservative
         setOrgData({
-          orgName: session.user.login || session.user.name || 'Unknown',
-          token: session.accessToken
+          orgName: extendedSession.user.login || extendedSession.user.name || 'Unknown',
+          token: extendedSession.accessToken
         })
         setTokenExpiry(expiryDate.toISOString())
         setConnected(true)

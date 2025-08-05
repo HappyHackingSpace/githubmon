@@ -15,18 +15,23 @@ const authOptions = {
   ],
   callbacks: {
     async jwt({ token, account, profile }: { 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       token: any; 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       account: any; 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       profile?: any 
     }) {
-      if (account) {
+      if (account?.access_token) {
         token.accessToken = account.access_token
         token.login = profile?.login
       }
       return token
     },
     async session({ session, token }: { 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       session: any; 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       token: any 
     }) {
       if (token.accessToken) {

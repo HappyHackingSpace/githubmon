@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import Image from "next/image";
 import {
   Dialog,
@@ -117,20 +117,17 @@ export function SearchModal() {
     }
   }, [currentResults.repos, currentResults.users, setSearchResults, addToHistory, addNotification]);
 
-  const debounceSearch = useCallback(
-    (() => {
-      let timeout: NodeJS.Timeout;
-      return (query: string, type: "all" | "repos" | "users") => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => performSearch(query, type), 800);
-      };
-    })(),
-    [performSearch]
-  );
+  const [debouncedSearch] = useState(() => {
+    let timeout: NodeJS.Timeout;
+    return (query: string, type: "all" | "repos" | "users") => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => performSearch(query, type), 800);
+    };
+  });
 
   useEffect(() => {
-    debounceSearch(currentQuery, currentSearchType);
-  }, [currentQuery, currentSearchType, debounceSearch]);
+    debouncedSearch(currentQuery, currentSearchType);
+  }, [currentQuery, currentSearchType, debouncedSearch]);
 
   useEffect(() => {
     if (!isSearchModalOpen) {
@@ -231,7 +228,7 @@ export function SearchModal() {
               </div>
               <Button
                 variant="outline"
-                onClick={() => debounceSearch(currentQuery, currentSearchType)}
+                onClick={() => debouncedSearch(currentQuery, currentSearchType)}
               >
                 Try Again
               </Button>
