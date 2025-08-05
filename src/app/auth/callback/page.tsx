@@ -10,23 +10,23 @@ export default function AuthCallback() {
   const router = useRouter()  
   const { setOrgData, setConnected, setTokenExpiry } = useAuthStore()
 
-  useEffect(() => {
+useEffect(() => {
     if (status === 'authenticated' && session?.accessToken && session.user) {
-      // Set auth data from OAuth session
-      const expiryDate = new Date()
-      expiryDate.setDate(expiryDate.getDate() + 90) // 90 days
-
-      setOrgData({
-        orgName: session.user.login || session.user.name || 'Unknown',
-        token: session.accessToken
-      })
-      setTokenExpiry(expiryDate.toISOString())
-      setConnected(true)
-
-      // Small delay to ensure state is updated before redirect
-      setTimeout(() => {
+      try {
+        // Set auth data from OAuth session
+        const expiryDate = new Date()
+        expiryDate.setDate(expiryDate.getDate() + 30) // 30 days - more conservative
+        setOrgData({
+          orgName: session.user.login || session.user.name || 'Unknown',
+          token: session.accessToken
+        })
+        setTokenExpiry(expiryDate.toISOString())
+        setConnected(true)
         router.replace('/dashboard')
-      }, 100)
+      } catch (error) {
+        console.error('Failed to set auth data:', error)
+        router.replace('/')
+      }
     } else if (status === 'unauthenticated') {
       router.replace('/')
     }
