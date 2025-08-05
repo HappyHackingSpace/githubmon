@@ -16,15 +16,6 @@ export default function HomePage() {
 
   useEffect(() => {
     hydrate()
-    
-
-    if (typeof window !== 'undefined') {
-      const syncInterval = setInterval(() => {
-        hydrate()
-      }, 2000) 
-      
-      return () => clearInterval(syncInterval)
-    }
   }, [hydrate])
 
   useEffect(() => {
