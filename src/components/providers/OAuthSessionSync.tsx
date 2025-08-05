@@ -5,6 +5,17 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores'
 
+// Type assertion for extended session
+interface ExtendedSession {
+  accessToken?: string
+  user?: {
+    login?: string
+    name?: string | null
+    email?: string | null
+    image?: string | null
+  }
+}
+
 export function OAuthSessionSync() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -12,13 +23,14 @@ export function OAuthSessionSync() {
   const hasProcessedSession = useRef(false)
 
  useEffect(() => {
-    if (status === 'authenticated' && session?.accessToken && !isConnected && !hasProcessedSession.current) {
+    const extendedSession = session as ExtendedSession
+    if (status === 'authenticated' && extendedSession?.accessToken && extendedSession?.user && !isConnected && !hasProcessedSession.current) {
       
       const expiryDate = new Date()
       expiryDate.setDate(expiryDate.getDate() + 30) // 30 days - align with AuthCallback
       setOrgData({
-        orgName: session.user.login || session.user.name || 'Unknown',
-        token: session.accessToken
+        orgName: extendedSession.user.login || extendedSession.user.name || 'Unknown',
+        token: extendedSession.accessToken
       })
       setTokenExpiry(expiryDate.toISOString())
       setConnected(true)

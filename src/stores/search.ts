@@ -39,7 +39,7 @@ interface SearchState {
 
 export const useSearchStore = create<SearchState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       isSearchModalOpen: false,
       currentQuery: '',
       currentSearchType: 'all',

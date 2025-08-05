@@ -61,7 +61,7 @@ export interface GitHubEvent {
     name: string
     url: string
   }
-  payload: any
+  payload: Record<string, unknown>
   created_at: string
   public: boolean
 }
@@ -173,7 +173,7 @@ export interface OSSInsightSQLResponse {
       data_type: string
       nullable: boolean
     }>
-    rows: any[]
+    rows: unknown[]
     result: {
       code: number
       message: string
@@ -246,7 +246,7 @@ export type SearchType = 'repos' | 'users' | 'orgs'
 export interface APIError {
   type: 'network' | 'not_found' | 'rate_limit' | 'unauthorized' | 'unknown'
   message: string
-  details?: any
+  details?: unknown
 }
 
 // Cache types

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 
 
 import { useSidebarState, useAuthStore, useStoreHydration, useActionItemsStore } from '@/stores'
-import { ChevronRight, Clock, Flame, LogOut, MessageSquare, Sparkles, Star, Target, Zap, } from 'lucide-react'
+import { ChevronRight, Clock,  LogOut, MessageSquare, Sparkles, Star, Target, Zap, } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
 
@@ -46,12 +46,6 @@ export function Sidebar() {
     return getBadgeCount(type)
   }
 
-
-
-
-  const navigationItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: Flame }
-  ]
 
   const handleLogout = () => {
     logout() 

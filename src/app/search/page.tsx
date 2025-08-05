@@ -46,18 +46,18 @@ import type { TrendingRepo, TopContributor } from "@/types/oss-insight";
 import { AreaChart, BarChart, LineChart } from "@/components/charts";
 import ChartWrapper from "@/components/charts/ChartWrapper";
 
-interface UserBehaviorData {
+interface UserBehaviorData extends Record<string, string | number> {
   day: string;
   commits: number;
   prs: number;
   issues: number;
 }
 
-interface UserOverviewData {
+interface UserOverviewData extends Record<string, string | number> {
   name: string;
   commits: number;
   stars: number;
-  repos?: number;
+  repos: number;
 }
 
 interface UserAnalytics {
@@ -195,7 +195,7 @@ export default function SearchPage() {
 
       // If searching for a user, load analytics
       if (userParam) {
-        loadUserAnalytics(userParam);
+        loadUserAnalytics();
       }
     }
   }, [userParam, repoParam, setCurrentQuery, setCurrentSearchType]);
@@ -235,7 +235,7 @@ export default function SearchPage() {
     }
   };
 
-  const loadUserAnalytics = async (_username: string) => {
+  const loadUserAnalytics = async () => {
     setLoadingAnalytics(true);
     try {
       // User analytics method was removed - no longer available

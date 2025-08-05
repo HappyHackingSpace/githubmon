@@ -25,7 +25,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
               <p>
-                By accessing and using GitHubMon ("the Service"), you accept and agree to be bound by the terms and provision of this agreement.
+                By accessing and using GitHubMon (&quot;the Service&quot;), you accept and agree to be bound by the terms and provision of this agreement.
               </p>
             </section>
 
@@ -67,7 +67,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">6. Limitation of Liability</h2>
               <p>
-                The Service is provided "as is" without any warranties. We are not liable for any damages arising from the use of this Service.
+                The Service is provided &quot;as is&quot; without any warranties. We are not liable for any damages arising from the use of this Service.
               </p>
             </section>
 

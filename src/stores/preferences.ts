@@ -52,7 +52,7 @@ const defaultPreferences = {
 
 export const usePreferencesStore = create<UserPreferencesState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       ...defaultPreferences,
 
       setTheme: (theme) => set({ theme }),

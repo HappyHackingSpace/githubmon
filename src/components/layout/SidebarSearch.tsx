@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 
 
-import { useSidebarState, useAuthStore, useStoreHydration } from '@/stores'
+import { useSidebarState } from '@/stores'
 import {
 
     Activity,
@@ -19,27 +19,13 @@ import {
     Eye
 } from 'lucide-react'
 
-interface SidebarProps {
-    isOpen: boolean
-    onClose: () => void
-}
-
-interface TrendingItem {
-    name: string
-    description: string
-    stars: number
-    language: string
-    url: string
-    type: 'repo' | 'user' | 'topic'
-}
 
 export function SidebarSearch() {
     const pathname = usePathname()
     const [activeSection, setActiveSection] = useState('overview')
     const { isOpen, setOpen } = useSidebarState()
 
-    
-    const { logout } = useAuthStore()
+
 
     const navigationItems = [
         { href: '#overview', label: 'Overview', icon: Eye, section: 'analytics' },

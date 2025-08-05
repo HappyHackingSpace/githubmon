@@ -193,7 +193,7 @@ export interface EChartsBaseProps {
   loadingOption?: object;
   theme?: 'github-light' | 'github-dark';
   onChartReady?: (chart: EChartsType) => void;
-  onEvents?: { [eventName: string]: (params: any, chart: EChartsType) => void };
+  onEvents?: { [eventName: string]: (params: unknown, chart: EChartsType) => void };
   className?: string;
   notMerge?: boolean;
   lazyUpdate?: boolean;

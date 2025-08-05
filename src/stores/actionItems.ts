@@ -4,6 +4,28 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { githubAPIClient } from '@/lib/api/github-api-client'
 import { useAuthStore } from './auth'
 
+// Raw item type from API
+interface RawAPIItem {
+  id: number
+  title: string
+  repo: string
+  type: 'issue' | 'pr'
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  url?: string
+  createdAt: string
+  updatedAt: string
+  assignee?: string
+  author?: string
+  labels?: string[]
+  daysOld?: number
+  assignedAt?: string
+  mentionType?: 'mention' | 'review_request' | 'comment'
+  mentionedAt?: string
+  lastActivity?: string
+  daysStale?: number
+  reviewStatus?: 'pending' | 'approved' | 'changes_requested'
+}
+
 export interface ActionItem {
   id: number
   title: string
@@ -184,25 +206,25 @@ export const useActionItemsStore = create<ActionItemsState>()(
           set((state) => ({ loading: { ...state.loading, [t]: true }, errors: { ...state.errors, [t]: null } }))
           
           try {
-            let items: any[] = []
+            let items: RawAPIItem[] = []
             
             switch (t) {
               case 'assigned':
-                items = await githubAPIClient.getAssignedItems(username)
+                items = await githubAPIClient.getAssignedItems(username) as RawAPIItem[]
                 get().setAssignedItems(items.map(item => ({ ...item, assignedAt: item.assignedAt || item.createdAt })))
                 break
               case 'mentions':
-                items = await githubAPIClient.getMentionItems(username)
-                get().setMentionItems(items.map(item => ({ 
-                  ...item, 
+                items = await githubAPIClient.getMentionItems(username) as RawAPIItem[]
+                get().setMentionItems(items.map(item => ({
+                  ...item,
                   mentionType: item.mentionType || 'mention',
-                  mentionedAt: item.mentionedAt || item.updatedAt 
+                  mentionedAt: item.mentionedAt || item.updatedAt
                 })))
                 break
               case 'stale':
-                items = await githubAPIClient.getStaleItems(username)
-                get().setStaleItems(items.map(item => ({ 
-                  ...item, 
+                items = await githubAPIClient.getStaleItems(username) as RawAPIItem[]
+                get().setStaleItems(items.map(item => ({
+                  ...item,
                   lastActivity: item.lastActivity || item.updatedAt,
                   daysStale: item.daysStale || item.daysOld || 0,
                   reviewStatus: item.reviewStatus || 'pending'

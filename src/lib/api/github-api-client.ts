@@ -3,9 +3,66 @@ import type {
   TopContributor
 } from '@/types/oss-insight'
 
+interface GitHubSearchResponse<T> {
+  items: T[]
+  total_count: number
+  incomplete_results: boolean
+}
+
+interface GitHubRepositoryResponse {
+  id: number
+  full_name: string
+  name: string
+  description: string | null
+  stargazers_count: number
+  forks_count: number
+  open_issues_count: number
+  language: string | null
+  html_url: string
+  created_at: string
+  updated_at: string
+  pushed_at: string
+  size: number
+  watchers_count: number
+  archived: boolean
+  fork: boolean
+  topics: string[]
+  owner: {
+    login: string
+    avatar_url: string
+    type: string
+  }
+}
+
+interface GitHubUserResponse {
+  login: string
+  avatar_url: string
+  html_url: string
+  type: string
+  bio: string | null
+}
+
+interface GitHubIssueResponse {
+  id: number
+  title: string
+  repository_url: string
+  html_url: string
+  created_at: string
+  updated_at: string
+  assignee: {
+    login: string
+  } | null
+  user: {
+    login: string
+  }
+  labels: Array<{ name: string }>
+  comments: number
+  pull_request?: unknown
+}
+
 class GitHubAPIClient {
   private baseUrl = 'https://api.github.com'
-  private cache = new Map<string, { data: any; timestamp: number }>()
+  private cache = new Map<string, { data: unknown; timestamp: number }>()
   private cacheTimeout = 5 * 60 * 1000 // 5 minutes
   private githubToken = process.env.GITHUB_TOKEN || ''
 
@@ -65,7 +122,7 @@ class GitHubAPIClient {
     const cached = this.cache.get(cacheKey)
 
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-      return cached.data
+      return cached.data as T
     }
 
     try {
@@ -87,7 +144,7 @@ class GitHubAPIClient {
           console.warn('GitHub API rate limit exceeded')
         }
         // Return fallback data on error
-        return this.getFallbackData(endpoint)
+        return this.getFallbackData(endpoint) as T
       }
 
       const data = await response.json()
@@ -102,15 +159,15 @@ class GitHubAPIClient {
       // Return cached data if available
       if (cached) {
         console.log('Returning stale cached data due to error')
-        return cached.data
+        return cached.data as T
       }
 
       // Fallback to mock data
-      return this.getFallbackData(endpoint)
+      return this.getFallbackData(endpoint) as T
     }
   }
 
-  private getFallbackData(endpoint: string): any {
+  private getFallbackData(endpoint: string): unknown {
     // Return mock trending repositories if the real API fails
     if (endpoint.includes('search/repositories')) {
       return {
@@ -148,12 +205,12 @@ class GitHubAPIClient {
 
   async searchRepositories(query: string, sort: 'stars' | 'forks' | 'updated' = 'stars', limit = 20): Promise<TrendingRepo[]> {
     try {
-      const response = await this.fetchWithCache<any>(
+      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(
         `/search/repositories?q=${encodeURIComponent(query)}&sort=${sort}&order=desc&per_page=${limit}`,
         true
       )
 
-      return response.items?.map((repo: any) => ({
+      return response.items?.map((repo: GitHubRepositoryResponse) => ({
         id: repo.id,
         full_name: repo.full_name,
         name: repo.name,
@@ -188,12 +245,12 @@ class GitHubAPIClient {
       const searchType = type === 'orgs' ? 'org' : type === 'users' ? 'user' : ''
       const queryString = searchType ? `${query} type:${searchType}` : query
 
-      const response = await this.fetchWithCache<any>(
+      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubUserResponse>>(
         `/search/users?q=${encodeURIComponent(queryString)}&per_page=${limit}`,
         true
       )
 
-      return response.items?.map((user: any) => ({
+      return response.items?.map((user: GitHubUserResponse) => ({
         login: user.login,
         avatar_url: user.avatar_url,
         html_url: user.html_url,
@@ -202,7 +259,7 @@ class GitHubAPIClient {
         stars_earned: 0,
         followers_count: 0,
         languages: [],
-        type: user.type,
+        type: user.type as 'User' | 'Organization',
         rank: 0,
         rank_change: 0,
         bio: user.bio || ''
@@ -216,7 +273,7 @@ class GitHubAPIClient {
   // ============ ACTION ITEMS API METHODS ============
   
   // Get assigned issues and PRs for the authenticated user
-async getAssignedItems(username?: string): Promise<any[]> {
+async getAssignedItems(username?: string): Promise<unknown[]> {
     if (!this.githubToken) {
       console.warn('No GitHub token available for assigned items')
       return []
@@ -224,9 +281,9 @@ async getAssignedItems(username?: string): Promise<any[]> {
     try {
       const user = username || '@me'
       const endpoint = `/search/issues?q=assignee:${user}+state:open&sort=updated&order=desc&per_page=50`
-      const response = await this.fetchWithCache<any>(endpoint, true)
+      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(endpoint, true)
       
-      return response.items?.map((item: any) => ({
+      return response.items?.map((item: GitHubIssueResponse) => ({
         id: item.id,
         title: item.title,
         repo: item.repository_url
@@ -239,7 +296,7 @@ async getAssignedItems(username?: string): Promise<any[]> {
         updatedAt: item.updated_at,
         assignee: item.assignee?.login,
         author: item.user?.login,
-        labels: item.labels?.map((l: any) => l.name) || [],
+        labels: item.labels?.map((l: { name: string }) => l.name) || [],
         assignedAt: item.created_at // Approximation
       })) || []
     } catch (error) {
@@ -248,7 +305,7 @@ async getAssignedItems(username?: string): Promise<any[]> {
     }
   }
 
-  async getMentionItems(username?: string): Promise<any[]> {
+  async getMentionItems(username?: string): Promise<unknown[]> {
     if (!this.githubToken) {
       console.warn('No GitHub token available for mentions')
       return []
@@ -260,11 +317,11 @@ async getAssignedItems(username?: string): Promise<any[]> {
       const reviewRequestsEndpoint = `/search/issues?q=review-requested:${user}+state:open&sort=updated&order=desc&per_page=25`
       
       const [mentionsResponse, reviewsResponse] = await Promise.all([
-        this.fetchWithCache<any>(mentionsEndpoint, true),
-        this.fetchWithCache<any>(reviewRequestsEndpoint, true)
+        this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(mentionsEndpoint, true),
+        this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(reviewRequestsEndpoint, true)
       ])
 
-      const mentions = mentionsResponse.items?.map((item: any) => ({
+      const mentions = mentionsResponse.items?.map((item: GitHubIssueResponse) => ({
         id: item.id,
         title: item.title,
         repo: item.repository_url.split('/').slice(-2).join('/'),
@@ -274,12 +331,12 @@ async getAssignedItems(username?: string): Promise<any[]> {
         createdAt: item.created_at,
         updatedAt: item.updated_at,
         author: item.user?.login,
-        labels: item.labels?.map((l: any) => l.name) || [],
+        labels: item.labels?.map((l: { name: string }) => l.name) || [],
         mentionType: 'mention',
         mentionedAt: item.updated_at
       })) || []
 
-      const reviews = reviewsResponse.items?.map((item: any) => ({
+      const reviews = reviewsResponse.items?.map((item: GitHubIssueResponse) => ({
         id: `review-${item.id}`, 
         title: item.title,
        repo: item.repository_url 
@@ -291,7 +348,7 @@ async getAssignedItems(username?: string): Promise<any[]> {
         createdAt: item.created_at,
         updatedAt: item.updated_at,
         author: item.user?.login,
-        labels: item.labels?.map((l: any) => l.name) || [],
+        labels: item.labels?.map((l: { name: string }) => l.name) || [],
         mentionType: 'review_request',
         mentionedAt: item.updated_at
       })) || []
@@ -305,7 +362,7 @@ async getAssignedItems(username?: string): Promise<any[]> {
     }
   }
 
-  async getStaleItems(username?: string, daysOld: number = 7): Promise<any[]> {
+  async getStaleItems(username?: string, daysOld: number = 7): Promise<unknown[]> {
     if (!this.githubToken) {
       console.warn('No GitHub token available for stale items')
       return []
@@ -318,9 +375,9 @@ async getAssignedItems(username?: string): Promise<any[]> {
       const dateString = date.toISOString().split('T')[0]
       
       const endpoint = `/search/issues?q=author:${user}+type:pr+state:open+updated:<${dateString}&sort=updated&order=asc&per_page=50`
-      const response = await this.fetchWithCache<any>(endpoint, true)
+      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(endpoint, true)
       
-      return response.items?.map((item: any) => {
+      return response.items?.map((item: GitHubIssueResponse) => {
         const lastActivity = new Date(item.updated_at)
         const daysStale = Math.floor((Date.now() - lastActivity.getTime()) / (1000 * 60 * 60 * 24))
         
@@ -336,7 +393,7 @@ async getAssignedItems(username?: string): Promise<any[]> {
           createdAt: item.created_at,
           updatedAt: item.updated_at,
           author: item.user?.login,
-          labels: item.labels?.map((l: any) => l.name) || [],
+          labels: item.labels?.map((l: { name: string }) => l.name) || [],
           lastActivity: item.updated_at,
           daysStale,
           daysOld: daysStale,
@@ -349,8 +406,8 @@ async getAssignedItems(username?: string): Promise<any[]> {
     }
   }
 
-  private calculatePriority(item: any): 'low' | 'medium' | 'high' | 'urgent' {
-    const labels = item.labels?.map((l: any) => l.name.toLowerCase()) || []
+  private calculatePriority(item: GitHubIssueResponse): 'low' | 'medium' | 'high' | 'urgent' {
+    const labels = item.labels?.map((l: { name: string }) => l.name.toLowerCase()) || []
     const commentCount = item.comments || 0
     const daysSinceUpdate = Math.floor((Date.now() - new Date(item.updated_at).getTime()) / (1000 * 60 * 60 * 24))
     

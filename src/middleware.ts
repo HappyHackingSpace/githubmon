@@ -30,7 +30,7 @@ export function middleware(request: NextRequest) {
           isAuthenticated = false
         }
       }
-    } catch (error) {
+    } catch {
       const response = NextResponse.next()
       response.cookies.set('githubmon-auth', '', {
         expires: new Date(0),
@@ -40,16 +40,12 @@ export function middleware(request: NextRequest) {
     }
   }
 
-
-  const publicRoutes = ['/login', '/register', '/about', '/search'] 
-
   const protectedRoutes = ['/dashboard', '/settings']
   
   const authRoutes = ['/auth/callback', '/api/auth']
 
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
 
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
   
 
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))

@@ -3,7 +3,7 @@ import EChartsBase, { EChartsBaseProps } from './EChartsBase';
 import type { EChartsOption } from 'echarts';
 
 export interface BarChartProps extends Omit<EChartsBaseProps, 'option'> {
-  data: Array<Record<string, any>>;
+  data: Array<Record<string, string | number>>;
   xField: string;
   yFields: string[];
   xAxisLabel?: string;
