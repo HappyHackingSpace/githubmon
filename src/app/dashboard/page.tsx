@@ -1,16 +1,42 @@
+// src/app/dashboard/page.tsx
 'use client'
 
-import {  useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { QuickWinsTable } from '@/components/quick-wins/QuickWinsTable'
+import type { GitHubIssue } from '@/types/quickWins'
+
+// Dashboard'daki ActionItem'ı QuickWinsTable'ın beklediği GitHubIssue formatına dönüştür
+function mapActionItemToGitHubIssue(item: any): GitHubIssue {
+  return {
+    id: item.id,
+    title: item.title,
+    repository: item.repo || '',
+    repositoryUrl: item.repo ? `https://github.com/${item.repo}` : '',
+    url: item.url || '',
+    labels: (item.labels || []).map((name: string) => ({ name, color: '999999' })),
+    created_at: item.createdAt || '',
+    updated_at: item.updatedAt || '',
+    difficulty: item.difficulty || 'medium', // Don't assume all items are 'easy'
+    language: item.language || 'unknown',
+    stars: 0,
+    author: { login: item.author || '', avatar_url: '' },
+    comments: 0,
+    state: 'open',
+    assignee: null,
+    priority: ['urgent', 'high', 'medium', 'low'].includes(item.priority) ? item.priority : 'low',
+  }
+}
+
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { useRequireAuth } from '@/hooks/useAuth'
-import { Target, MessageSquare, Clock, Zap, Search, ExternalLink } from "lucide-react"
+import { Target, MessageSquare, Clock, Zap, Search, ExternalLink, Sparkles } from "lucide-react"
 import { useSearchStore, useActionItemsStore } from '@/stores'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import RefreshButton from "@/components/Refresh/RefreshButton";
@@ -33,6 +59,8 @@ export default function DashboardPage() {
     assignedItems,
     mentionItems,
     staleItems,
+    goodFirstIssues,
+    easyFixes,
     loading,
     errors,
     refreshData
@@ -41,8 +69,12 @@ export default function DashboardPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
+  // Get current tab from URL or default to 'assigned'
   const currentTab = searchParams.get('tab') || 'assigned'
+  const isQuickWinsTab = currentTab === 'quick-wins' || currentTab === 'good-first-issues' || currentTab === 'easy-fixes'
+  const isActionRequiredTab = !isQuickWinsTab
 
+  // Authentication check (senin versiyonundan)
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace('/')
@@ -58,10 +90,13 @@ export default function DashboardPage() {
     }
   }, [orgData?.token, refreshData])
 
+  // Real data from store
   const getActionItems = (type: string) => {
     switch (type) {
       case 'assigned': return assignedItems
       case 'mentions': return mentionItems
+      case 'good-first-issues': return goodFirstIssues
+      case 'easy-fixes': return easyFixes
       case 'stale': return staleItems
       default: return []
     }
@@ -86,7 +121,6 @@ export default function DashboardPage() {
     const userName = orgData?.orgName || 'Developer'
     return `${timeOfDay}, ${userName}! `
   }
-
 
   if (isLoading) {
     return (
@@ -130,38 +164,68 @@ export default function DashboardPage() {
           </div>
         </div>
 
-
-
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-6 h-6 text-orange-500" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Action Required
-            </h1>
+        {/* Dynamic Section Title */}
+        {isActionRequiredTab ? (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="w-6 h-6 text-orange-500" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Action Required
+              </h1>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300">
+              Items that need your attention
+            </p>
           </div>
-          <p className="text-gray-600 dark:text-gray-300">
-            Items that need your attention
-          </p>
-        </div>
+        ) : (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="w-6 h-6 text-blue-500" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Quick Wins
+              </h1>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300">
+              Easy tasks to get started with
+            </p>
+          </div>
+        )}
 
-        {/* Action Request Tabs */}
+        {/* Dynamic Tabs */}
         <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="assigned" className="flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              Assigned
-              <Badge variant="secondary" className="ml-1">{getActionItems('assigned').length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="mentions" className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Mentions
-              <Badge variant="secondary" className="ml-1">{getActionItems('mentions').length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="stale" className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Stale PRs
-              <Badge variant="destructive" className="ml-1">{getActionItems('stale').length}</Badge>
-            </TabsTrigger>
+          <TabsList className={`grid w-full ${isQuickWinsTab ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            {isActionRequiredTab ? (
+              <>
+                <TabsTrigger value="assigned" className="flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Assigned
+                  <Badge variant="secondary" className="ml-1">{getActionItems('assigned').length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="mentions" className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Mentions
+                  <Badge variant="secondary" className="ml-1">{getActionItems('mentions').length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="stale" className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Stale PRs
+                  <Badge variant="destructive" className="ml-1">{getActionItems('stale').length}</Badge>
+                </TabsTrigger>
+              </>
+            ) : (
+              <>
+                <TabsTrigger value="good-first-issues" className="flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Good First Issues
+                  <Badge variant="secondary" className="ml-1">{getActionItems('good-first-issues').length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="easy-fixes" className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Easy Fixes
+                  <Badge variant="secondary" className="ml-1">{getActionItems('easy-fixes').length}</Badge>
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           <TabsContent value="assigned" className="mt-6">
@@ -266,11 +330,24 @@ export default function DashboardPage() {
                 {getActionItems('mentions').length > 0 ? (
                   <div className="space-y-3">
                     {getActionItems('mentions').map((item: ActionItem) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 group">
                         <div className="flex items-center gap-3">
                           <div className={`w-2 h-2 rounded-full ${item.priority === 'high' ? 'bg-red-500' : item.priority === 'medium' ? 'bg-yellow-500' : 'bg-gray-400'}`} />
                           <div>
-                            <h4 className="font-medium">{item.title}</h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium">{item.title}</h4>
+                              {item.url && (
+                                <a
+                                  href={isValidUrl(item.url) ? item.url : '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => !isValidUrl(item.url ?? '') && e.preventDefault()}
+                                >
+                                  <ExternalLink className="w-3 h-3 text-gray-500 hover:text-blue-500" />
+                                </a>
+                              )}
+                            </div>
                             <p className="text-sm text-gray-500">{item.repo} • {item.type}</p>
                           </div>
                         </div>
@@ -284,7 +361,7 @@ export default function DashboardPage() {
                   <div className="text-center py-12 text-gray-500">
                     <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                     <p>No mentions found</p>
-                    <p className="text-sm mt-2">Items where you&apos;re mentioned will appear here</p>
+                    <p className="text-sm mt-2">Items where you're mentioned will appear here</p>
                   </div>
                 )}
               </CardContent>
@@ -304,11 +381,24 @@ export default function DashboardPage() {
                 {getActionItems('stale').length > 0 ? (
                   <div className="space-y-3">
                     {getActionItems('stale').map((item: ActionItem) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 group">
                         <div className="flex items-center gap-3">
                           <div className="w-2 h-2 rounded-full bg-orange-500" />
                           <div>
-                            <h4 className="font-medium">{item.title}</h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium">{item.title}</h4>
+                              {item.url && (
+                                <a
+                                  href={isValidUrl(item.url) ? item.url : '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => !isValidUrl(item.url ?? '') && e.preventDefault()}
+                                >
+                                  <ExternalLink className="w-3 h-3 text-gray-500 hover:text-blue-500" />
+                                </a>
+                              )}
+                            </div>
                             <p className="text-sm text-gray-500">{item.repo} • {item.daysOld} days old</p>
                           </div>
                         </div>
@@ -327,6 +417,30 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="good-first-issues" className="mt-6">
+            <QuickWinsTable
+              data={goodFirstIssues.map(mapActionItemToGitHubIssue)}
+              loading={loading.goodFirstIssues}
+              error={errors.goodFirstIssues}
+              onRefresh={refreshData}
+              title="Good First Issues"
+              description="Well-documented issues perfect for newcomers to open source"
+              emptyMessage="No good first issues found"
+            />
+          </TabsContent>
+
+          <TabsContent value="easy-fixes" className="mt-6">
+            <QuickWinsTable
+              data={easyFixes.map(mapActionItemToGitHubIssue)}
+              loading={loading.easyFixes}
+              error={errors.easyFixes}
+              onRefresh={refreshData}
+              title="Easy Fixes"
+              description="Simple bugs and improvements that can be fixed quickly"
+              emptyMessage="No easy fixes found"
+            />
           </TabsContent>
         </Tabs>
       </div>
