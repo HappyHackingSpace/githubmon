@@ -161,6 +161,11 @@ export const useActionItemsStore = create<ActionItemsState>()(
         const userToken = authState.orgData?.token
         const username = authState.orgData?.orgName
         
+        if (!username) {
+          console.warn('No org/user name available for action-items refresh')
+          return
+        }
+        
         if (!userToken) {
           console.warn('No GitHub token available for action items')
           const types = type ? [type] : ['assigned', 'mentions', 'stale'] as const
