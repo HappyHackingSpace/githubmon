@@ -11,14 +11,11 @@ export function OAuthSessionSync() {
   const { setOrgData, setConnected, setTokenExpiry, isConnected } = useAuthStore()
   const hasProcessedSession = useRef(false)
 
-  useEffect(() => {
-    // Only sync if we have a session but no local auth data and haven't processed this session yet
+ useEffect(() => {
     if (status === 'authenticated' && session?.accessToken && !isConnected && !hasProcessedSession.current) {
-      console.log('Syncing OAuth session to auth store')
       
       const expiryDate = new Date()
-      expiryDate.setDate(expiryDate.getDate() + 90) // 90 days
-
+      expiryDate.setDate(expiryDate.getDate() + 30) // 30 days - align with AuthCallback
       setOrgData({
         orgName: session.user.login || session.user.name || 'Unknown',
         token: session.accessToken
@@ -26,13 +23,11 @@ export function OAuthSessionSync() {
       setTokenExpiry(expiryDate.toISOString())
       setConnected(true)
       hasProcessedSession.current = true
-
       // Redirect to dashboard if we're on login page
-      if (window.location.pathname === '/login') {
+      if (typeof window !== 'undefined' && window.location.pathname === '/login') {
         router.replace('/dashboard')
       }
     }
-
     // Reset the flag when session is cleared
     if (status === 'unauthenticated') {
       hasProcessedSession.current = false
