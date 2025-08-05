@@ -5,7 +5,7 @@ import { Sidebar, SidebarToggle } from './Sidebar'
 import { useSidebarState } from '@/stores'
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { isOpen, setOpen } = useSidebarState()
+  const {  setOpen } = useSidebarState()
 
   return (
     <div className="flex">

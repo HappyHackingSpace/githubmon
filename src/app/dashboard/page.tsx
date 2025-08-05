@@ -1,7 +1,7 @@
 // src/app/dashboard/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import {  useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
 
@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { useRequireAuth } from '@/hooks/useAuth'
 import { Target, MessageSquare, Clock, Zap, Search, ExternalLink } from "lucide-react"
-import { SearchModal } from '@/components/search/SearchModal'
 import { useSearchStore, useActionItemsStore } from '@/stores'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import RefreshButton from "@/components/Refresh/RefreshButton";
@@ -289,7 +288,7 @@ export default function DashboardPage() {
                   <div className="text-center py-12 text-gray-500">
                     <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                     <p>No mentions found</p>
-                    <p className="text-sm mt-2">Items where you're mentioned will appear here</p>
+                    <p className="text-sm mt-2">Items where you&apos;re mentioned will appear here</p>
                   </div>
                 )}
               </CardContent>

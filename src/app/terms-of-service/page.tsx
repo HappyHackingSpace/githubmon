@@ -43,15 +43,15 @@ export default function TermsOfServicePage() {
                 <li>You are responsible for maintaining the confidentiality of your GitHub authentication credentials</li>
                 <li>You agree to use the Service only for lawful purposes</li>
                 <li>You will not attempt to gain unauthorized access to any part of the Service</li>
-                <li>You will not use the Service to violate GitHub's Terms of Service</li>
+                <li>You will not use the Service to violate GitHub&apos;s Terms of Service</li>
               </ul>
             </section>
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">4. GitHub API Usage</h2>
               <p>
-                This Service uses the GitHub API and is subject to GitHub's API rate limits and terms of use. 
-                By using this Service, you also agree to comply with GitHub's Terms of Service and API guidelines.
+                This Service uses the GitHub API and is subject to GitHub&apos;s API rate limits and terms of use. 
+                By using this Service, you also agree to comply with GitHub&apos;s Terms of Service and API guidelines.
               </p>
             </section>
 
@@ -60,7 +60,7 @@ export default function TermsOfServicePage() {
               <p>
                 The Service only accesses publicly available GitHub data and basic profile information as authorized through GitHub OAuth. 
                 We do not store your GitHub access tokens or personal data on our servers. 
-                All authentication is handled securely through GitHub's OAuth system.
+                All authentication is handled securely through GitHub&apos;s OAuth system.
               </p>
             </section>
 

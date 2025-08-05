@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ExternalLink, Star, MessageSquare, Calendar } from 'lucide-react'
 import type { GitHubIssue } from '@/types/quickWins'
-import { ReactElement, JSXElementConstructor, ReactNode, ReactPortal, Key } from 'react'
 
 
 

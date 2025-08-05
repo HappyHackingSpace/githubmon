@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname,  useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 
@@ -11,19 +11,7 @@ import { ChevronRight, Clock, Flame, LogOut, MessageSquare, Sparkles, Star, Targ
 import { Badge } from '../ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
 
-interface SidebarProps {
-  isOpen: boolean
-  onClose: () => void
-}
 
-interface TrendingItem {
-  name: string
-  description: string
-  stars: number
-  language: string
-  url: string
-  type: 'repo' | 'user' | 'topic'
-}
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -66,7 +54,7 @@ export function Sidebar() {
   ]
 
   const handleLogout = () => {
-    logout() // logout fonksiyonu artık otomatik yönlendirme yapıyor
+    logout() 
   }
   return (
     <>

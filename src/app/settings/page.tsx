@@ -1,18 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState} from 'react'
 import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useAuthStore, usePreferencesStore } from '@/stores'
+import {  usePreferencesStore } from '@/stores'
 import { useRequireAuth } from '@/hooks/useAuth'
-import { ThemeSelector, ThemeToggle } from '@/components/theme/ThemeToggle'
+import { ThemeSelector } from '@/components/theme/ThemeToggle'
 import { cookieUtils } from '@/lib/cookies'
 
 export default function SettingsPage() {
-  const { isAuthenticated, isLoading, orgData } = useRequireAuth()
-  const { setOrgData } = useAuthStore()
+  const {  isLoading, orgData } = useRequireAuth()
   const { resetPreferences } = usePreferencesStore()
   const [tempOrgName, setTempOrgName] = useState(orgData?.orgName || '')
   const [tempToken, setTempToken] = useState('')
@@ -26,10 +25,7 @@ export default function SettingsPage() {
     }
   }
 
-  // Middleware auth kontrolü yaptığı için bu kontrol artık gereksiz
-  // if (!shouldRender) {
-  //   return null
-  // }
+
 
   if (isLoading) {
     return (

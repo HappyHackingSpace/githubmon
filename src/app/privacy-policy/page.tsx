@@ -51,10 +51,10 @@ export default function PrivacyPolicyPage() {
                 <strong>Local Storage:</strong> User preferences and session data are stored locally in your browser and never transmitted to our servers.
               </p>
               <p>
-                <strong>Authentication:</strong> We use GitHub's OAuth system for secure authentication. We do not store your GitHub passwords or access tokens on our servers.
+                <strong>Authentication:</strong> We use GitHub&apos;s OAuth system for secure authentication. We do not store your GitHub passwords or access tokens on our servers.
               </p>
               <p>
-                <strong>GitHub API:</strong> All repository and user data is fetched directly from GitHub's public API using your authenticated session.
+                <strong>GitHub API:</strong> All repository and user data is fetched directly from GitHub&apos;s public API using your authenticated session.
               </p>
             </section>
 
@@ -98,8 +98,8 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">7. Data Retention</h2>
               <p>
-                Since we don't store personal data on our servers, there is no data retention period. 
-                All personal information exists only in your browser's local storage and your GitHub OAuth session.
+                Since we don&apos;t store personal data on our servers, there is no data retention period. 
+                All personal information exists only in your browser&apos;s local storage and your GitHub OAuth session.
               </p>
             </section>
 
