@@ -73,27 +73,50 @@ class GitHubAPIClient {
     }
 
     const trimmedToken = token.trim()
+    
+ 
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Token validation debug:', {
+        tokenLength: trimmedToken.length,
+        tokenPrefix: trimmedToken.substring(0, 10) + '...',
+        tokenPattern: trimmedToken.substring(0, 4)
+      })
+    }
 
    
     const isClassicToken = /^ghp_[A-Za-z0-9]{36}$/.test(trimmedToken)
     const isFineGrainedToken = /^github_pat_[A-Za-z0-9_]{82}$/.test(trimmedToken)
     const isGitHubAppToken = /^ghs_[A-Za-z0-9]{36}$/.test(trimmedToken)
-    
     const isLegacyToken = /^[a-f0-9]{40}$/.test(trimmedToken)
+    
 
-    if (!isClassicToken && !isFineGrainedToken && !isGitHubAppToken && !isLegacyToken) {
+    const isOAuthToken = /^gho_[A-Za-z0-9_-]{16,}$/.test(trimmedToken) ||
+                        (!isClassicToken && !isFineGrainedToken && !isGitHubAppToken && !isLegacyToken && 
+                         /^[A-Za-z0-9_-]{20,255}$/.test(trimmedToken))
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Token type checks:', {
+        isClassicToken,
+        isFineGrainedToken,
+        isGitHubAppToken,
+        isLegacyToken,
+        isOAuthToken
+      })
+    }
+
+    if (!isClassicToken && !isFineGrainedToken && !isGitHubAppToken && !isLegacyToken && !isOAuthToken) {
       throw new Error(
         'Invalid GitHub token format. Expected:\n' +
         '- Classic token: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (40 chars)\n' +
         '- Fine-grained token: github_pat_xxxxxxxxxx... (94 chars)\n' +
         '- GitHub App token: ghs_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (40 chars)\n' +
+        '- OAuth token: 20-255 character alphanumeric string\n' +
         '- Legacy token: 40 character hexadecimal string'
       )
     }
 
-    // Additional length validation
-    if (trimmedToken.length < 40) {
-      throw new Error('GitHub token is too short. Minimum length is 40 characters.')
+    if (trimmedToken.length < 20) {
+      throw new Error('GitHub token is too short. Minimum length is 20 characters.')
     }
 
     if (trimmedToken.length > 255) {
@@ -103,16 +126,12 @@ class GitHubAPIClient {
     this.githubToken = trimmedToken
   }
 
-  /**
-   * Check if a valid GitHub token is currently set
-   */
+ 
   hasValidToken(): boolean {
-    return this.githubToken.length >= 40
+    return this.githubToken.length >= 20
   }
 
-  /**
-   * Clear the current GitHub token
-   */
+ 
   clearToken(): void {
     this.githubToken = ''
   }
@@ -131,7 +150,6 @@ class GitHubAPIClient {
         'User-Agent': 'GitHubMon/1.0'
       }
 
-      // Add GitHub token if available for authenticated requests
       if (useGithub && this.githubToken) {
         headers['Authorization'] = `token ${this.githubToken}`
       }
@@ -143,32 +161,27 @@ class GitHubAPIClient {
         if (response.status === 403) {
           console.warn('GitHub API rate limit exceeded')
         }
-        // Return fallback data on error
         return this.getFallbackData(endpoint) as T
       }
 
       const data = await response.json()
 
-      // GitHub API response
       this.cache.set(cacheKey, { data, timestamp: Date.now() })
       return data
 
     } catch (error) {
       console.error(`API request failed for ${endpoint}:`, error)
 
-      // Return cached data if available
       if (cached) {
         console.log('Returning stale cached data due to error')
         return cached.data as T
       }
 
-      // Fallback to mock data
       return this.getFallbackData(endpoint) as T
     }
   }
 
   private getFallbackData(endpoint: string): unknown {
-    // Return mock trending repositories if the real API fails
     if (endpoint.includes('search/repositories')) {
       return {
         items: [
