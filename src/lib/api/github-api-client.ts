@@ -406,6 +406,60 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
     }
   }
 
+  async getGoodFirstIssues(): Promise<unknown[]> {
+    try {
+      const endpoint = `/search/issues?q=label:"good first issue"+state:open+type:issue&sort=updated&order=desc&per_page=50`
+      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(endpoint, true)
+      
+      return response.items?.map((item: GitHubIssueResponse) => ({
+        id: item.id,
+        title: item.title,
+        repo: item.repository_url 
+          ? item.repository_url.split('/').slice(-2).join('/')
+          : 'unknown/unknown',
+        type: 'issue',
+        priority: this.calculatePriority(item),
+        url: item.html_url,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        author: item.user?.login,
+        labels: item.labels?.map((l: { name: string }) => l.name) || [],
+        daysOld: Math.floor((Date.now() - new Date(item.created_at).getTime()) / (1000 * 60 * 60 * 24))
+      })) || []
+    } catch (error) {
+      console.error('Failed to fetch good first issues:', error)
+      return []
+    }
+  }
+
+  async getEasyFixes(): Promise<unknown[]> {
+    try {
+      const labels = ['easy', 'easy fix', 'beginner', 'starter', 'help wanted']
+      const labelQuery = labels.map(label => `label:"${label}"`).join(' OR ')
+      const endpoint = `/search/issues?q=(${labelQuery})+state:open+type:issue&sort=updated&order=desc&per_page=50`
+      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(endpoint, true)
+      
+      return response.items?.map((item: GitHubIssueResponse) => ({
+        id: item.id,
+        title: item.title,
+        repo: item.repository_url 
+          ? item.repository_url.split('/').slice(-2).join('/')
+          : 'unknown/unknown',
+        type: 'issue',
+        priority: this.calculatePriority(item),
+        url: item.html_url,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        author: item.user?.login,
+        labels: item.labels?.map((l: { name: string }) => l.name) || [],
+        daysOld: Math.floor((Date.now() - new Date(item.created_at).getTime()) / (1000 * 60 * 60 * 24))
+      })) || []
+    } catch (error) {
+      console.error('Failed to fetch easy fixes:', error)
+      return []
+    }
+  }
+
   private calculatePriority(item: GitHubIssueResponse): 'low' | 'medium' | 'high' | 'urgent' {
     const labels = item.labels?.map((l: { name: string }) => l.name.toLowerCase()) || []
     const commentCount = item.comments || 0

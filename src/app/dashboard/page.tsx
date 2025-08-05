@@ -19,7 +19,11 @@ import { useSearchStore, useActionItemsStore } from '@/stores'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import RefreshButton from "@/components/Refresh/RefreshButton";
 
+const VALID_PRIORITIES = ['urgent', 'high', 'medium', 'low'] as const;
 function mapActionItemToGitHubIssue(item: any): GitHubIssue {
+  if (!item) {
+    throw new Error('Invalid item provided to mapActionItemToGitHubIssue');
+  }
   return {
     id: item.id,
     title: item.title,
@@ -29,14 +33,14 @@ function mapActionItemToGitHubIssue(item: any): GitHubIssue {
     labels: (item.labels || []).map((name: string) => ({ name, color: '999999' })),
     created_at: item.createdAt || '',
     updated_at: item.updatedAt || '',
-    difficulty: item.difficulty || 'medium', // Don't assume all items are 'easy'
+    difficulty: item.difficulty || 'medium',
     language: item.language || 'unknown',
     stars: 0,
     author: { login: item.author || '', avatar_url: '' },
     comments: 0,
     state: 'open',
     assignee: null,
-    priority: ['urgent', 'high', 'medium', 'low'].includes(item.priority) ? item.priority : 'low',
+    priority: VALID_PRIORITIES.includes(item.priority) ? item.priority : 'low',
   }
 }
 
@@ -53,7 +57,7 @@ interface ActionItem {
 }
 
 export default function DashboardPage() {
-  const { isLoading, orgData, isAuthenticated } = useRequireAuth()
+  const { isLoading, orgData } = useRequireAuth()
   const { setSearchModalOpen } = useSearchStore()
   const {
     assignedItems,

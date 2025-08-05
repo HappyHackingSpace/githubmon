@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname,  useSearchParams } from 'next/navigation'
+import { usePathname,  useRouter,  useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 
@@ -41,13 +40,9 @@ export function Sidebar() {
 
   const router = useRouter()
 
-  // Hangi bölümün açık olduğunu kontrol etmek için
   const isQuickWinsTab = currentTab === 'quick-wins' || currentTab === 'good-first-issues' || currentTab === 'easy-fixes'
   const isActionRequiredTab = !isQuickWinsTab && isDashboardPage
 
-  const navigationItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: Flame }
-  ]
 
   const handleLogout = () => {
     logout() 
