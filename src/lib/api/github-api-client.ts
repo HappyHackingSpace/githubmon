@@ -7,14 +7,57 @@ class GitHubAPIClient {
   private baseUrl = 'https://api.github.com'
   private cache = new Map<string, { data: any; timestamp: number }>()
   private cacheTimeout = 5 * 60 * 1000 // 5 minutes
-  private githubBaseUrl = 'https://api.github.com'
-  private githubToken = process.env.NEXT_PUBLIC_GITHUB_TOKEN || ''
+  private githubToken = process.env.GITHUB_TOKEN || ''
 
  setUserToken(token: string) {
+    // Basic validation
     if (!token || typeof token !== 'string' || token.trim().length === 0) {
       throw new Error('Invalid GitHub token: must be a non-empty string')
     }
-    this.githubToken = token
+
+    const trimmedToken = token.trim()
+
+   
+    const isClassicToken = /^ghp_[A-Za-z0-9]{36}$/.test(trimmedToken)
+    const isFineGrainedToken = /^github_pat_[A-Za-z0-9_]{82}$/.test(trimmedToken)
+    const isGitHubAppToken = /^ghs_[A-Za-z0-9]{36}$/.test(trimmedToken)
+    
+    const isLegacyToken = /^[a-f0-9]{40}$/.test(trimmedToken)
+
+    if (!isClassicToken && !isFineGrainedToken && !isGitHubAppToken && !isLegacyToken) {
+      throw new Error(
+        'Invalid GitHub token format. Expected:\n' +
+        '- Classic token: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (40 chars)\n' +
+        '- Fine-grained token: github_pat_xxxxxxxxxx... (94 chars)\n' +
+        '- GitHub App token: ghs_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (40 chars)\n' +
+        '- Legacy token: 40 character hexadecimal string'
+      )
+    }
+
+    // Additional length validation
+    if (trimmedToken.length < 40) {
+      throw new Error('GitHub token is too short. Minimum length is 40 characters.')
+    }
+
+    if (trimmedToken.length > 255) {
+      throw new Error('GitHub token is too long. Maximum length is 255 characters.')
+    }
+
+    this.githubToken = trimmedToken
+  }
+
+  /**
+   * Check if a valid GitHub token is currently set
+   */
+  hasValidToken(): boolean {
+    return this.githubToken.length >= 40
+  }
+
+  /**
+   * Clear the current GitHub token
+   */
+  clearToken(): void {
+    this.githubToken = ''
   }
 
   private async fetchWithCache<T>(endpoint: string, useGithub = false): Promise<T> {
@@ -26,7 +69,6 @@ class GitHubAPIClient {
     }
 
     try {
-      const baseUrl = useGithub ? this.githubBaseUrl : this.baseUrl
       const headers: HeadersInit = {
         'Accept': 'application/vnd.github.v3+json',
         'User-Agent': 'GitHubMon/1.0'
@@ -37,7 +79,7 @@ class GitHubAPIClient {
         headers['Authorization'] = `token ${this.githubToken}`
       }
 
-      const response = await fetch(`${baseUrl}${endpoint}`, { headers })
+      const response = await fetch(`${this.baseUrl}${endpoint}`, { headers })
 
       if (!response.ok) {
         console.warn(`API Error ${response.status} for ${endpoint}`)
