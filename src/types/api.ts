@@ -268,18 +268,11 @@ export interface GitHubClientConfig {
   userAgent?: string
 }
 
-export interface OSSInsightClientConfig {
-  baseUrl?: string
-  timeout?: number
-  retries?: number
-  cacheTimeout?: number
-}
-
 // Generic API Types
 export interface APIClient {
   get<T>(endpoint: string, config?: RequestConfig): Promise<T>
-  post<T>(endpoint: string, data?: any, config?: RequestConfig): Promise<T>
-  put<T>(endpoint: string, data?: any, config?: RequestConfig): Promise<T>
+  post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T>
+  put<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T>
   delete<T>(endpoint: string, config?: RequestConfig): Promise<T>
 }
 
@@ -303,7 +296,7 @@ export interface APIError {
   message: string
   status?: number
   code?: string
-  details?: any
+  details?: unknown
 }
 
 // Pagination Types

@@ -4,10 +4,12 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { ossInsightClient } from '@/lib/api/oss-insight-client'
+import { githubAPIClient } from '@/lib/api/github-api-client'
+
+import type { TrendingRepo, TopContributor } from '@/types/oss-insight'
 
 interface SearchSectionProps {
-  onSearchResults?: (results: any[]) => void
+  onSearchResults?: (results: (TrendingRepo | TopContributor)[]) => void
   className?: string
 }
 
@@ -22,12 +24,12 @@ export function SearchSection({ onSearchResults, className }: SearchSectionProps
 
     setIsSearching(true)
     try {
-      let results: unknown[] = []
+      let results: (TrendingRepo | TopContributor)[] = []
 
       if (searchType === 'repos') {
-        results = await ossInsightClient.searchRepositories(searchQuery)
+        results = await githubAPIClient.searchRepositories(searchQuery)
       } else {
-        results = await ossInsightClient.searchUsers(searchQuery, searchType === 'users' ? 'users' : 'orgs')
+        results = await githubAPIClient.searchUsers(searchQuery, searchType === 'users' ? 'users' : 'orgs')
       }
 
       onSearchResults?.(results)
@@ -42,7 +44,7 @@ export function SearchSection({ onSearchResults, className }: SearchSectionProps
   return (
     <div className={className}>
       <form onSubmit={handleSearch} className="flex items-center space-x-2">
-        <Select value={searchType} onValueChange={(value: any) => setSearchType(value)}>
+        <Select value={searchType} onValueChange={(value: 'repos' | 'users' | 'orgs') => setSearchType(value)}>
           <SelectTrigger className="w-32">
             <SelectValue />
           </SelectTrigger>

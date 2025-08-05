@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCallback } from "react";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -22,7 +23,7 @@ import {
 } from "@/components/layout/SidebarSearch";
 import { useSearchStore, useSidebarState } from "@/stores";
 import { SearchModal } from "@/components/search/SearchModal";
-import { ossInsightClient } from "@/lib/api/oss-insight-client";
+import { githubAPIClient } from "@/lib/api/github-api-client";
 import {
   Star,
   GitFork,
@@ -42,8 +43,22 @@ import {
   Folder,
 } from "lucide-react";
 import type { TrendingRepo, TopContributor } from "@/types/oss-insight";
-import { AreaChart, BarChart, PieChart, LineChart } from "@/components/charts";
+import { AreaChart, BarChart, LineChart } from "@/components/charts";
 import ChartWrapper from "@/components/charts/ChartWrapper";
+
+interface UserBehaviorData extends Record<string, string | number> {
+  day: string;
+  commits: number;
+  prs: number;
+  issues: number;
+}
+
+interface UserOverviewData extends Record<string, string | number> {
+  name: string;
+  commits: number;
+  stars: number;
+  repos: number;
+}
 
 interface UserAnalytics {
   profile?: {
@@ -58,22 +73,12 @@ interface UserAnalytics {
     company?: string;
     html_url: string;
   };
-  overview?: Array<{
-    name: string;
-    commits: number;
-    stars: number;
-    repos?: number;
-  }>;
+  overview?: Array<UserOverviewData>;
   languages?: Array<{
     name: string;
     value: number;
   }>;
-  behavior?: Array<{
-    day: string;
-    commits: number;
-    prs: number;
-    issues: number;
-  }>;
+  behavior?: Array<UserBehaviorData>;
 }
 
 export default function SearchPage() {
@@ -115,14 +120,14 @@ export default function SearchPage() {
   const [loadingAnalytics, setLoadingAnalytics] = useState<boolean>(false);
 
   const throttle = useCallback(
-    <T extends (...args: any[]) => void>(
+    <T extends (...args: unknown[]) => void>(
       func: T,
       delay: number
     ): ((...args: Parameters<T>) => void) => {
       let timeoutId: NodeJS.Timeout | undefined;
       let lastExecTime = 0;
 
-      return function (this: any, ...args: Parameters<T>) {
+      return function (this: unknown, ...args: Parameters<T>) {
         const currentTime = Date.now();
 
         if (currentTime - lastExecTime > delay) {
@@ -162,7 +167,6 @@ export default function SearchPage() {
       for (let i = sections.length - 1; i >= 0; i--) {
         const element = sections[i].ref.current;
         if (element) {
-          const rect = element.getBoundingClientRect();
           const elementTop = element.offsetTop;
 
           if (scrollPosition >= elementTop) {
@@ -191,7 +195,7 @@ export default function SearchPage() {
 
       // If searching for a user, load analytics
       if (userParam) {
-        loadUserAnalytics(userParam);
+        loadUserAnalytics();
       }
     }
   }, [userParam, repoParam, setCurrentQuery, setCurrentSearchType]);
@@ -200,7 +204,7 @@ export default function SearchPage() {
 
     try {
       if (type === "users") {
-        const users = await ossInsightClient.searchUsers(query, "all", 20);
+        const users = await githubAPIClient.searchUsers(query, "all", 20);
         setSearchResults({
           repos: [],
           users: users || [],
@@ -208,7 +212,7 @@ export default function SearchPage() {
           error: null,
         });
       } else {
-        const repos = await ossInsightClient.searchRepositories(
+        const repos = await githubAPIClient.searchRepositories(
           query,
           "stars",
           20
@@ -231,12 +235,12 @@ export default function SearchPage() {
     }
   };
 
-  const loadUserAnalytics = async (username: string) => {
+  const loadUserAnalytics = async () => {
     setLoadingAnalytics(true);
     try {
-      // Use real API to get user analytics
-      const analytics = await ossInsightClient.getUserAnalytics(username);
-      setUserAnalytics(analytics);
+      // User analytics method was removed - no longer available
+      console.log("User analytics feature temporarily disabled");
+      setUserAnalytics(null);
     } catch (error) {
       console.error("Analytics error:", error);
       // Fallback to null if API fails
@@ -317,10 +321,12 @@ export default function SearchPage() {
                       <Card className="hover:shadow-md transition-shadow">
                         <CardContent className="p-6">
                           <div className="flex items-start space-x-4">
-                            <img
+                            <Image
                               src={userAnalytics.profile.avatar_url}
                               alt={userAnalytics.profile.login}
-                              className="w-20 h-20 rounded-full"
+                              width={80}
+                              height={80}
+                              className="rounded-full"
                             />
                             <div className="flex-1">
                               <div className="flex items-center space-x-2 mb-2">
@@ -382,10 +388,12 @@ export default function SearchPage() {
                         >
                           <CardContent className="p-6">
                             <div className="flex items-start space-x-4">
-                              <img
+                              <Image
                                 src={user.avatar_url}
                                 alt={user.login}
-                                className="w-20 h-20 rounded-full"
+                                width={80}
+                                height={80}
+                                className="rounded-full"
                               />
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2 mb-2">
@@ -533,7 +541,7 @@ export default function SearchPage() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {userAnalytics.overview?.reduce(
-                                    (sum: number, item: any) =>
+                                    (sum: number, item: UserOverviewData) =>
                                       sum + (item.stars || 0),
                                     0
                                   ) || 0}
@@ -548,7 +556,7 @@ export default function SearchPage() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {userAnalytics.overview?.reduce(
-                                    (sum: number, item: any) =>
+                                    (sum: number, item: UserOverviewData) =>
                                       sum + (item.commits || 0),
                                     0
                                   ) || 0}
@@ -610,7 +618,7 @@ export default function SearchPage() {
                                     {/* Most Active Day calculation */}
                                     {userAnalytics.behavior?.length > 0
                                       ? userAnalytics.behavior.reduce(
-                                        (max: any, day: any) =>
+                                        (max: UserBehaviorData, day: UserBehaviorData) =>
                                           day.commits + day.prs + day.issues >
                                             max.commits + max.prs + max.issues
                                             ? day
@@ -629,7 +637,7 @@ export default function SearchPage() {
                                   <td className="py-3 text-right font-semibold">
                                     {/* Weekly totals */}
                                     {userAnalytics.behavior?.reduce(
-                                      (sum: number, day: any) =>
+                                      (sum: number, day: UserBehaviorData) =>
                                         sum + day.commits,
                                       0
                                     ) || 0}
@@ -644,7 +652,7 @@ export default function SearchPage() {
                                   </td>
                                   <td className="py-3 text-right font-semibold">
                                     {userAnalytics.behavior?.reduce(
-                                      (sum: number, day: any) => sum + day.prs,
+                                      (sum: number, day: UserBehaviorData) => sum + day.prs,
                                       0
                                     ) || 0}
                                   </td>
@@ -658,7 +666,7 @@ export default function SearchPage() {
                                   </td>
                                   <td className="py-3 text-right font-semibold">
                                     {userAnalytics.behavior?.reduce(
-                                      (sum: number, day: any) =>
+                                      (sum: number, day: UserBehaviorData) =>
                                         sum + day.issues,
                                       0
                                     ) || 0}
@@ -863,7 +871,7 @@ export default function SearchPage() {
                   <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                   <h2 className="text-xl font-semibold mb-2">User Not Found</h2>
                   <p className="text-gray-600 mb-4">
-                    No user data available for "{userParam}"
+                    No user data available for &quot;{userParam}&quot;
                   </p>
                   <Button onClick={() => setSearchModalOpen(true)}>
                     Try Different Search
@@ -879,7 +887,7 @@ export default function SearchPage() {
                   <div className="flex items-center mb-6">
                     <Package className="w-6 h-6 mr-2" />
                     <h1 className="text-2xl font-bold">
-                      Repositories matching "{repoParam}"
+                      Repositories matching &quot;{repoParam}&quot;
                     </h1>
                     <Badge variant="secondary" className="ml-3">
                       {searchResults.repos.length} results
@@ -958,8 +966,8 @@ export default function SearchPage() {
                     No results found
                   </h2>
                   <p className="text-gray-600 mb-4">
-                    No {userParam ? "users" : "repositories"} found for "
-                    {userParam || repoParam}"
+                    No {userParam ? "users" : "repositories"} found for &quot;
+                    {userParam || repoParam}&quot;
                   </p>
                   <Button onClick={() => setSearchModalOpen(true)}>
                     Try Different Search

@@ -56,4 +56,3 @@ export function CallToActionSection() {
   )
 }
 
-// This section is a CTA that redirects to the login page

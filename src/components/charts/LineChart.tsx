@@ -3,7 +3,7 @@ import EChartsBase, { EChartsBaseProps, GITHUB_COLORS } from './EChartsBase';
 import type { EChartsOption } from 'echarts';
 
 export interface LineChartProps extends Omit<EChartsBaseProps, 'option'> {
-  data: Array<Record<string, any>>;
+  data: Array<Record<string, string | number>>;
   xField: string;
   yFields: string[];
   xAxisLabel?: string;

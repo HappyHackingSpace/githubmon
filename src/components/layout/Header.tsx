@@ -2,42 +2,25 @@
 
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RateLimitWarning } from '@/components/common/RateLimitWarning'
-import { SearchModal } from '@/components/search/SearchModal'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
-import { useSearchStore, useAuthStore, useStoreHydration } from '@/stores'
+import { useSearchStore } from '@/stores'
 import { Button } from '../ui/button'
-import { Search, User, LogOut, BarChart3 } from 'lucide-react'
+import { Search, User } from 'lucide-react'
 
 
 export function Header() {
   const {
-    currentQuery,
-    currentSearchType,
     setSearchModalOpen,
-    setCurrentQuery,
-    setCurrentSearchType
+ 
   } = useSearchStore()
 
-  const { isConnected, orgData, logout } = useAuthStore()
-  const hasHydrated = useStoreHydration()
+
   const router = useRouter()
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    setSearchModalOpen(true)
-  }
 
-  const handleInputClick = () => {
-    setSearchModalOpen(true)
-  }
 
-  const handleLogout = () => {
-    logout()
-    router.push('/')
-  }
+
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">

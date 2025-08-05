@@ -41,7 +41,6 @@ export type {
   GitHubAPIHeaders,
   GitHubResponseHeaders,
   GitHubClientConfig,
-  OSSInsightClientConfig,
   APIClient,
   RequestConfig,
   APIResponse as GenericAPIResponse,
@@ -121,7 +120,7 @@ export interface FormField<T = string> {
   required?: boolean
 }
 
-export interface FormState<T extends Record<string, any>> {
+export interface FormState<T extends Record<string, unknown>> {
   fields: {
     [K in keyof T]: FormField<T[K]>
   }
@@ -167,7 +166,7 @@ export interface FeatureFlags {
 // Analytics types
 export interface AnalyticsEvent {
   name: string
-  properties?: Record<string, any>
+  properties?: Record<string, unknown>
   timestamp?: number
   userId?: string
   sessionId?: string
@@ -175,8 +174,8 @@ export interface AnalyticsEvent {
 
 export interface AnalyticsProvider {
   track: (event: AnalyticsEvent) => void
-  identify: (userId: string, traits?: Record<string, any>) => void
-  page: (name: string, properties?: Record<string, any>) => void
+  identify: (userId: string, traits?: Record<string, unknown>) => void
+  page: (name: string, properties?: Record<string, unknown>) => void
 }
 
 // Notification types

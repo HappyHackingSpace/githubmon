@@ -1,7 +1,6 @@
 // src/app/quick-wins/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
 
@@ -21,9 +20,7 @@ import {
     Lightbulb,
     Wrench,
     Search,
-    RefreshCw,
     AlertTriangle,
-    Info,
     Github
 } from 'lucide-react'
 import { useSearchStore } from '@/stores'

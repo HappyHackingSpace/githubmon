@@ -2,22 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { ThemeToggleMinimal } from '@/components/theme/ThemeToggle'
+import { usePathname } from 'next/navigation'
 
-import { useSidebarState, useAuthStore, useStoreHydration } from '@/stores'
+
+import { useSidebarState } from '@/stores'
 import {
-    Home,
-    Flame,
-    TrendingUp,
-    Languages,
-    Users,
-    FolderOpen,
-    BarChart2,
-    LogOut,
+
     Activity,
     Star,
     Code,
@@ -29,32 +19,13 @@ import {
     Eye
 } from 'lucide-react'
 
-interface SidebarProps {
-    isOpen: boolean
-    onClose: () => void
-}
-
-interface TrendingItem {
-    name: string
-    description: string
-    stars: number
-    language: string
-    url: string
-    type: 'repo' | 'user' | 'topic'
-}
 
 export function SidebarSearch() {
     const pathname = usePathname()
-    const router = useRouter()
-    const [quickTrends, setQuickTrends] = useState<TrendingItem[]>([])
-    const [topTopics, setTopTopics] = useState<string[]>([])
-    const [loading, setLoading] = useState(true)
     const [activeSection, setActiveSection] = useState('overview')
     const { isOpen, setOpen } = useSidebarState()
 
-    // Auth state
-    const hasHydrated = useStoreHydration()
-    const { isConnected, orgData, logout } = useAuthStore()
+
 
     const navigationItems = [
         { href: '#overview', label: 'Overview', icon: Eye, section: 'analytics' },
@@ -67,7 +38,6 @@ export function SidebarSearch() {
         { href: '#contribution-activities', label: 'Contribution Activities', icon: UserPlus, section: 'analytics' }
     ]
 
-    // Listen for active section changes
     useEffect(() => {
         const handleActiveSection = (event: CustomEvent) => {
             setActiveSection(event.detail.section);
@@ -77,11 +47,8 @@ export function SidebarSearch() {
         return () => window.removeEventListener('activeSectionChange', handleActiveSection as EventListener);
     }, []);
 
-    const handleLogout = () => {
-        logout() // logout fonksiyonu artık otomatik yönlendirme yapıyor
-    }
+  
 
-    // Group navigation items by section
     const mainItems = navigationItems.filter(item => item.section === 'main')
     const analyticsItems = navigationItems.filter(item => item.section === 'analytics')
 

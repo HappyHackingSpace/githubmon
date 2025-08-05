@@ -42,8 +42,11 @@ export default function PieChart({
     title: undefined,
     tooltip: {
       trigger: 'item',
-      formatter: (params: any) => {
-        const { name, value, percent } = params;
+      formatter: (params: unknown) => {
+        const p = params as { name?: string; value?: number; percent?: number };
+        const name = p.name || '';
+        const value = p.value || 0;
+        const percent = p.percent || 0;
         return `${name}<br/>${value} (${percent}%)`;
       }
     },

@@ -27,6 +27,7 @@ Easily search for repositories, users, and organizations with advanced analytics
    git clone https://github.com/your-username/githubmon.git
    cd githubmon
    ```
+
 2. Install dependencies:
    ```sh
    npm install
@@ -37,7 +38,19 @@ Easily search for repositories, users, and organizations with advanced analytics
    # or
    bun install
    ```
-3. Start the development server:
+
+3. Set up environment variables:
+   ```sh
+   cp .env.example .env.local
+   ```
+   
+   Edit `.env.local` and fill in the required values:
+   - `GITHUB_CLIENT_ID` - Your GitHub OAuth App Client ID
+   - `GITHUB_CLIENT_SECRET` - Your GitHub OAuth App Client Secret
+   - `NEXTAUTH_SECRET` - A random secret for NextAuth.js
+   - `NEXTAUTH_URL` - Your application URL (http://localhost:3000 for development)
+
+4. Start the development server:
    ```sh
    npm run dev
    # or
@@ -47,7 +60,53 @@ Easily search for repositories, users, and organizations with advanced analytics
    # or
    bun dev
    ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Environment Variables Setup
+
+This application requires GitHub OAuth for authentication. Follow these steps:
+
+#### 1. Create a GitHub OAuth App
+
+1. Go to [GitHub Developer Settings](https://github.com/settings/applications/new)
+2. Create a new OAuth App with these settings:
+   - **Application name**: GitHubMon (or your preferred name)
+   - **Homepage URL**: `http://localhost:3000` (for development)
+   - **Application description**: Optional description
+   - **Authorization callback URL**: `http://localhost:3000/api/auth/callback/github`
+
+3. After creating the app, copy the **Client ID** and **Client Secret**
+
+#### 2. Configure Environment Variables
+
+Copy `.env.example` to `.env.local` and update the values:
+
+```bash
+# Required - Get these from your GitHub OAuth App
+GITHUB_CLIENT_ID=your_github_client_id_here
+GITHUB_CLIENT_SECRET=your_github_client_secret_here
+
+# Required - Generate a random secret
+NEXTAUTH_SECRET=your_random_secret_here
+
+# Required - Your app URL
+NEXTAUTH_URL=http://localhost:3000
+```
+
+To generate a secure `NEXTAUTH_SECRET`, you can use:
+```bash
+openssl rand -base64 32
+```
+
+#### 3. OAuth Scopes
+
+The application requests these minimal GitHub scopes:
+- `read:user` - Read basic user profile information
+- `user:email` - Access user email addresses  
+- `public_repo` - Read-only access to public repositories
+
+These scopes follow the principle of least privilege and provide secure access without unnecessary permissions.
 
 ## Usage
 

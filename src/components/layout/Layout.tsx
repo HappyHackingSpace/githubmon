@@ -5,14 +5,14 @@ import { Sidebar, SidebarToggle } from './Sidebar'
 import { useSidebarState } from '@/stores'
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { isOpen, setOpen } = useSidebarState()
+  const {  setOpen } = useSidebarState()
 
   return (
-    <div className="flex  overflow-hidden">
+    <div className="flex">
       <Sidebar />
       <SidebarToggle onClick={() => setOpen(true)} />
 
-      <main className="flex-1 overflow-y-auto lg:ml-0">
+       <main className="flex-1 min-h-screen">
         {children}
       </main>
     </div>

@@ -73,8 +73,8 @@ export function RateLimitWarning() {
       setRateLimit({ remaining, limit, resetTime, used })
     }
 
-    // @ts-ignore - Global function for API client
-    window.updateRateLimit = updateFromHeaders
+    // Add global function for API client to use
+    ;(window as typeof window & { updateRateLimit?: (headers: Headers) => void }).updateRateLimit = updateFromHeaders
   }, [setRateLimit])
 
   if (!rateLimitInfo) {

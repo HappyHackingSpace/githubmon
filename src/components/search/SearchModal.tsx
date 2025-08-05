@@ -1,4 +1,5 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,7 @@ import {
   GitBranch,
   Users,
 } from "lucide-react";
-import { ossInsightClient } from "@/lib/api/oss-insight-client";
+import { githubAPIClient } from "@/lib/api/github-api-client";
 import {
   useSearchStore,
   usePreferencesStore,
@@ -27,12 +28,7 @@ import type { TrendingRepo, TopContributor } from "@/types/oss-insight";
 
 import { useRouter } from "next/navigation";
 
-type SearchResults = {
-  repos: TrendingRepo[];
-  users: TopContributor[];
-  loading: boolean;
-  error: string | null;
-};
+
 
 export function SearchModal() {
   const router = useRouter();
@@ -42,7 +38,6 @@ export function SearchModal() {
     currentSearchType,
     currentResults,
     searchHistory,
-    recentSearches,
     setSearchModalOpen,
     setCurrentQuery,
     setCurrentSearchType,
@@ -64,7 +59,7 @@ export function SearchModal() {
     setCurrentSearchType,
   ]);
 
-  const performSearch = async (
+  const performSearch = useCallback(async (
     searchQuery: string,
     type: "all" | "repos" | "users"
   ) => {
@@ -81,16 +76,18 @@ export function SearchModal() {
     });
 
     try {
-      const promises: [Promise<TrendingRepo[]>, Promise<TopContributor[]>] = [
-        type === "all" || type === "repos"
-          ? ossInsightClient.searchRepositories(searchQuery, "stars", 10)
-          : Promise.resolve([]),
-        type === "all" || type === "users"
-          ? ossInsightClient.searchUsers(searchQuery, "all", 10)
-          : Promise.resolve([]),
-      ];
+      let repos: TrendingRepo[] = [];
+      let users: TopContributor[] = [];
 
-      const [repos, users] = await Promise.all(promises);
+      if (type === "all") {
+        repos = await githubAPIClient.searchRepositories(searchQuery, "stars", 5);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        users = await githubAPIClient.searchUsers(searchQuery, "all", 5);
+      } else if (type === "repos") {
+        repos = await githubAPIClient.searchRepositories(searchQuery, "stars", 10);
+      } else if (type === "users") {
+        users = await githubAPIClient.searchUsers(searchQuery, "all", 10);
+      }
 
       setSearchResults({
         repos: repos || [],
@@ -102,7 +99,7 @@ export function SearchModal() {
       if ((repos && repos.length > 0) || (users && users.length > 0)) {
         addToHistory(searchQuery, type);
       }
-    } catch (error) {
+    } catch {
       const errorMessage = "An error occurred during search";
 
       setSearchResults({
@@ -118,18 +115,19 @@ export function SearchModal() {
         message: errorMessage,
       });
     }
-  };
+  }, [currentResults.repos, currentResults.users, setSearchResults, addToHistory, addNotification]);
 
-  const debounceSearch = useCallback(
-    debounce((query: string, type: "all" | "repos" | "users") => {
-      performSearch(query, type);
-    }, 500),
-    []
-  );
+  const [debouncedSearch] = useState(() => {
+    let timeout: NodeJS.Timeout;
+    return (query: string, type: "all" | "repos" | "users") => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => performSearch(query, type), 800);
+    };
+  });
 
   useEffect(() => {
-    debounceSearch(currentQuery, currentSearchType);
-  }, [currentQuery, currentSearchType, debounceSearch]);
+    debouncedSearch(currentQuery, currentSearchType);
+  }, [currentQuery, currentSearchType, debouncedSearch]);
 
   useEffect(() => {
     if (!isSearchModalOpen) {
@@ -152,27 +150,21 @@ export function SearchModal() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSearchModalOpen, setSearchModalOpen]);
 
-  const handleRecentSearchClick = (query: string) => {
-    setCurrentQuery(query);
-  };
+ 
 
   const hasResults =
     currentResults.repos.length > 0 || currentResults.users.length > 0;
   const handleUserClick = (username: string) => {
-    // Store'da seçili kullanıcıyı sakla
     setCurrentQuery(username);
     setCurrentSearchType("users");
     setSearchModalOpen(false);
-    // Search sayfasına git ve kullanıcı bilgilerini aktar
     router.push(`/search?user=${username}`);
   };
 
   const handleRepoClick = (repoName: string) => {
-    // Store'da seçili repo'yu sakla
     setCurrentQuery(repoName);
     setCurrentSearchType("repos");
     setSearchModalOpen(false);
-    // Search sayfasına git ve repo bilgilerini aktar
     router.push(`/search?repo=${repoName}`);
   };
 
@@ -215,7 +207,7 @@ export function SearchModal() {
               ))}
             </div>
 
-            {/* Search Now button removed */}
+       
           </div>
         </div>
 
@@ -236,7 +228,7 @@ export function SearchModal() {
               </div>
               <Button
                 variant="outline"
-                onClick={() => debounceSearch(currentQuery, currentSearchType)}
+                onClick={() => debouncedSearch(currentQuery, currentSearchType)}
               >
                 Try Again
               </Button>
@@ -251,7 +243,7 @@ export function SearchModal() {
                 <div className="flex items-center justify-center mb-2">
                   <Search className="w-12 h-12 text-gray-300" />
                 </div>
-                <div>No results found for "{currentQuery}"</div>
+                <div>No results found for &ldquo;{currentQuery}&rdquo;</div>
                 <div className="text-sm mt-2">Try different keywords</div>
               </div>
             )}
@@ -271,10 +263,12 @@ export function SearchModal() {
                       className="flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 group cursor-pointer"
                       onClick={() => handleRepoClick(repo.full_name)}
                     >
-                      <img
+                      <Image
                         src={repo.owner.avatar_url}
                         alt={repo.owner.login}
-                        className="w-7 h-7 rounded-full object-cover"
+                        width={28}
+                        height={28}
+                        className="rounded-full object-cover"
                       />
                       <div className="flex-1 min-w-0">
                         <span className="font-medium text-indigo-600 group-hover:text-indigo-800 truncate">
@@ -319,10 +313,12 @@ export function SearchModal() {
                       className="flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 group cursor-pointer"
                       onClick={() => handleUserClick(user.login)}
                     >
-                      <img
+                      <Image
                         src={user.avatar_url}
                         alt={user.login}
-                        className="w-7 h-7 rounded-full object-cover"
+                        width={28}
+                        height={28}
+                        className="rounded-full object-cover"
                       />
                       <div className="flex-1 min-w-0">
                         <span className="font-medium text-indigo-600 group-hover:text-indigo-800 truncate">
@@ -400,23 +396,4 @@ export function SearchModal() {
   );
 }
 
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): {
-  (...args: Parameters<T>): void;
-  cancel: () => void;
-} {
-  let timeout: NodeJS.Timeout;
 
-  const debounced = (...args: Parameters<T>): void => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-
-  debounced.cancel = () => {
-    clearTimeout(timeout);
-  };
-
-  return debounced;
-}

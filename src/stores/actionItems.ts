@@ -1,8 +1,30 @@
 // stores/actionItems.ts
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { ossInsightClient } from '@/lib/api/oss-insight-client'
+import { githubAPIClient } from '@/lib/api/github-api-client'
 import { useAuthStore } from './auth'
+
+// Raw item type from API
+interface RawAPIItem {
+  id: number
+  title: string
+  repo: string
+  type: 'issue' | 'pr'
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  url?: string
+  createdAt: string
+  updatedAt: string
+  assignee?: string
+  author?: string
+  labels?: string[]
+  daysOld?: number
+  assignedAt?: string
+  mentionType?: 'mention' | 'review_request' | 'comment'
+  mentionedAt?: string
+  lastActivity?: string
+  daysStale?: number
+  reviewStatus?: 'pending' | 'approved' | 'changes_requested'
+}
 
 export interface ActionItem {
   id: number
@@ -204,7 +226,7 @@ export const useActionItemsStore = create<ActionItemsState>()(
         }
 
         // Set the user token in the API client
-        ossInsightClient.setUserToken(userToken)
+        githubAPIClient.setUserToken(userToken)
 
         const types = type ? [type] : ['assigned', 'mentions', 'stale', 'goodFirstIssues', 'easyFixes'] as const
 
@@ -216,11 +238,11 @@ export const useActionItemsStore = create<ActionItemsState>()(
 
             switch (t) {
               case 'assigned':
-                items = await ossInsightClient.getAssignedItems(username)
+                items = await githubAPIClient.getAssignedItems(username) as RawAPIItem[]
                 get().setAssignedItems(items.map(item => ({ ...item, assignedAt: item.assignedAt || item.createdAt })))
                 break
               case 'mentions':
-                items = await ossInsightClient.getMentionItems(username)
+                items = await githubAPIClient.getMentionItems(username)
                 get().setMentionItems(items.map(item => ({
                   ...item,
                   mentionType: item.mentionType || 'mention',
@@ -228,7 +250,7 @@ export const useActionItemsStore = create<ActionItemsState>()(
                 })))
                 break
               case 'stale':
-                items = await ossInsightClient.getStaleItems(username)
+                items = await githubAPIClient.getStaleItems(username)
                 get().setStaleItems(items.map(item => ({
                   ...item,
                   lastActivity: item.lastActivity || item.updatedAt,
@@ -237,11 +259,11 @@ export const useActionItemsStore = create<ActionItemsState>()(
                 })))
                 break
               case 'goodFirstIssues':
-                items = await ossInsightClient.getGoodFirstIssues() // Don't pass username as language
+                items = await githubAPIClient.getGoodFirstIssues() // Don't pass username as language
                 get().setGoodFirstIssues(items)
                 break
               case 'easyFixes':
-                items = await ossInsightClient.getEasyFixes() // Don't pass username as language
+                items = await githubAPIClient.getEasyFixes() // Don't pass username as language
                 get().setEasyFixes(items)
                 break
             }

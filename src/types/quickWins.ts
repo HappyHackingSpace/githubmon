@@ -23,12 +23,6 @@ export interface GitHubIssue {
     priority: 'low' | 'medium' | 'high'
 }
 
-interface QuickWinsCount {
-    goodIssuesCount: number
-    easyFixesCount: number
-    count: number
-    isLoading: boolean
-}
 
 export interface QuickWinsState {
     goodIssues: GitHubIssue[]

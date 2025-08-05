@@ -1,14 +1,24 @@
-// src/app/dashboard/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import {  useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { QuickWinsTable } from '@/components/quick-wins/QuickWinsTable'
 import type { GitHubIssue } from '@/types/quickWins'
-// Dashboard'daki ActionItem'ı QuickWinsTable'ın beklediği GitHubIssue formatına dönüştür
+
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+import { useRequireAuth } from '@/hooks/useAuth'
+import { Target, MessageSquare, Clock, Zap, Search, ExternalLink, Sparkles } from "lucide-react"
+import { SearchModal } from '@/components/search/SearchModal'
+import { useSearchStore, useActionItemsStore } from '@/stores'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import RefreshButton from "@/components/Refresh/RefreshButton";
+
 function mapActionItemToGitHubIssue(item: any): GitHubIssue {
   return {
     id: item.id,
@@ -29,16 +39,7 @@ function mapActionItemToGitHubIssue(item: any): GitHubIssue {
     priority: ['urgent', 'high', 'medium', 'low'].includes(item.priority) ? item.priority : 'low',
   }
 }
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
-import { useRequireAuth } from '@/hooks/useAuth'
-import { Target, MessageSquare, Clock, Zap, Search, ExternalLink, Sparkles } from "lucide-react"
-import { SearchModal } from '@/components/search/SearchModal'
-import { useSearchStore, useActionItemsStore } from '@/stores'
-import { ThemeToggle } from '@/components/theme/ThemeToggle'
-import RefreshButton from "@/components/Refresh/RefreshButton";
 
 interface ActionItem {
   id: string | number;
@@ -52,7 +53,7 @@ interface ActionItem {
 }
 
 export default function DashboardPage() {
-  const { isLoading, orgData } = useRequireAuth()
+  const { isLoading, orgData, isAuthenticated } = useRequireAuth()
   const { setSearchModalOpen } = useSearchStore()
   const {
     assignedItems,
@@ -68,7 +69,6 @@ export default function DashboardPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  // Get current tab from URL or default to 'assigned'
   const currentTab = searchParams.get('tab') || 'assigned'
   const isQuickWinsTab = currentTab === 'quick-wins' || currentTab === 'good-first-issues' || currentTab === 'easy-fixes'
   const isActionRequiredTab = !isQuickWinsTab
@@ -83,7 +83,6 @@ export default function DashboardPage() {
     }
   }, [orgData?.token, refreshData])
 
-  // Real data from store
   const getActionItems = (type: string) => {
     switch (type) {
       case 'assigned': return assignedItems
@@ -356,7 +355,7 @@ export default function DashboardPage() {
                   <div className="text-center py-12 text-gray-500">
                     <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                     <p>No mentions found</p>
-                    <p className="text-sm mt-2">Items where you're mentioned will appear here</p>
+                    <p className="text-sm mt-2">Items where you&apos;re mentioned will appear here</p>
                   </div>
                 )}
               </CardContent>

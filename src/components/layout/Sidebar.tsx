@@ -1,29 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname,  useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 
 import { useSidebarState, useAuthStore, useStoreHydration, useActionItemsStore } from '@/stores'
-import { ChevronRight, Clock, Flame, LogOut, MessageSquare, Sparkles, Star, Target, Zap, } from 'lucide-react'
+import { ChevronRight, Clock,  LogOut, MessageSquare, Sparkles, Star, Target, Zap, } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
 
-interface SidebarProps {
-  isOpen: boolean
-  onClose: () => void
-}
 
-interface TrendingItem {
-  name: string
-  description: string
-  stars: number
-  language: string
-  url: string
-  type: 'repo' | 'user' | 'topic'
-}
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -62,7 +50,7 @@ export function Sidebar() {
   ]
 
   const handleLogout = () => {
-    logout() // logout fonksiyonu artık otomatik yönlendirme yapıyor
+    logout() 
   }
   return (
     <>
@@ -75,9 +63,9 @@ export function Sidebar() {
       )}
 
       <aside className={`
-        fixed top-0 left-0 h-full w-80 bg-sidebar border-r border-sidebar-border z-50 transform transition-transform duration-300 ease-in-out
+        fixed top-0 left-0 h-screen w-80 bg-sidebar border-r border-sidebar-border z-50 transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:z-auto
+        lg:translate-x-0 lg:static lg:z-auto lg:h-screen
         flex flex-col
       `}>
 
