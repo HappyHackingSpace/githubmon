@@ -80,16 +80,18 @@ export function SearchModal() {
     });
 
     try {
-      const promises: [Promise<TrendingRepo[]>, Promise<TopContributor[]>] = [
-        type === "all" || type === "repos"
-          ? githubAPIClient.searchRepositories(searchQuery, "stars", 10)
-          : Promise.resolve([]),
-        type === "all" || type === "users"
-          ? githubAPIClient.searchUsers(searchQuery, "all", 10)
-          : Promise.resolve([]),
-      ];
+      let repos: TrendingRepo[] = [];
+      let users: TopContributor[] = [];
 
-      const [repos, users] = await Promise.all(promises);
+      if (type === "all") {
+        repos = await githubAPIClient.searchRepositories(searchQuery, "stars", 5);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        users = await githubAPIClient.searchUsers(searchQuery, "all", 5);
+      } else if (type === "repos") {
+        repos = await githubAPIClient.searchRepositories(searchQuery, "stars", 10);
+      } else if (type === "users") {
+        users = await githubAPIClient.searchUsers(searchQuery, "all", 10);
+      }
 
       setSearchResults({
         repos: repos || [],
@@ -122,7 +124,7 @@ export function SearchModal() {
   const debounceSearch = useCallback(
     debounce((query: string, type: "all" | "repos" | "users") => {
       performSearch(query, type);
-    }, 500),
+    }, 800),
     []
   );
 
