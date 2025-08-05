@@ -29,23 +29,25 @@ export function Sidebar() {
   const currentTab = searchParams.get('tab') || 'assigned'
   const isDashboardPage = pathname.startsWith('/dashboard')
 
-  useEffect(() => {
-    if (hasHydrated && isConnected && orgData?.token) {
-      refreshData().catch((error) => {
-        console.error('Failed to refresh action items:', error)
-      })
-    }
-  }, [hasHydrated, isConnected, orgData?.token, refreshData])
-
-  const getBadgeCount = (type: 'assigned' | 'mentions' | 'stale') => getCountByType(type)
+  // Badge count helpers
+  const getBadgeCount = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => getCountByType(type)
   const getTotalActionCount = () => getTotalCount()
 
   // Show loading state in badges
-  const getBadgeContent = (type: 'assigned' | 'mentions' | 'stale') => {
+  const getBadgeContent = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => {
     if (loading[type]) return '...'
     return getBadgeCount(type)
   }
 
+  const router = useRouter()
+
+  // Hangi bölümün açık olduğunu kontrol etmek için
+  const isQuickWinsTab = currentTab === 'quick-wins' || currentTab === 'good-first-issues' || currentTab === 'easy-fixes'
+  const isActionRequiredTab = !isQuickWinsTab && isDashboardPage
+
+  const navigationItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: Flame }
+  ]
 
   const handleLogout = () => {
     logout() 
@@ -89,11 +91,11 @@ export function Sidebar() {
           <div className="flex-1 overflow-y-auto p-4">
             <nav className="space-y-2">
               {/* Action Required - Active with Collapsible */}
-              <Collapsible defaultOpen={isDashboardPage}>
+              <Collapsible defaultOpen={isActionRequiredTab}>
                 <CollapsibleTrigger asChild>
                   <Link href="/dashboard" className={`
                     flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors
-                    ${isDashboardPage
+                    ${isActionRequiredTab
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                       : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                     }
@@ -168,13 +170,11 @@ export function Sidebar() {
                 )}
               </Collapsible>
 
-              {/* Coming Soon Items - Disabled Collapsibles */}
-
-              <Collapsible>
+              <Collapsible defaultOpen={isQuickWinsTab}>
                 <CollapsibleTrigger asChild>
-                  <Link href="/quick-wins" className={`
+                  <Link href="/dashboard?tab=good-first-issues" className={`
                     flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors
-                    ${pathname.startsWith('/quick-wins')
+                    ${isQuickWinsTab
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                       : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                     }
@@ -182,40 +182,51 @@ export function Sidebar() {
                     <div className="flex items-center gap-3">
                       <Target className="w-5 h-5" />
                       <span>Quick Wins</span>
+                      {(getBadgeCount('goodFirstIssues') + getBadgeCount('easyFixes')) > 0 && (
+                        <Badge variant="default" className="ml-1 text-xs min-w-[1.25rem] h-5">
+                          {getBadgeCount('goodFirstIssues') + getBadgeCount('easyFixes')}
+                        </Badge>
+                      )}
                     </div>
-                    <ChevronRight />
+                    <ChevronRight className={`w-4 h-4 transition-transform ${currentTab === 'quick-wins' ? 'rotate-90' : ''}`} />
                   </Link>
                 </CollapsibleTrigger>
 
-                {pathname.startsWith('/quick-wins') && (
-                  <CollapsibleContent className="pl-8 space-y-1 mt-1">
-                    <Link
-                      href="/quick-wins?tab=good-issues"
-                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                          ${currentTab === 'good-issues'
-                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                          : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
-                        }`}
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      Good First Issues
-                    </Link>
-                    <Link
-                      href="/quick-wins?tab=easy-fixes"
-                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                          ${currentTab === 'easy-fixes'
-                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                          : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
-                        }`}
-                    >
-                      <Zap className="w-4 h-4" />
-                      Easy Fixes
-                    </Link>
-                  </CollapsibleContent>
-                )}
+                <CollapsibleContent className="pl-8 space-y-1 mt-1">
+                  <Link
+                    href="/dashboard?tab=good-first-issues"
+                    className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
+                        ${currentTab === 'good-first-issues'
+                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                        : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      }`}>
+                    <Target className="w-4 h-4" />
+                    <span className="font-medium">Good First Issues</span>
+                    <Badge
+                      variant={getBadgeCount('goodFirstIssues') > 0 ? "default" : "secondary"}
+                      className="ml-auto text-xs">
+                      {getBadgeContent('goodFirstIssues')}
+                    </Badge>
+                  </Link>
+                  <Link
+                    href="/dashboard?tab=easy-fixes"
+                    className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
+                        ${currentTab === 'easy-fixes'
+                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                        : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      }`}>
+                    <Sparkles className="w-4 h-4" />
+                    <span className="font-medium">Easy Fixes</span>
+                    <Badge
+                      variant={getBadgeCount('easyFixes') > 0 ? "default" : "secondary"}
+                      className="ml-auto text-xs">
+                      {getBadgeContent('easyFixes')}
+                    </Badge>
+                  </Link>
+                </CollapsibleContent>
               </Collapsible>
 
-
+              {/* Coming Soon Items - Disabled Collapsibles */}
               <Collapsible>
                 <CollapsibleTrigger asChild>
                   <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
