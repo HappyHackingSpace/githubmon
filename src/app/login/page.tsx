@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -62,7 +63,14 @@ export default function LoginPage() {
 
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
-                By signing in, you agree to our terms of service and privacy policy
+                By signing in, you agree to our{' '}
+                <Link href="/terms-of-service" className="underline hover:text-foreground transition-colors">
+                  terms of service
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy-policy" className="underline hover:text-foreground transition-colors">
+                  privacy policy
+                </Link>
               </p>
             </div>
           </CardContent>
