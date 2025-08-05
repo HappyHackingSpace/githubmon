@@ -42,7 +42,6 @@ export function SearchModal() {
     currentSearchType,
     currentResults,
     searchHistory,
-    recentSearches,
     setSearchModalOpen,
     setCurrentQuery,
     setCurrentSearchType,
@@ -159,20 +158,16 @@ export function SearchModal() {
   const hasResults =
     currentResults.repos.length > 0 || currentResults.users.length > 0;
   const handleUserClick = (username: string) => {
-    // Store'da seçili kullanıcıyı sakla
     setCurrentQuery(username);
     setCurrentSearchType("users");
     setSearchModalOpen(false);
-    // Search sayfasına git ve kullanıcı bilgilerini aktar
     router.push(`/search?user=${username}`);
   };
 
   const handleRepoClick = (repoName: string) => {
-    // Store'da seçili repo'yu sakla
     setCurrentQuery(repoName);
     setCurrentSearchType("repos");
     setSearchModalOpen(false);
-    // Search sayfasına git ve repo bilgilerini aktar
     router.push(`/search?repo=${repoName}`);
   };
 
@@ -215,7 +210,7 @@ export function SearchModal() {
               ))}
             </div>
 
-            {/* Search Now button removed */}
+       
           </div>
         </div>
 
