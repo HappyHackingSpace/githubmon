@@ -27,10 +27,8 @@ const handler = NextAuth({
       return session
     },
     async redirect({ url, baseUrl }) {
-      // Always redirect to auth callback first, then to dashboard
-      if (url.startsWith('/') || url.startsWith(baseUrl)) {
-        return `${baseUrl}/auth/callback`
-      }
+      if (url.startsWith('/')) return `${baseUrl}${url}`
+      if (new URL(url).origin === baseUrl) return url
       return `${baseUrl}/auth/callback`
     }
   },
