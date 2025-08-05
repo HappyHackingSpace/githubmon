@@ -1,4 +1,3 @@
-// src/app/dashboard/page.tsx
 'use client'
 
 import {  useEffect } from 'react'
@@ -42,10 +41,8 @@ export default function DashboardPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  // Get current tab from URL or default to 'assigned'
   const currentTab = searchParams.get('tab') || 'assigned'
 
-  // Additional protection - if not authenticated after hydration, redirect
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace('/')
@@ -61,7 +58,6 @@ export default function DashboardPage() {
     }
   }, [orgData?.token, refreshData])
 
-  // Real data from store
   const getActionItems = (type: string) => {
     switch (type) {
       case 'assigned': return assignedItems
