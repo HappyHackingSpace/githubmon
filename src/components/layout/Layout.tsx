@@ -1,8 +1,9 @@
 'use client'
 
 
-import { Sidebar, SidebarToggle } from './Sidebar'
+import { Sidebar } from './Sidebar'
 import { useSidebarState } from '@/stores'
+import { SidebarToggle } from './SidebarToggle'
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { setOpen } = useSidebarState()
@@ -13,7 +14,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Sidebar />
         <SidebarToggle onClick={() => setOpen(true)} />
       </div>
-      <main className="ml-64 h-full overflow-auto">
+      <main className="lg:ml-64 ml-0 h-full overflow-auto">
         {children}
       </main>
     </div>
