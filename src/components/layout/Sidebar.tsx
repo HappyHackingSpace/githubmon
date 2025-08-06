@@ -118,6 +118,7 @@ export function Sidebar() {
                           : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                         }`}
                     >
+
                       <Target className="w-4 h-4" />
                       Assigned
                       <Badge
