@@ -14,7 +14,18 @@ async function fetchIssuesFromPopularRepos(
             throw new Error(`GitHub API error: ${repoRes.status}`);
         }
 
-        const repoData = await repoRes.json();
+        interface GitHubRepoSearchItem {
+            name: string;
+            owner: {
+                login: string;
+            };
+        }
+
+        interface GitHubSearchResponse {
+            items: GitHubRepoSearchItem[];
+        }
+
+        const repoData: GitHubSearchResponse = await repoRes.json();
 
         if (!repoData.items || !Array.isArray(repoData.items)) {
             throw new Error('Repo bulunamadı');
@@ -27,7 +38,7 @@ async function fetchIssuesFromPopularRepos(
         for (let i = 0; i < repoData.items.length; i += batchSize) {
             const batch = repoData.items.slice(i, i + batchSize);
             const batchResults = await Promise.all(
-                batch.map(async (repo: any) => {
+                batch.map(async (repo: GitHubRepoSearchItem) => {
                     try {
                         const issues = await fetchIssuesFromGitHub({
                             owner: repo.owner.login,

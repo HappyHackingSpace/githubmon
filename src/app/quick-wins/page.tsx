@@ -4,7 +4,6 @@
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -21,7 +20,7 @@ import {
     Wrench,
     Search,
     AlertTriangle,
-    Github
+
 } from 'lucide-react'
 import { useSearchStore } from '@/stores'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -51,9 +50,7 @@ export default function QuickWinsPage() {
         refreshGoodIssues,
         refreshEasyFixes,
         refreshAll,
-        totalIssues,
         needsToken,
-        hasData
     } = useQuickWins()
 
     const handleTabChange = (tab: string) => {

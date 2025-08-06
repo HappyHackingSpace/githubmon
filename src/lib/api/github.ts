@@ -1,5 +1,40 @@
 import { GitHubIssue } from '@/types/quickWins';
 
+// GitHub API response types
+interface GitHubIssueResponse {
+    id: number;
+    title: string;
+    repository_url: string;
+    html_url: string;
+    labels: Array<{
+        name: string;
+        color: string;
+    }>;
+    created_at: string;
+    updated_at: string;
+    user: {
+        login: string;
+        avatar_url: string;
+    };
+    comments: number;
+    state: 'open' | 'closed';
+    assignee?: {
+        login: string;
+        avatar_url: string;
+    } | null;
+}
+
+interface GitHubRepoResponse {
+    full_name: string;
+    language: string | null;
+    stargazers_count: number;
+}
+
+interface GitHubLabel {
+    name: string;
+    color: string;
+}
+
 const GITHUB_API_URL = 'https://api.github.com';
 
 const CACHE_DURATION = 1000 * 60 * 60 * 12; 
@@ -34,17 +69,17 @@ async function fetchIssuesFromGitHub({
     }
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error('GitHub API error');
-    const data = await res.json();
+    const data: GitHubIssueResponse[] = await res.json();
     // Her issue için kendi repository'sinden language ve stars bilgisini çek
-    const issues = await Promise.all(data.map(async (issue: any) => {
-        let repoData: any = {};
+    const issues = await Promise.all(data.map(async (issue: GitHubIssueResponse) => {
+        let repoData: GitHubRepoResponse = {} as GitHubRepoResponse;
         try {
             const repoRes = await fetch(issue.repository_url, { headers });
             if (repoRes.ok) {
                 repoData = await repoRes.json();
             }
-        } catch (e) {
-            repoData = {};
+        } catch {
+            repoData = {} as GitHubRepoResponse;
         }
         return {
             id: issue.id,
@@ -52,17 +87,17 @@ async function fetchIssuesFromGitHub({
             repository: repoData.full_name || `${owner}/${repo}`,
             repositoryUrl: issue.repository_url.replace('api.github.com/repos', 'github.com'),
             url: issue.html_url,
-            labels: issue.labels.map((l: any) => ({ name: l.name, color: l.color })),
+            labels: issue.labels.map((l: GitHubLabel) => ({ name: l.name, color: l.color })),
             created_at: issue.created_at,
             updated_at: issue.updated_at,
             difficulty:
-                issue.labels.some((l: any) => l.name.toLowerCase().includes('good first issue'))
-                    ? 'good'
-                    : issue.labels.some((l: any) => l.name.toLowerCase().includes('easy'))
-                        ? 'easy'
-                        : issue.labels.some((l: any) => l.name.toLowerCase().includes('medium'))
-                            ? 'medium'
-                            : undefined,
+                issue.labels.some((l: GitHubLabel) => l.name.toLowerCase().includes('good first issue'))
+                    ? 'easy' as const
+                    : issue.labels.some((l: GitHubLabel) => l.name.toLowerCase().includes('easy'))
+                        ? 'easy' as const
+                        : issue.labels.some((l: GitHubLabel) => l.name.toLowerCase().includes('medium'))
+                            ? 'medium' as const
+                            : 'medium' as const, // Default to medium instead of undefined
             language: repoData.language || 'unknown',
             stars: repoData.stargazers_count || 0,
             author: {
@@ -72,7 +107,7 @@ async function fetchIssuesFromGitHub({
             comments: issue.comments,
             state: issue.state,
             assignee: issue.assignee,
-            priority: 'medium',
+            priority: 'medium' as const,
         };
     }));
     issuesCache[cacheKey] = { timestamp: now, data: issues };

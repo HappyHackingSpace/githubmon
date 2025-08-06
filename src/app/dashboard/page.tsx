@@ -14,18 +14,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { useRequireAuth } from '@/hooks/useAuth'
 import { Target, MessageSquare, Clock, Zap, Search, ExternalLink, Sparkles } from "lucide-react"
-import { SearchModal } from '@/components/search/SearchModal'
 import { useSearchStore, useActionItemsStore } from '@/stores'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import RefreshButton from "@/components/Refresh/RefreshButton";
 
+interface ActionItemInput {
+  id: string | number;
+  title: string;
+  repo?: string;
+  url?: string;
+  labels?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  difficulty?: 'easy' | 'medium';
+  language?: string;
+  author?: string;
+  priority?: string;
+}
+
 const VALID_PRIORITIES = ['urgent', 'high', 'medium', 'low'] as const;
-function mapActionItemToGitHubIssue(item: any): GitHubIssue {
+type ValidPriority = typeof VALID_PRIORITIES[number];
+
+function isValidPriority(priority: string): priority is ValidPriority {
+  return VALID_PRIORITIES.includes(priority as ValidPriority);
+}
+
+function mapActionItemToGitHubIssue(item: ActionItemInput): GitHubIssue {
   if (!item) {
     throw new Error('Invalid item provided to mapActionItemToGitHubIssue');
   }
   return {
-    id: item.id,
+    id: typeof item.id === 'string' ? parseInt(item.id, 10) || 0 : item.id,
     title: item.title,
     repository: item.repo || '',
     repositoryUrl: item.repo ? `https://github.com/${item.repo}` : '',
@@ -38,9 +57,10 @@ function mapActionItemToGitHubIssue(item: any): GitHubIssue {
     stars: 0,
     author: { login: item.author || '', avatar_url: '' },
     comments: 0,
-    state: 'open',
+    state: 'open' as const,
     assignee: null,
-    priority: VALID_PRIORITIES.includes(item.priority) ? item.priority : 'low',
+    priority: (item.priority && isValidPriority(item.priority)) ? 
+      item.priority as 'low' | 'medium' | 'high' : 'low',
   }
 }
 
