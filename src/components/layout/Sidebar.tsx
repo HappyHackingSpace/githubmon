@@ -34,10 +34,10 @@ export function Sidebar() {
     return getBadgeCount(type)
   }
 
-  // Debug için log ekle
+  // Debug logs
   console.log('Sidebar Debug:', { currentTab, pathname, isDashboardPage })
 
-  // Fixed logic - tüm tab'lar için çalışacak şekilde
+  // Fixed logic - works for all tabs
   const isQuickWinsTab = currentTab === 'good-first-issues' || currentTab === 'easy-fixes'
   const isActionRequiredTab = ['assigned', 'mentions', 'stale'].includes(currentTab)
 
