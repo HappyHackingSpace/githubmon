@@ -234,16 +234,16 @@ export const useActionItemsStore = create<ActionItemsState>()(
           set((state) => ({ loading: { ...state.loading, [t]: true }, errors: { ...state.errors, [t]: null } }))
 
           try {
-            let items: any[] = []
+            let items: unknown[] = []
 
             switch (t) {
               case 'assigned':
-                items = await githubAPIClient.getAssignedItems(username) as RawAPIItem[]
-                get().setAssignedItems(items.map(item => ({ ...item, assignedAt: item.assignedAt || item.createdAt })))
+                items = await githubAPIClient.getAssignedItems(username)
+                get().setAssignedItems((items as RawAPIItem[]).map(item => ({ ...item, assignedAt: item.assignedAt || item.createdAt })))
                 break
               case 'mentions':
                 items = await githubAPIClient.getMentionItems(username)
-                get().setMentionItems(items.map(item => ({
+                get().setMentionItems((items as RawAPIItem[]).map(item => ({
                   ...item,
                   mentionType: item.mentionType || 'mention',
                   mentionedAt: item.mentionedAt || item.updatedAt
@@ -251,7 +251,7 @@ export const useActionItemsStore = create<ActionItemsState>()(
                 break
               case 'stale':
                 items = await githubAPIClient.getStaleItems(username)
-                get().setStaleItems(items.map(item => ({
+                get().setStaleItems((items as RawAPIItem[]).map(item => ({
                   ...item,
                   lastActivity: item.lastActivity || item.updatedAt,
                   daysStale: item.daysStale || item.daysOld || 0,
@@ -259,12 +259,12 @@ export const useActionItemsStore = create<ActionItemsState>()(
                 })))
                 break
               case 'goodFirstIssues':
-                items = await githubAPIClient.getGoodFirstIssues() 
-                get().setGoodFirstIssues(items)
+                items = await githubAPIClient.getGoodFirstIssues()
+                get().setGoodFirstIssues(items as ActionItem[])
                 break
               case 'easyFixes':
-                items = await githubAPIClient.getEasyFixes() 
-                get().setEasyFixes(items)
+                items = await githubAPIClient.getEasyFixes()
+                get().setEasyFixes(items as ActionItem[])
                 break
             }
 
