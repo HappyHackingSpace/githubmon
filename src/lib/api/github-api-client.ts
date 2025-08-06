@@ -73,17 +73,7 @@ class GitHubAPIClient {
     }
 
     const trimmedToken = token.trim()
-    
  
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Token validation debug:', {
-        tokenLength: trimmedToken.length,
-        tokenPrefix: trimmedToken.substring(0, 10) + '...',
-        tokenPattern: trimmedToken.substring(0, 4)
-      })
-    }
-
-   
     const isClassicToken = /^ghp_[A-Za-z0-9]{36}$/.test(trimmedToken)
     const isFineGrainedToken = /^github_pat_[A-Za-z0-9_]{82}$/.test(trimmedToken)
     const isGitHubAppToken = /^ghs_[A-Za-z0-9]{36}$/.test(trimmedToken)
@@ -456,11 +446,7 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
                                 language: repo.language || 'unknown',
                                 daysOld: Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
                             };
-                            console.log('🔍 Good First Issues - API mapping:', {
-                                issueId: issue.id,
-                                repoStars: repo.stargazers_count,
-                                mappedStars: mappedIssue.stars
-                            });
+                           
                             return mappedIssue;
                         })
                         
@@ -531,11 +517,7 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
                                     language: repo.language || 'unknown',
                                     daysOld: Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
                                 };
-                                console.log('🔍 Easy Fixes - API mapping:', {
-                                    issueId: issue.id,
-                                    repoStars: repo.stargazers_count,
-                                    mappedStars: mappedIssue.stars
-                                });
+                               
                                 return mappedIssue;
                             })
                         })

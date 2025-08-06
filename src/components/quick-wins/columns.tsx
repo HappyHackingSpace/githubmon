@@ -1,13 +1,9 @@
-// src/components/quick-wins/columns.ts
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ExternalLink,  Calendar } from 'lucide-react'
 import type { GitHubIssue } from '@/types/quickWins'
-
-
-
 
 export const createColumns = (): ColumnDef<GitHubIssue>[] => [
     {
