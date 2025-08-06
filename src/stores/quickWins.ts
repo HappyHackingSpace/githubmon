@@ -1,69 +1,6 @@
 import { create } from 'zustand'
-import { fetchIssuesFromGitHub } from '@/lib/api/github'
 import { GitHubIssue } from '@/types/quickWins'
-
-// Helper method to fetch issues from popular repos
-async function fetchIssuesFromPopularRepos(
-    labelQuery: string,
-    issuesPerRepo: number = 10
-): Promise<GitHubIssue[]> {
-    try {
-        const repoRes = await fetch('https://api.github.com/search/repositories?q=stars:%3E10000&sort=stars&order=desc&per_page=50');
-
-        if (!repoRes.ok) {
-            throw new Error(`GitHub API error: ${repoRes.status}`);
-        }
-
-        interface GitHubRepoSearchItem {
-            name: string;
-            owner: {
-                login: string;
-            };
-        }
-
-        interface GitHubSearchResponse {
-            items: GitHubRepoSearchItem[];
-        }
-
-        const repoData: GitHubSearchResponse = await repoRes.json();
-
-        if (!repoData.items || !Array.isArray(repoData.items)) {
-            throw new Error('Repo bulunamadı');
-        }
-
-        const userToken = window.localStorage.getItem('github_token') || '';
-        const batchSize = 5;
-        const allIssues: GitHubIssue[][] = [];
-
-        for (let i = 0; i < repoData.items.length; i += batchSize) {
-            const batch = repoData.items.slice(i, i + batchSize);
-            const batchResults = await Promise.all(
-                batch.map(async (repo: GitHubRepoSearchItem) => {
-                    try {
-                        const issues = await fetchIssuesFromGitHub({
-                            owner: repo.owner.login,
-                            repo: repo.name,
-                            labels: labelQuery,
-                            per_page: issuesPerRepo,
-                            state: 'open',
-                            token: userToken,
-                        });
-                        return issues;
-                    } catch (error) {
-                        console.warn(`Failed to fetch issues from ${repo.name}:`, error);
-                        return [];
-                    }
-                })
-            );
-            allIssues.push(...batchResults);
-        }
-
-        return allIssues.flat().filter(Boolean).slice(0, 50);
-    } catch (error) {
-        console.error('Error fetching issues from popular repos:', error);
-        throw error;
-    }
-}
+import { githubAPIClient } from '@/lib/api/github-api-client';
 
 interface QuickWinsState {
     goodIssues: GitHubIssue[]
@@ -93,12 +30,43 @@ export const useQuickWinsStore = create<QuickWinsState>((set) => ({
         }));
 
         try {
-            const flatIssues = await fetchIssuesFromPopularRepos('good first issue', 10);
+            const issues = await githubAPIClient.getGoodFirstIssues();
+            console.log('🔍 Good First Issues API Response:', issues);
+            
+            const formattedIssues: GitHubIssue[] = issues.map((item: any) => {
+                console.log('🔍 Good First Issues - Mapping item:', item);
+                const formatted = {
+                    id: item.id,
+                    title: item.title,
+                    repository: item.repo,
+                    repositoryUrl: `https://github.com/${item.repo}`,
+                    url: item.url || '',
+                    labels: (item.labels || []).map((name: string) => ({ name, color: '999999' })),
+                    created_at: item.createdAt || item.created_at,
+                    updated_at: item.updatedAt || item.updated_at,
+                    difficulty: 'easy' as const,
+                    language: item.language || 'unknown',
+                    stars: item.stars || 0,
+                    author: { login: item.author || '', avatar_url: '' },
+                    comments: item.comments || 0,
+                    state: 'open' as const,
+                    assignee: null,
+                    priority: item.priority || 'low' as const,
+                };
+                console.log('🔍 Good First Issues - Formatted:', {
+                    id: formatted.id,
+                    stars: formatted.stars,
+                    originalStars: item.stars
+                });
+                return formatted;
+            });
+
             set((state) => ({
-                goodIssues: flatIssues,
+                goodIssues: formattedIssues,
                 loading: { ...state.loading, goodIssues: false },
                 error: { ...state.error, goodIssues: null }
             }));
+            console.log('🔍 Good First Issues - Final store data:', formattedIssues.map(i => ({ id: i.id, stars: i.stars })));
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
             set((state) => ({
@@ -116,12 +84,43 @@ export const useQuickWinsStore = create<QuickWinsState>((set) => ({
         }));
 
         try {
-            const flatIssues = await fetchIssuesFromPopularRepos('easy fix', 10);
+            const issues = await githubAPIClient.getEasyFixes();
+            console.log('🔍 Easy Fixes API Response:', issues);
+            
+            const formattedIssues: GitHubIssue[] = issues.map((item: any) => {
+                console.log('🔍 Easy Fixes - Mapping item:', item);
+                const formatted = {
+                    id: item.id,
+                    title: item.title,
+                    repository: item.repo,
+                    repositoryUrl: `https://github.com/${item.repo}`,
+                    url: item.url || '',
+                    labels: (item.labels || []).map((name: string) => ({ name, color: '999999' })),
+                    created_at: item.createdAt || item.created_at,
+                    updated_at: item.updatedAt || item.updated_at,
+                    difficulty: 'easy' as const,
+                    language: item.language || 'unknown',
+                    stars: item.stars || 0,
+                    author: { login: item.author || '', avatar_url: '' },
+                    comments: item.comments || 0,
+                    state: 'open' as const,
+                    assignee: null,
+                    priority: item.priority || 'low' as const,
+                };
+                console.log('🔍 Easy Fixes - Formatted:', {
+                    id: formatted.id,
+                    stars: formatted.stars,
+                    originalStars: item.stars
+                });
+                return formatted;
+            });
+
             set((state) => ({
-                easyFixes: flatIssues,
+                easyFixes: formattedIssues,
                 loading: { ...state.loading, easyFixes: false },
                 error: { ...state.error, easyFixes: null }
             }));
+            console.log('🔍 Easy Fixes - Final store data:', formattedIssues.map(i => ({ id: i.id, stars: i.stars })));
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
             set((state) => ({

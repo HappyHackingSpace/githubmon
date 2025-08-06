@@ -59,18 +59,17 @@ export function QuickWinsTable({
     description,
     emptyMessage = 'No issues found'
 }: QuickWinsTableProps) {
+    
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [globalFilter, setGlobalFilter] = useState('')
 
-    // Language filter state
     const [languageFilter, setLanguageFilter] = useState<string>('all')
     const [difficultyFilter, setDifficultyFilter] = useState<string>('all')
 
     const columns = useMemo(() => createColumns(), [])
 
-    // Filter data based on local filters
     const filteredData = useMemo(() => {
         let filtered = data
 
@@ -85,7 +84,6 @@ export function QuickWinsTable({
         return filtered
     }, [data, languageFilter, difficultyFilter])
 
-    // Get unique languages for filter dropdown
     const availableLanguages = useMemo(() => {
         const languages = [...new Set(data.map(item => item.language).filter((lang): lang is string => typeof lang === 'string' && lang.trim() !== ''))]
         return languages.sort()
@@ -115,6 +113,8 @@ export function QuickWinsTable({
             },
         },
     })
+
+    
 
     // Loading skeleton
     if (loading) {

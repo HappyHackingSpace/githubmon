@@ -106,28 +106,45 @@ export const createColumns = (): ColumnDef<GitHubIssue>[] => [
             )
         }
     },
-    {
-        accessorKey: 'stars',
-        header: ({ column }) => (
-            <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')
-                }
-                className="h-auto p-0 font-semibold"
-            >
-                <Star className="w-4 h-4 mr-1" />
-                Stars
-            </Button>
-        ),
-        cell: ({ row }) => (
-            <div className="flex items-center gap-1" >
-                <Star className="w-3 h-3 text-yellow-500" />
-                <span className="text-sm font-medium" >
-                    {row.original.stars.toLocaleString()}
-                </span>
-            </div>
-        )
-    },
+   // {
+   //  accessorKey: 'stars',
+   //  header: ({ column }) => (
+   //      <Button
+   //          variant="ghost"
+   //          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+   //          className="h-auto p-0 font-semibold"
+   //      >
+   //          <Star className="w-4 h-4 mr-1" />
+   //          Stars
+   //      </Button>
+   //  ),
+   //  cell: ({ row }) => {
+   //      const data = row.original;
+   //      const stars = data.stars;
+   //      console.log('🔍 Table render - Full row data:', data);
+   //      console.log('🔍 Table render - Stars value:', { 
+   //          id: data.id, 
+   //          stars, 
+   //          typeof: typeof stars,
+   //          isNumber: typeof stars === 'number',
+   //          value: stars
+   //      });
+   //      
+   //      const displayValue = typeof stars === 'number' ? stars.toLocaleString() : '0';
+   //      
+   //      return (
+   //          <div className="flex items-center gap-1">
+   //              <Star className="w-3 h-3 text-yellow-500" />
+   //              <span className="text-sm font-medium">
+   //                  {displayValue}
+   //              </span>
+   //          </div>
+   //      );
+   //  },
+   //  sortingFn: (rowA, rowB) => {
+   //      return rowA.original.stars - rowB.original.stars
+   //  }
+   // },
     {
         accessorKey: 'comments',
         header: ({ column }) => (
@@ -148,23 +165,23 @@ export const createColumns = (): ColumnDef<GitHubIssue>[] => [
             </div>
         )
     },
-    {
-        accessorKey: 'difficulty',
-        header: 'Difficulty',
-        cell: ({ row }) => {
-            const difficulty = row.original.difficulty
-            return (
-                <Badge
-                    variant={difficulty === 'easy' ? 'default' : 'secondary'
-                    }
-                    className="text-xs"
-                >
-                    {difficulty === 'easy' ? '✨ Easy' : '⚡ Medium'
-                    }
-                </Badge>
-            )
-        }
-    },
+    // {
+    //     accessorKey: 'difficulty',
+    //     header: 'Difficulty',
+    //     cell: ({ row }) => {
+    //         const difficulty = row.original.difficulty
+    //         return (
+    //             <Badge
+    //                 variant={difficulty === 'easy' ? 'default' : 'secondary'
+    //                 }
+    //                 className="text-xs"
+    //             >
+    //                 {difficulty === 'easy' ? '✨ Easy' : '⚡ Medium'
+    //                 }
+    //             </Badge>
+    //         )
+    //     }
+    // },
     {
         accessorKey: 'created_at',
         header: ({ column }) => (
