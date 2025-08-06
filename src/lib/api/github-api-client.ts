@@ -115,8 +115,8 @@ class GitHubAPIClient {
       )
     }
 
-    if (trimmedToken.length < 20) {
-      throw new Error('GitHub token is too short. Minimum length is 20 characters.')
+    if (trimmedToken.length < 40) {
+      throw new Error('GitHub token is too short. Minimum length is 40 characters.')
     }
 
     if (trimmedToken.length > 255) {
