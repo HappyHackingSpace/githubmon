@@ -1,6 +1,6 @@
 'use client'
 
-import {  useEffect } from 'react'
+import { useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
 
@@ -59,7 +59,7 @@ function mapActionItemToGitHubIssue(item: ActionItemInput): GitHubIssue {
     comments: 0,
     state: 'open' as const,
     assignee: null,
-    priority: (item.priority && isValidPriority(item.priority)) ? 
+    priority: (item.priority && isValidPriority(item.priority)) ?
       item.priority as 'low' | 'medium' | 'high' : 'low',
   }
 }
@@ -93,7 +93,7 @@ export default function DashboardPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const currentTab = searchParams.get('tab') || 'assigned'
+  const currentTab = searchParams?.get('tab') || 'assigned'
   const isQuickWinsTab = currentTab === 'quick-wins' || currentTab === 'good-first-issues' || currentTab === 'easy-fixes'
   const isActionRequiredTab = !isQuickWinsTab
 
@@ -156,7 +156,7 @@ export default function DashboardPage() {
     <Layout>
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b pb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b pb-4 sticky top-0 bg-white dark:bg-gray-900 z-10">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {getWelcomeMessage()}

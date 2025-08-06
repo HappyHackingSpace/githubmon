@@ -59,11 +59,12 @@ export function Sidebar() {
       )}
 
       <aside className={`
-        fixed top-0 left-0 h-screen bg-sidebar border-r border-sidebar-border z-50 transform transition-transform duration-300 ease-in-out
+        fixed top-0 left-0 bg-sidebar border-r border-sidebar-border z-50 transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:z-auto lg:h-screen
+        lg:translate-x-0
         flex flex-col
         w-80 min-w-[20rem] max-w-[20rem]
+        h-screen
       `}>
 
         {/* Header */}
@@ -80,8 +81,8 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Navigation Content */}
-        <div className="flex-1">
+        {/* Navigation Content - no scroll, fixed height */}
+        <div className="flex-1 overflow-hidden">
           {/* Navigation Menu */}
           <div className="p-4">
             <nav className="space-y-2">
@@ -258,9 +259,9 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Logout - Fixed at bottom */}
+        {/* Logout - Fixed at bottom with fixed height */}
         {hasHydrated && isConnected && (
-          <div className="p-4 border-t border-sidebar-border">
+          <div className="p-4 border-t border-sidebar-border flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
