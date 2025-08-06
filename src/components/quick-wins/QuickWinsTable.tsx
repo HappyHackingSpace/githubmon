@@ -34,7 +34,6 @@ import {
     ChevronRight,
     ChevronsLeft,
     ChevronsRight,
-    Search,
     Filter,
     RefreshCw,
     AlertCircle

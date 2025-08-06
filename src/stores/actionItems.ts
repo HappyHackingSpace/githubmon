@@ -259,11 +259,11 @@ export const useActionItemsStore = create<ActionItemsState>()(
                 })))
                 break
               case 'goodFirstIssues':
-                items = await githubAPIClient.getGoodFirstIssues() // Don't pass username as language
+                items = await githubAPIClient.getGoodFirstIssues() 
                 get().setGoodFirstIssues(items)
                 break
               case 'easyFixes':
-                items = await githubAPIClient.getEasyFixes() // Don't pass username as language
+                items = await githubAPIClient.getEasyFixes() 
                 get().setEasyFixes(items)
                 break
             }
