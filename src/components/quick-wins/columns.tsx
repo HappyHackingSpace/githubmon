@@ -3,7 +3,7 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ExternalLink, Star, MessageSquare, Calendar } from 'lucide-react'
+import { ExternalLink,  Calendar } from 'lucide-react'
 import type { GitHubIssue } from '@/types/quickWins'
 
 
@@ -145,26 +145,26 @@ export const createColumns = (): ColumnDef<GitHubIssue>[] => [
    //      return rowA.original.stars - rowB.original.stars
    //  }
    // },
-    {
-        accessorKey: 'comments',
-        header: ({ column }) => (
-            <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')
-                }
-                className="h-auto p-0 font-semibold"
-            >
-                <MessageSquare className="w-4 h-4 mr-1" />
-                Comments
-            </Button>
-        ),
-        cell: ({ row }) => (
-            <div className="flex items-center gap-1" >
-                <MessageSquare className="w-3 h-3 text-gray-500" />
-                <span className="text-sm" > {row.original.comments} </span>
-            </div>
-        )
-    },
+    // {
+    //     accessorKey: 'comments',
+    //     header: ({ column }) => (
+    //         <Button
+    //             variant="ghost"
+    //             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')
+    //             }
+    //             className="h-auto p-0 font-semibold"
+    //         >
+    //             <MessageSquare className="w-4 h-4 mr-1" />
+    //             Comments
+    //         </Button>
+    //     ),
+    //     cell: ({ row }) => (
+    //         <div className="flex items-center gap-1" >
+    //             <MessageSquare className="w-3 h-3 text-gray-500" />
+    //             <span className="text-sm" > {row.original.comments} </span>
+    //         </div>
+    //     )
+    // },
     // {
     //     accessorKey: 'difficulty',
     //     header: 'Difficulty',
