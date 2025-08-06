@@ -11,7 +11,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex">
       <Sidebar />
       <SidebarToggle onClick={() => setOpen(true)} />
-      <main className="flex-1 min-h-screen lg:ml-80  max-w-7xl mx-auto p-6 space-y-6 overflow-hidden">
+      <main className="flex-1 min-h-screen lg:ml-80 max-w-7xl mx-auto p-6 space-y-6 overflow-auto">
         {children}
       </main>
     </div>

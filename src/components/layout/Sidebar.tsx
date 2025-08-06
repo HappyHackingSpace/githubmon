@@ -81,8 +81,7 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Navigation Content - no scroll, fixed height */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           {/* Navigation Menu */}
           <div className="p-4">
             <nav className="space-y-2">
