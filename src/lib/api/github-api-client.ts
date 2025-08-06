@@ -60,6 +60,22 @@ interface GitHubIssueResponse {
   pull_request?: unknown
 }
 
+interface MappedIssue {
+  id: number
+  title: string
+  repo: string
+  type: string
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  url: string
+  createdAt: string
+  updatedAt: string
+  author: string
+  labels: string[]
+  stars: number
+  language: string
+  daysOld: number
+}
+
 class GitHubAPIClient {
   private baseUrl = 'https://api.github.com'
   private cache = new Map<string, { data: unknown; timestamp: number }>()
@@ -409,7 +425,7 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
     }
   }
 
- async getGoodFirstIssues(): Promise<unknown[]> {
+ async getGoodFirstIssues(): Promise<MappedIssue[]> {
     try {
         const repoEndpoint = `/search/repositories?q=stars:>20&sort=stars&order=desc&per_page=50`
         const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
@@ -419,7 +435,7 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
         }
 
         const batchSize = 5
-        const allIssues: any[] = []
+        const allIssues: MappedIssue[] = []
 
         for (let i = 0; i < Math.min(repoResponse.items.length, 20); i += batchSize) {
             const batch = repoResponse.items.slice(i, i + batchSize)
@@ -478,7 +494,7 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
     }
 }
 
- async getEasyFixes(): Promise<unknown[]> {
+ async getEasyFixes(): Promise<MappedIssue[]> {
     try {
         const repoEndpoint = `/search/repositories?q=stars:>15&sort=stars&order=desc&per_page=50`
         const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
@@ -489,7 +505,7 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
 
         const labels = ['easy', 'easy fix', 'beginner', 'starter', 'help wanted']
         const batchSize = 5
-        const allIssues: any[] = []
+        const allIssues: MappedIssue[] = []
 
         for (let i = 0; i < Math.min(repoResponse.items.length, 20); i += batchSize) {
             const batch = repoResponse.items.slice(i, i + batchSize)

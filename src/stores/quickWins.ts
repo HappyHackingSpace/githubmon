@@ -33,30 +33,47 @@ export const useQuickWinsStore = create<QuickWinsState>((set) => ({
             const issues = await githubAPIClient.getGoodFirstIssues();
             console.log('🔍 Good First Issues API Response:', issues);
             
-            const formattedIssues: GitHubIssue[] = issues.map((item: any) => {
+            const formattedIssues: GitHubIssue[] = issues.map((item: unknown) => {
                 console.log('🔍 Good First Issues - Mapping item:', item);
+                const typedItem = item as {
+                    id: number;
+                    title: string;
+                    repo: string;
+                    url: string;
+                    labels: string[];
+                    createdAt: string;
+                    updatedAt: string;
+                    created_at?: string;
+                    updated_at?: string;
+                    language: string;
+                    stars: number;
+                    author: string;
+                    comments?: number;
+                    priority: 'low' | 'medium' | 'high' | 'urgent';
+                    [key: string]: unknown;
+                };
                 const formatted = {
-                    id: item.id,
-                    title: item.title,
-                    repository: item.repo,
-                    repositoryUrl: `https://github.com/${item.repo}`,
-                    url: item.url || '',
-                    labels: (item.labels || []).map((name: string) => ({ name, color: '999999' })),
-                    created_at: item.createdAt || item.created_at,
-                    updated_at: item.updatedAt || item.updated_at,
+                    id: typedItem.id,
+                    title: typedItem.title,
+                    repository: typedItem.repo,
+                    repositoryUrl: `https://github.com/${typedItem.repo}`,
+                    url: typedItem.url || '',
+                    labels: (typedItem.labels || []).map((name: string) => ({ name, color: '999999' })),
+                    created_at: typedItem.createdAt || typedItem.created_at || '',
+                    updated_at: typedItem.updatedAt || typedItem.updated_at || '',
                     difficulty: 'easy' as const,
-                    language: item.language || 'unknown',
-                    stars: item.stars || 0,
-                    author: { login: item.author || '', avatar_url: '' },
-                    comments: item.comments || 0,
+                    language: typedItem.language || 'unknown',
+                    stars: typedItem.stars || 0,
+                    author: { login: typedItem.author || '', avatar_url: '' },
+                    comments: typedItem.comments || 0,
                     state: 'open' as const,
                     assignee: null,
-                    priority: item.priority || 'low' as const,
+                    priority: (typedItem.priority === 'urgent' ? 'high' : typedItem.priority) as 'low' | 'medium' | 'high',
                 };
                 console.log('🔍 Good First Issues - Formatted:', {
                     id: formatted.id,
                     stars: formatted.stars,
-                    originalStars: item.stars
+                    originalStars: typedItem.stars
                 });
                 return formatted;
             });
@@ -87,30 +104,47 @@ export const useQuickWinsStore = create<QuickWinsState>((set) => ({
             const issues = await githubAPIClient.getEasyFixes();
             console.log('🔍 Easy Fixes API Response:', issues);
             
-            const formattedIssues: GitHubIssue[] = issues.map((item: any) => {
+            const formattedIssues: GitHubIssue[] = issues.map((item: unknown) => {
                 console.log('🔍 Easy Fixes - Mapping item:', item);
+                const typedItem = item as {
+                    id: number;
+                    title: string;
+                    repo: string;
+                    url: string;
+                    labels: string[];
+                    createdAt: string;
+                    updatedAt: string;
+                    created_at?: string;
+                    updated_at?: string;
+                    language: string;
+                    stars: number;
+                    author: string;
+                    comments?: number;
+                    priority: 'low' | 'medium' | 'high' | 'urgent';
+                    [key: string]: unknown;
+                };
                 const formatted = {
-                    id: item.id,
-                    title: item.title,
-                    repository: item.repo,
-                    repositoryUrl: `https://github.com/${item.repo}`,
-                    url: item.url || '',
-                    labels: (item.labels || []).map((name: string) => ({ name, color: '999999' })),
-                    created_at: item.createdAt || item.created_at,
-                    updated_at: item.updatedAt || item.updated_at,
+                    id: typedItem.id,
+                    title: typedItem.title,
+                    repository: typedItem.repo,
+                    repositoryUrl: `https://github.com/${typedItem.repo}`,
+                    url: typedItem.url || '',
+                    labels: (typedItem.labels || []).map((name: string) => ({ name, color: '999999' })),
+                    created_at: typedItem.createdAt || typedItem.created_at || '',
+                    updated_at: typedItem.updatedAt || typedItem.updated_at || '',
                     difficulty: 'easy' as const,
-                    language: item.language || 'unknown',
-                    stars: item.stars || 0,
-                    author: { login: item.author || '', avatar_url: '' },
-                    comments: item.comments || 0,
+                    language: typedItem.language || 'unknown',
+                    stars: typedItem.stars || 0,
+                    author: { login: typedItem.author || '', avatar_url: '' },
+                    comments: typedItem.comments || 0,
                     state: 'open' as const,
                     assignee: null,
-                    priority: item.priority || 'low' as const,
+                    priority: (typedItem.priority === 'urgent' ? 'high' : typedItem.priority) as 'low' | 'medium' | 'high',
                 };
                 console.log('🔍 Easy Fixes - Formatted:', {
                     id: formatted.id,
                     stars: formatted.stars,
-                    originalStars: item.stars
+                    originalStars: typedItem.stars
                 });
                 return formatted;
             });
