@@ -7,6 +7,7 @@ import { useRequireAuth } from '@/hooks/useAuth'
 import { useQuickWins } from '@/components/quick-wins/hooks/useQuickWins'
 import { QuickWinsTable } from '@/components/quick-wins/QuickWinsTable'
 import { SearchModal } from '@/components/search/SearchModal'
+import { PageHeader } from '@/components/layout/PageHeader'
 import {
     Lightbulb,
     Wrench,
@@ -68,6 +69,7 @@ export default function QuickWinsPage() {
     return (
         <Layout>
             <div className="max-w-7xl mx-auto p-6 space-y-6">
+                <PageHeader onRefresh={refreshAll} showSearch={true} />
                
                 {/* Hero Section */}
                 <div className="mb-8">
@@ -113,7 +115,7 @@ export default function QuickWinsPage() {
                             error={goodIssuesError}
                             onRefresh={refreshGoodIssues}
                             title="Good First Issues"
-                            description="Well-documented issues perfect for newcomers to open source"
+                           
                             emptyMessage="No good first issues found"
                         />
                     </TabsContent>
@@ -125,7 +127,6 @@ export default function QuickWinsPage() {
                             error={easyFixesError}
                             onRefresh={refreshEasyFixes}
                             title="Easy Fixes"
-                            description="Simple bugs and improvements that can be fixed quickly"
                             emptyMessage="No easy fixes found"
                         />
                     </TabsContent>
