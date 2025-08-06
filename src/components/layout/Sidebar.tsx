@@ -63,7 +63,6 @@ export function Sidebar() {
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0
         flex flex-col
-        w-80 min-w-[20rem] max-w-[20rem]
         h-screen
       `}>
 

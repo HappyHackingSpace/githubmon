@@ -156,13 +156,13 @@ export default function DashboardPage() {
     <Layout>
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b pb-4 sticky top-0 bg-white dark:bg-gray-900 z-10">
-          <div>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b pb-4  top-0  z-10">
+          <div className="flex flex-row items-center gap-4">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {getWelcomeMessage()}
             </h1>
             <p className="text-gray-600 dark:text-gray-300 mt-1">
-              Your GitHub analytics dashboard • Last updated: {new Date().toLocaleTimeString()}
+              Last updated: {new Date().toLocaleTimeString()}
             </p>
           </div>
 

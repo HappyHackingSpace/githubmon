@@ -8,10 +8,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { setOpen } = useSidebarState()
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <SidebarToggle onClick={() => setOpen(true)} />
-      <main className="flex-1 min-h-screen lg:ml-80 max-w-7xl mx-auto p-6 space-y-6 overflow-auto">
+    <div className="relative h-screen overflow-hidden">
+      <div className="absolute left-0 top-0 h-full z-10">
+        <Sidebar />
+        <SidebarToggle onClick={() => setOpen(true)} />
+      </div>
+      <main className="ml-64 h-full overflow-auto">
         {children}
       </main>
     </div>

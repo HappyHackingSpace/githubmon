@@ -1,33 +1,21 @@
-// src/app/quick-wins/page.tsx
 'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
-
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-
 import { useRequireAuth } from '@/hooks/useAuth'
 import { useQuickWins } from '@/components/quick-wins/hooks/useQuickWins'
 import { QuickWinsTable } from '@/components/quick-wins/QuickWinsTable'
 import { SearchModal } from '@/components/search/SearchModal'
-import { ThemeToggle } from '@/components/theme/ThemeToggle'
-import RefreshButton from "@/components/Refresh/RefreshButton";
-
 import {
     Lightbulb,
     Wrench,
-    Search,
-    AlertTriangle,
 
 } from 'lucide-react'
-import { useSearchStore } from '@/stores'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default function QuickWinsPage() {
-    const { isLoading, orgData } = useRequireAuth()
-    const { setSearchModalOpen } = useSearchStore()
+    const { isLoading } = useRequireAuth()
 
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -61,12 +49,7 @@ export default function QuickWinsPage() {
             console.error('Failed to navigate to tab:', tab, error)
         }
     }
-    const getWelcomeMessage = () => {
-        const hour = new Date().getHours()
-        const timeOfDay = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-        const userName = orgData?.orgName || 'Developer'
-        return `${timeOfDay}, ${userName}! `
-    }
+   
 
     // Show loading state during initial load
     if (isLoading) {
@@ -85,34 +68,7 @@ export default function QuickWinsPage() {
     return (
         <Layout>
             <div className="max-w-7xl mx-auto p-6 space-y-6">
-                {/* Header */}
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b pb-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                            {getWelcomeMessage()}
-                        </h1>
-                        <p className="text-gray-600 dark:text-gray-300 mt-1">
-                            Find easy issues to contribute to • Last updated: {new Date().toLocaleTimeString()}
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setSearchModalOpen(true)}
-                            className="px-6 py-2.5 font-medium text-base"
-                            size="lg"
-                        >
-                            <Search className="w-6 h-6 mr-2" />
-                            Search
-                        </Button>
-
-                        <RefreshButton onRefresh={refreshAll} />
-
-                        <ThemeToggle />
-                    </div>
-                </div>
-
+               
                 {/* Hero Section */}
                 <div className="mb-8">
                     <div className="flex items-center gap-2 mb-2">
@@ -126,20 +82,7 @@ export default function QuickWinsPage() {
                     </p>
                 </div>
 
-                {/* No Token Warning */}
-                {needsToken && (
-                    <Alert className="border-yellow-200 bg-yellow-50" role="alert" aria-live="polite">
-                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                        <AlertDescription className="text-yellow-800">
-                            <strong>GitHub Token Required:</strong> To access more issues and avoid rate limits,
-                            please add your GitHub token in the{' '}
-                            <Button variant="link" className="h-auto p-0 text-yellow-700 underline" asChild>
-                                <a href="/login" aria-label="Go to login page to add GitHub token">login page</a>
-                            </Button>
-                            . Without a token, results may be limited.
-                        </AlertDescription>
-                    </Alert>
-                )}
+              
                 {/* Quick Wins Tabs */}
                 <Tabs
                     value={currentTab}
