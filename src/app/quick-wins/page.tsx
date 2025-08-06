@@ -1,12 +1,11 @@
 'use client'
 
-import { useSearchParams, useRouter } from 'next/navigation'
+import {  useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
 import { Badge } from '@/components/ui/badge'
 import { useRequireAuth } from '@/hooks/useAuth'
 import { useQuickWins } from '@/components/quick-wins/hooks/useQuickWins'
 import { QuickWinsTable } from '@/components/quick-wins/QuickWinsTable'
-import { SearchModal } from '@/components/search/SearchModal'
 import { PageHeader } from '@/components/layout/PageHeader'
 import {
     Lightbulb,
@@ -14,21 +13,19 @@ import {
 
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useState } from 'react'
 
 export default function QuickWinsPage() {
     const { isLoading } = useRequireAuth()
 
-    const searchParams = useSearchParams()
     const router = useRouter()
 
     const VALID_TABS = ['good-issues', 'easy-fixes'] as const
     type ValidTab = typeof VALID_TABS[number]
 
 
-    const tabParam = searchParams.get('tab')
-    const currentTab: ValidTab = VALID_TABS.includes(tabParam as ValidTab)
-        ? (tabParam as ValidTab)
-        : 'good-issues'
+
+   
     const {
         goodIssues,
         easyFixes,
@@ -39,9 +36,10 @@ export default function QuickWinsPage() {
         refreshGoodIssues,
         refreshEasyFixes,
         refreshAll,
-        needsToken,
+       
     } = useQuickWins()
 
+    const [currentTab] = useState<ValidTab>('good-issues')
     const handleTabChange = (tab: string) => {
 
         try {
@@ -69,7 +67,7 @@ export default function QuickWinsPage() {
     return (
         <Layout>
             <div className="max-w-7xl mx-auto p-6 space-y-6">
-                <PageHeader onRefresh={refreshAll} showSearch={true} />
+                <PageHeader onRefresh={refreshAll} showSearch={false} />
                
                 {/* Hero Section */}
                 <div className="mb-8">

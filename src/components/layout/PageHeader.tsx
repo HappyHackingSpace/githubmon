@@ -1,10 +1,7 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
 // import { Search } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
-import RefreshButton from '@/components/Refresh/RefreshButton'
-import { useSearchStore } from '@/stores'
 import { useRequireAuth } from '@/hooks/useAuth'
 
 interface PageHeaderProps {
@@ -12,7 +9,7 @@ interface PageHeaderProps {
   showSearch?: boolean
 }
 
-export function PageHeader({ onRefresh, showSearch = false }: PageHeaderProps) {
+export function PageHeader({}: PageHeaderProps) {
   // const { setSearchModalOpen } = useSearchStore()
   const { orgData } = useRequireAuth()
 
