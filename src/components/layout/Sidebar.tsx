@@ -1,10 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname,  useRouter,  useSearchParams } from 'next/navigation'
+import { usePathname,   useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-
-
 import { useSidebarState, useAuthStore, useStoreHydration, useActionItemsStore } from '@/stores'
 import { ChevronRight, Clock,  LogOut, MessageSquare, Sparkles, Star, Target, Zap, } from 'lucide-react'
 import { Badge } from '../ui/badge'
@@ -19,10 +17,10 @@ export function Sidebar() {
 
   // Auth state
   const hasHydrated = useStoreHydration()
-  const { isConnected, orgData, logout } = useAuthStore()
+  const { isConnected, logout } = useAuthStore()
 
   // Action items state
-  const { getCountByType, getTotalCount, loading, refreshData } = useActionItemsStore()
+  const { getCountByType, getTotalCount, loading } = useActionItemsStore()
 
   // Get current tab from URL params
   const currentTab = searchParams.get('tab') || 'assigned'
@@ -38,7 +36,7 @@ export function Sidebar() {
     return getBadgeCount(type)
   }
 
-  const router = useRouter()
+
 
   const isQuickWinsTab = currentTab === 'quick-wins' || currentTab === 'good-first-issues' || currentTab === 'easy-fixes'
   const isActionRequiredTab = !isQuickWinsTab && isDashboardPage
