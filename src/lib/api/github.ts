@@ -2,14 +2,7 @@ import { GitHubIssue } from '@/types/quickWins';
 
 const GITHUB_API_URL = 'https://api.github.com';
 
-// İsteğe bağlı: Token'ı .env veya config dosyasından alınabilir
-// Eğer .env yoksa buraya kendi token'ınızı yazabilirsiniz
-// Token artık parametre ile alınacak, default olarak boş
-
-
-
-// Basit bir in-memory cache
-const CACHE_DURATION = 1000 * 60 * 60 * 12; // 12 saat (günde 2 defa güncellenir)
+const CACHE_DURATION = 1000 * 60 * 60 * 12; 
 const issuesCache: Record<string, { timestamp: number; data: GitHubIssue[] }> = {};
 
 async function fetchIssuesFromGitHub({

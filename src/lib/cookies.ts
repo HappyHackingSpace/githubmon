@@ -1,4 +1,3 @@
-// lib/cookies.ts
 import { OrgData } from '@/types/auth'
 
 export interface AuthCookieData {
