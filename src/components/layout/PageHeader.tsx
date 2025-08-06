@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Search } from 'lucide-react'
+// import { Search } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import RefreshButton from '@/components/Refresh/RefreshButton'
 import { useSearchStore } from '@/stores'
@@ -13,7 +13,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ onRefresh, showSearch = false }: PageHeaderProps) {
-  const { setSearchModalOpen } = useSearchStore()
+  // const { setSearchModalOpen } = useSearchStore()
   const { orgData } = useRequireAuth()
 
   return (
@@ -28,7 +28,7 @@ export function PageHeader({ onRefresh, showSearch = false }: PageHeaderProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        {showSearch && (
+        {/* {showSearch && (
           <Button
             variant="outline"
             onClick={() => setSearchModalOpen(true)}
@@ -39,7 +39,7 @@ export function PageHeader({ onRefresh, showSearch = false }: PageHeaderProps) {
             Search
           </Button>
         )}
-        {onRefresh && <RefreshButton onRefresh={onRefresh} />}
+        {onRefresh && <RefreshButton onRefresh={onRefresh} />} */}
         <ThemeToggle />
       </div>
     </div>

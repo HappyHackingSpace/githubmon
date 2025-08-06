@@ -135,7 +135,7 @@ export default function QuickWinsPage() {
 
             </div>
 
-            <SearchModal />
+           
         </Layout >
     )
 }
