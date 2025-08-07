@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { GitHubIssue } from '@/types/quickWins'
 import { githubAPIClient } from '@/lib/api/github-api-client';
+import { useDataCacheStore } from './cache';
 
 interface QuickWinsState {
     goodIssues: GitHubIssue[]
@@ -13,23 +14,53 @@ interface QuickWinsState {
         goodIssues: string | null
         easyFixes: string | null
     }
-    fetchGoodIssues: () => Promise<void>
-    fetchEasyFixes: () => Promise<void>
+    fetchGoodIssues: (forceRefresh?: boolean) => Promise<void>
+    fetchEasyFixes: (forceRefresh?: boolean) => Promise<void>
+    loadFromCache: () => void
 }
 
-export const useQuickWinsStore = create<QuickWinsState>((set) => ({
+export const useQuickWinsStore = create<QuickWinsState>((set, get) => ({
     goodIssues: [],
     easyFixes: [],
     loading: { goodIssues: false, easyFixes: false },
     error: { goodIssues: null, easyFixes: null },
 
-    fetchGoodIssues: async () => {
+    loadFromCache: () => {
+        const cache = useDataCacheStore.getState().getQuickWinsCache()
+        if (cache) {
+            console.log('📦 Loading quick wins from cache:', { 
+                goodIssuesCount: cache.goodIssues.length, 
+                easyFixesCount: cache.easyFixes.length,
+                cacheAge: Date.now() - cache.timestamp 
+            })
+            set({
+                goodIssues: cache.goodIssues,
+                easyFixes: cache.easyFixes
+            })
+        }
+    },
+
+    fetchGoodIssues: async (forceRefresh = false) => {
+        // Önce cache'den kontrol et
+        if (!forceRefresh) {
+            const cache = useDataCacheStore.getState().getQuickWinsCache()
+            if (cache) {
+                console.log('📦 Using cached good first issues')
+                set((state) => ({
+                    goodIssues: cache.goodIssues,
+                    error: { ...state.error, goodIssues: null }
+                }))
+                return
+            }
+        }
+
         set((state) => ({
             loading: { ...state.loading, goodIssues: true },
             error: { ...state.error, goodIssues: null }
         }));
 
         try {
+            console.log('🌐 Fetching fresh good first issues from API')
             const issues = await githubAPIClient.getGoodFirstIssues();
             console.log('🔍 Good First Issues API Response:', issues);
             
@@ -83,6 +114,14 @@ export const useQuickWinsStore = create<QuickWinsState>((set) => ({
                 loading: { ...state.loading, goodIssues: false },
                 error: { ...state.error, goodIssues: null }
             }));
+            
+            // Cache'i güncelle
+            const currentEasyFixes = get().easyFixes
+            useDataCacheStore.getState().setQuickWinsCache({
+                goodIssues: formattedIssues,
+                easyFixes: currentEasyFixes
+            })
+            
             console.log('🔍 Good First Issues - Final store data:', formattedIssues.map(i => ({ id: i.id, stars: i.stars })));
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
@@ -94,7 +133,20 @@ export const useQuickWinsStore = create<QuickWinsState>((set) => ({
         }
     },
 
-    fetchEasyFixes: async () => {
+    fetchEasyFixes: async (forceRefresh = false) => {
+       
+        if (!forceRefresh) {
+            const cache = useDataCacheStore.getState().getQuickWinsCache()
+            if (cache) {
+               
+                set((state) => ({
+                    easyFixes: cache.easyFixes,
+                    error: { ...state.error, easyFixes: null }
+                }))
+                return
+            }
+        }
+
         set((state) => ({
             loading: { ...state.loading, easyFixes: true },
             error: { ...state.error, easyFixes: null }
@@ -102,7 +154,6 @@ export const useQuickWinsStore = create<QuickWinsState>((set) => ({
 
         try {
             const issues = await githubAPIClient.getEasyFixes();
-            console.log('🔍 Easy Fixes API Response:', issues);
             
             const formattedIssues: GitHubIssue[] = issues.map((item: unknown) => {
                 console.log('🔍 Easy Fixes - Mapping item:', item);
@@ -141,11 +192,7 @@ export const useQuickWinsStore = create<QuickWinsState>((set) => ({
                     assignee: null,
                     priority: (typedItem.priority === 'urgent' ? 'high' : typedItem.priority) as 'low' | 'medium' | 'high',
                 };
-                console.log('🔍 Easy Fixes - Formatted:', {
-                    id: formatted.id,
-                    stars: formatted.stars,
-                    originalStars: typedItem.stars
-                });
+               
                 return formatted;
             });
 
@@ -154,7 +201,13 @@ export const useQuickWinsStore = create<QuickWinsState>((set) => ({
                 loading: { ...state.loading, easyFixes: false },
                 error: { ...state.error, easyFixes: null }
             }));
-            console.log('🔍 Easy Fixes - Final store data:', formattedIssues.map(i => ({ id: i.id, stars: i.stars })));
+            
+            const currentGoodIssues = get().goodIssues
+            useDataCacheStore.getState().setQuickWinsCache({
+                goodIssues: currentGoodIssues,
+                easyFixes: formattedIssues
+            })
+            
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
             set((state) => ({

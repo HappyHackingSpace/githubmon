@@ -100,15 +100,7 @@ class GitHubAPIClient {
                         (!isClassicToken && !isFineGrainedToken && !isGitHubAppToken && !isLegacyToken && 
                          /^[A-Za-z0-9_-]{20,255}$/.test(trimmedToken))
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Token type checks:', {
-        isClassicToken,
-        isFineGrainedToken,
-        isGitHubAppToken,
-        isLegacyToken,
-        isOAuthToken
-      })
-    }
+   
 
     if (!isClassicToken && !isFineGrainedToken && !isGitHubAppToken && !isLegacyToken && !isOAuthToken) {
       throw new Error(
@@ -142,6 +134,15 @@ class GitHubAPIClient {
     this.githubToken = ''
   }
 
+  // Debug fonksiyonu - token durumunu kontrol et
+  getTokenInfo(): { hasToken: boolean, tokenPrefix: string, source: string } {
+    return {
+      hasToken: !!this.githubToken,
+      tokenPrefix: this.githubToken ? this.githubToken.substring(0, 10) + '...' : 'NO_TOKEN',
+      source: this.githubToken === process.env.GITHUB_TOKEN ? 'ENV_VAR' : 'USER_SET'
+    }
+  }
+
   private async fetchWithCache<T>(endpoint: string, useGithub = false): Promise<T> {
     const cacheKey = endpoint
     const cached = this.cache.get(cacheKey)
@@ -158,14 +159,22 @@ class GitHubAPIClient {
 
       if (useGithub && this.githubToken) {
         headers['Authorization'] = `token ${this.githubToken}`
+        console.log(`🔑 API call to ${endpoint} with token: ${this.githubToken.substring(0, 10)}...`)
+      } else {
+        console.log(`🚫 API call to ${endpoint} WITHOUT token (rate limited)`)
       }
 
       const response = await fetch(`${this.baseUrl}${endpoint}`, { headers })
 
       if (!response.ok) {
         console.warn(`API Error ${response.status} for ${endpoint}`)
-        if (response.status === 403) {
-          console.warn('GitHub API rate limit exceeded')
+        if (response.status === 403 || response.status === 429) {
+          console.warn('GitHub API rate limit exceeded - using fallback data')
+          // Rate limit durumunda cached data varsa onu döndür
+          if (cached) {
+            console.log('Returning stale cached data due to rate limit')
+            return cached.data as T
+          }
         }
         return this.getFallbackData(endpoint) as T
       }
@@ -427,26 +436,36 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
 
  async getGoodFirstIssues(): Promise<MappedIssue[]> {
     try {
-        const repoEndpoint = `/search/repositories?q=stars:>20&sort=stars&order=desc&per_page=50`
+        const repoEndpoint = `/search/repositories?q=stars:>20+created:>2024-01-01&sort=stars&order=desc&per_page=20`
         const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
         
         if (!repoResponse.items || repoResponse.items.length === 0) {
             return []
         }
 
-        const batchSize = 5
+        const batchSize = 2 
         const allIssues: MappedIssue[] = []
 
-        for (let i = 0; i < Math.min(repoResponse.items.length, 20); i += batchSize) {
+        for (let i = 0; i < Math.min(repoResponse.items.length, 10); i += batchSize) {
             const batch = repoResponse.items.slice(i, i + batchSize)
             
             const batchIssues = await Promise.all(
                 batch.map(async (repo: GitHubRepositoryResponse) => {
                     try {
-                        const issueEndpoint = `/repos/${repo.full_name}/issues?labels=good first issue&state=open&per_page=10`
+                        const issueEndpoint = `/repos/${repo.full_name}/issues?labels=good first issue&state=open&since=2024-01-01T00:00:00Z&per_page=5`
                         const issueResponse = await this.fetchWithCache<GitHubIssueResponse[]>(issueEndpoint, true)
                         
-                        return (issueResponse || []).map((issue: GitHubIssueResponse) => {
+                        if (!Array.isArray(issueResponse)) {
+                            console.warn(`Invalid response for ${repo.full_name}:`, issueResponse)
+                            return []
+                        }
+                        
+                        return issueResponse
+                            .filter((issue: GitHubIssueResponse) => {
+                                const createdDate = new Date(issue.created_at)
+                                return createdDate.getFullYear() >= 2024
+                            })
+                            .map((issue: GitHubIssueResponse) => {
                             const mappedIssue = {
                                 id: issue.id,
                                 title: issue.title,
@@ -475,7 +494,7 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
 
             allIssues.push(...batchIssues.flat())
             
-            await new Promise(resolve => setTimeout(resolve, 100))
+            await new Promise(resolve => setTimeout(resolve, 500))
         }
 
         const uniqueIssues = allIssues
@@ -484,7 +503,7 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
             )
             .filter(issue => issue.stars >= 20)
             .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-            .slice(0, 50)
+            .slice(0, 30) 
 
         return uniqueIssues
         
@@ -496,28 +515,38 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
 
  async getEasyFixes(): Promise<MappedIssue[]> {
     try {
-        const repoEndpoint = `/search/repositories?q=stars:>15&sort=stars&order=desc&per_page=50`
+        const repoEndpoint = `/search/repositories?q=stars:>15+created:>2024-01-01&sort=stars&order=desc&per_page=20`
         const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
         
         if (!repoResponse.items || repoResponse.items.length === 0) {
             return []
         }
 
-        const labels = ['easy', 'easy fix', 'beginner', 'starter', 'help wanted']
-        const batchSize = 5
+        const labels = ['easy', 'beginner', 'help wanted'] 
+        const batchSize = 2 
         const allIssues: MappedIssue[] = []
 
-        for (let i = 0; i < Math.min(repoResponse.items.length, 20); i += batchSize) {
+        for (let i = 0; i < Math.min(repoResponse.items.length, 10); i += batchSize) {
             const batch = repoResponse.items.slice(i, i + batchSize)
             
             const batchIssues = await Promise.all(
                 batch.map(async (repo: GitHubRepositoryResponse) => {
                     try {
                         const issuePromises = labels.map(async (label) => {
-                            const issueEndpoint = `/repos/${repo.full_name}/issues?labels=${encodeURIComponent(label)}&state=open&per_page=5`
+                            const issueEndpoint = `/repos/${repo.full_name}/issues?labels=${encodeURIComponent(label)}&state=open&since=2024-01-01T00:00:00Z&per_page=3`
                             const issueResponse = await this.fetchWithCache<GitHubIssueResponse[]>(issueEndpoint, true)
                             
-                            return (issueResponse || []).map((issue: GitHubIssueResponse) => {
+                            if (!Array.isArray(issueResponse)) {
+                                console.warn(`Invalid response for ${repo.full_name} with label ${label}:`, issueResponse)
+                                return []
+                            }
+                            
+                            return issueResponse
+                                .filter((issue: GitHubIssueResponse) => {
+                                    const createdDate = new Date(issue.created_at)
+                                    return createdDate.getFullYear() >= 2024
+                                })
+                                .map((issue: GitHubIssueResponse) => {
                                 const mappedIssue = {
                                     id: issue.id,
                                     title: issue.title,
@@ -550,7 +579,7 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
 
             allIssues.push(...batchIssues.flat())
             
-            await new Promise(resolve => setTimeout(resolve, 100))
+            await new Promise(resolve => setTimeout(resolve, 500))
         }
         const uniqueIssues = allIssues
             .filter((issue, index, self) => 
@@ -558,7 +587,7 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
             )
             .filter(issue => issue.stars >= 15)
             .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-            .slice(0, 50)
+            .slice(0, 30) 
 
         return uniqueIssues
         
