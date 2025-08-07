@@ -1,31 +1,39 @@
 'use client'
 
-import {  useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
 import { Badge } from '@/components/ui/badge'
 import { useRequireAuth } from '@/hooks/useAuth'
 import { useQuickWins } from '@/components/quick-wins/hooks/useQuickWins'
 import { QuickWinsTable } from '@/components/quick-wins/QuickWinsTable'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { CacheStatus } from '@/components/common/CacheStatus'
+import { RateLimitWarning } from '@/components/common/RateLimitWarning'
 import {
     Lightbulb,
     Wrench,
 
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function QuickWinsPage() {
     const { isLoading } = useRequireAuth()
-
     const router = useRouter()
+    const searchParams = useSearchParams()
 
     const VALID_TABS = ['good-issues', 'easy-fixes'] as const
     type ValidTab = typeof VALID_TABS[number]
 
+    // URL'den tab parametresini al, yoksa default olarak 'good-issues' kullan
+    const [currentTab, setCurrentTab] = useState<ValidTab>('good-issues')
 
-
-   
+    useEffect(() => {
+        const tabParam = searchParams.get('tab')
+        if (tabParam && VALID_TABS.includes(tabParam as ValidTab)) {
+            setCurrentTab(tabParam as ValidTab)
+        }
+    }, [searchParams])
     const {
         goodIssues,
         easyFixes,
@@ -39,13 +47,10 @@ export default function QuickWinsPage() {
        
     } = useQuickWins()
 
-    const [currentTab] = useState<ValidTab>('good-issues')
     const handleTabChange = (tab: string) => {
-
-        try {
+        if (VALID_TABS.includes(tab as ValidTab)) {
+            setCurrentTab(tab as ValidTab)
             router.push(`/quick-wins?tab=${tab}`)
-        } catch (error) {
-            console.error('Failed to navigate to tab:', tab, error)
         }
     }
    
@@ -68,14 +73,20 @@ export default function QuickWinsPage() {
         <Layout>
             <div className="max-w-7xl mx-auto p-6 space-y-6">
                 <PageHeader onRefresh={refreshAll} showSearch={false} />
+                
+                {/* Rate Limit Warning */}
+                <RateLimitWarning />
                
                 {/* Hero Section */}
                 <div className="mb-8">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Lightbulb className="w-6 h-6 text-yellow-500" />
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                            Quick Wins
-                        </h1>
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <Lightbulb className="w-6 h-6 text-yellow-500" />
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                                Quick Wins
+                            </h1>
+                        </div>
+                        <CacheStatus />
                     </div>
                     <p className="text-gray-600 dark:text-gray-300">
                         Discover easy issues and good first contributions to jumpstart your open source journey
