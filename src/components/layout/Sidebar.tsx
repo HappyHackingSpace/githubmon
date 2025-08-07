@@ -111,16 +111,18 @@ export function Sidebar() {
                     : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                   }
                 `}>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center  gap-1 ">
                     <Zap className="w-5 h-5" />
                     <span>Action Required</span>
+                  </div>
+                  <div className="flex items-center gap-1">
                     {getActionRequiredTotal() > 0 && (
-                      <Badge variant="destructive" className="ml-1 text-xs min-w-[1.25rem] h-5">
+                      <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
                         {getActionRequiredTotal()}
                       </Badge>
                     )}
-                  </div>
                   <ChevronRight className={`w-4 h-4 transition-transform ${actionRequiredOpen ? 'rotate-90' : ''}`} />
+                  </div>
                 </CollapsibleTrigger>
 
                 {/* Action Required sub-items */}
@@ -136,8 +138,8 @@ export function Sidebar() {
                     <Target className="w-4 h-4" />
                     Assigned
                     <Badge
-                      variant={getBadgeCount('assigned') > 0 ? "default" : "secondary"}
-                      className="ml-auto text-xs"
+                      variant="outline"
+                      className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
                     >
                       {getBadgeContent('assigned')}
                     </Badge>
@@ -153,8 +155,8 @@ export function Sidebar() {
                     <MessageSquare className="w-4 h-4" />
                     Mentions
                     <Badge
-                      variant={getBadgeCount('mentions') > 0 ? "default" : "secondary"}
-                      className="ml-auto text-xs"
+                      variant="outline"
+                      className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
                     >
                       {getBadgeContent('mentions')}
                     </Badge>
@@ -170,8 +172,8 @@ export function Sidebar() {
                     <Clock className="w-4 h-4" />
                     Stale PRs
                     <Badge
-                      variant={getBadgeCount('stale') > 0 ? "destructive" : "secondary"}
-                      className="ml-auto text-xs"
+                      variant="outline"
+                      className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
                     >
                       {getBadgeContent('stale')}
                     </Badge>
@@ -191,13 +193,15 @@ export function Sidebar() {
                   <div className="flex items-center gap-3">
                     <Target className="w-5 h-5" />
                     <span>Quick Wins</span>
+                  </div>
+                   <div className="flex items-center gap-1">
                     {getQuickWinsTotal() > 0 && (
-                      <Badge variant="default" className="ml-1 text-xs min-w-[1.25rem] h-5">
+                      <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
                         {getQuickWinsTotal()}
                       </Badge>
                     )}
-                  </div>
                   <ChevronRight className={`w-4 h-4 transition-transform ${quickWinsOpen ? 'rotate-90' : ''}`} />
+                  </div>
                 </CollapsibleTrigger>
 
                 {/* Quick Wins sub-items */}
@@ -212,8 +216,8 @@ export function Sidebar() {
                     <Target className="w-4 h-4" />
                     <span className="font-medium">Good First Issues</span>
                     <Badge
-                      variant={getBadgeCount('goodFirstIssues') > 0 ? "default" : "secondary"}
-                      className="ml-auto text-xs">
+                      variant="outline"
+                      className="ml-auto text-xs bg-muted/30 border-muted-foreground/20">
                       {getBadgeContent('goodFirstIssues')}
                     </Badge>
                   </Link>
@@ -227,8 +231,8 @@ export function Sidebar() {
                     <Sparkles className="w-4 h-4" />
                     <span className="font-medium">Easy Fixes</span>
                     <Badge
-                      variant={getBadgeCount('easyFixes') > 0 ? "default" : "secondary"}
-                      className="ml-auto text-xs">
+                      variant="outline"
+                      className="ml-auto text-xs bg-muted/30 border-muted-foreground/20">
                       {getBadgeContent('easyFixes')}
                     </Badge>
                   </Link>
