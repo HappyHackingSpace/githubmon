@@ -83,7 +83,6 @@ class GitHubAPIClient {
   private githubToken = process.env.GITHUB_TOKEN || ''
 
  setUserToken(token: string) {
-    // Basic validation
     if (!token || typeof token !== 'string' || token.trim().length === 0) {
       throw new Error('Invalid GitHub token: must be a non-empty string')
     }
@@ -170,7 +169,6 @@ class GitHubAPIClient {
         console.warn(`API Error ${response.status} for ${endpoint}`)
         if (response.status === 403 || response.status === 429) {
           console.warn('GitHub API rate limit exceeded - using fallback data')
-          // Rate limit durumunda cached data varsa onu döndür
           if (cached) {
             console.log('Returning stale cached data due to rate limit')
             return cached.data as T
