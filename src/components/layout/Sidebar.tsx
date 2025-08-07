@@ -5,6 +5,7 @@ import { useSearchParams, usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useSidebarState, useAuthStore, useStoreHydration, useActionItemsStore } from '@/stores'
+import { useQuickWinsStore } from '@/stores/quickWins'
 import { ChevronRight, Clock, LogOut, MessageSquare, Sparkles, Star, Target, Zap, Home } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
@@ -14,23 +15,33 @@ export function Sidebar() {
   const pathname = usePathname()
   const { isOpen, setOpen } = useSidebarState()
 
-  // Auth state
   const hasHydrated = useStoreHydration()
   const { isConnected, logout } = useAuthStore()
 
   const { getCountByType, loading } = useActionItemsStore()
+  
+  const { goodIssues, easyFixes, loading: quickWinsLoading } = useQuickWinsStore()
 
   const [actionRequiredOpen, setActionRequiredOpen] = useState(true)
   const [quickWinsOpen, setQuickWinsOpen] = useState(true)
 
   const currentTab = searchParams?.get('tab') || 'assigned'
 
-  const getBadgeCount = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => getCountByType(type)
+  const getBadgeCount = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => {
+    if (type === 'goodFirstIssues') return goodIssues.length
+    if (type === 'easyFixes') return easyFixes.length
+    return getCountByType(type)
+  }
+  
   const getActionRequiredTotal = () => getBadgeCount('assigned') + getBadgeCount('mentions') + getBadgeCount('stale')
   const getQuickWinsTotal = () => getBadgeCount('goodFirstIssues') + getBadgeCount('easyFixes')
 
   const getBadgeContent = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => {
-    if (loading[type]) return '...'
+    if (type === 'goodFirstIssues' || type === 'easyFixes') {
+      if (quickWinsLoading.goodIssues || quickWinsLoading.easyFixes) return '...'
+    } else {
+      if (loading[type]) return '...'
+    }
     return getBadgeCount(type)
   }
 
