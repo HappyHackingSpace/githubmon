@@ -46,7 +46,6 @@ interface QuickWinsTableProps {
     error: string | null
     onRefresh: () => void
     title: string
-    description: string
     emptyMessage?: string
 }
 
@@ -56,21 +55,18 @@ export function QuickWinsTable({
     error,
     onRefresh,
     title,
-    description,
     emptyMessage = 'No issues found'
 }: QuickWinsTableProps) {
+    
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [globalFilter, setGlobalFilter] = useState('')
 
-    // Language filter state
     const [languageFilter, setLanguageFilter] = useState<string>('all')
-    const [difficultyFilter, setDifficultyFilter] = useState<string>('all')
 
     const columns = useMemo(() => createColumns(), [])
 
-    // Filter data based on local filters
     const filteredData = useMemo(() => {
         let filtered = data
 
@@ -78,14 +74,11 @@ export function QuickWinsTable({
             filtered = filtered.filter(item => item.language === languageFilter)
         }
 
-        if (difficultyFilter !== 'all') {
-            filtered = filtered.filter(item => item.difficulty === difficultyFilter)
-        }
+      
 
         return filtered
-    }, [data, languageFilter, difficultyFilter])
+    }, [data, languageFilter])
 
-    // Get unique languages for filter dropdown
     const availableLanguages = useMemo(() => {
         const languages = [...new Set(data.map(item => item.language).filter((lang): lang is string => typeof lang === 'string' && lang.trim() !== ''))]
         return languages.sort()
@@ -116,6 +109,8 @@ export function QuickWinsTable({
         },
     })
 
+    
+
     // Loading skeleton
     if (loading) {
         return (
@@ -127,7 +122,7 @@ export function QuickWinsTable({
                                 {title}
                                 <Skeleton className="h-6 w-16" />
                             </CardTitle>
-                            <p className="text-sm text-muted-foreground mt-1">{description}</p>
+                          
                         </div>
                         <Skeleton className="h-9 w-24" />
                     </div>
@@ -190,7 +185,7 @@ export function QuickWinsTable({
                                 {filteredData.length} issues
                             </Badge>
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">{description}</p>
+                      
                     </div>
                     <Button onClick={onRefresh} variant="outline" size="sm">
                         <RefreshCw className="w-4 h-4 mr-2" />
@@ -217,16 +212,7 @@ export function QuickWinsTable({
                         </SelectContent>
                     </Select>
 
-                    <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-                        <SelectTrigger className="w-32">
-                            <SelectValue placeholder="Difficulty" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Levels</SelectItem>
-                            <SelectItem value="easy">Easy</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                        </SelectContent>
-                    </Select>
+                   
                 </div>
 
                 {/* Table */}

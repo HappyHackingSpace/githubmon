@@ -268,7 +268,6 @@ export const useActionItemsStore = create<ActionItemsState>()(
                 break
             }
 
-            console.log(`Loaded ${items.length} ${t} items from GitHub API`)
           } catch (error) {
             console.error(`Failed to fetch ${t} items:`, error)
             set((state) => ({

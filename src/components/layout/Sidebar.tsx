@@ -1,48 +1,52 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { useSearchParams, usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useSidebarState, useAuthStore, useStoreHydration, useActionItemsStore } from '@/stores'
-import { ChevronRight, Clock, LogOut, MessageSquare, Sparkles, Star, Target, Zap } from 'lucide-react'
+import { useQuickWinsStore } from '@/stores/quickWins'
+import { ChevronRight, Clock, LogOut, MessageSquare, Sparkles, Star, Target, Zap, Home } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
 
 export function Sidebar() {
-  const pathname = usePathname()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const { isOpen, setOpen } = useSidebarState()
 
-  // Auth state
   const hasHydrated = useStoreHydration()
   const { isConnected, logout } = useAuthStore()
 
-  // Action items state
   const { getCountByType, loading } = useActionItemsStore()
+  
+  const { goodIssues, easyFixes, loading: quickWinsLoading } = useQuickWinsStore()
 
-  // Accordion states - MUI style
   const [actionRequiredOpen, setActionRequiredOpen] = useState(true)
   const [quickWinsOpen, setQuickWinsOpen] = useState(true)
 
-  // Get current tab from URL params
   const currentTab = searchParams?.get('tab') || 'assigned'
-  const isDashboardPage = pathname?.startsWith('/dashboard')
 
-  // Badge count helpers - Dinamik hesaplama
-  const getBadgeCount = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => getCountByType(type)
+  const getBadgeCount = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => {
+    if (type === 'goodFirstIssues') return goodIssues.length
+    if (type === 'easyFixes') return easyFixes.length
+    return getCountByType(type)
+  }
+  
   const getActionRequiredTotal = () => getBadgeCount('assigned') + getBadgeCount('mentions') + getBadgeCount('stale')
   const getQuickWinsTotal = () => getBadgeCount('goodFirstIssues') + getBadgeCount('easyFixes')
 
-  // Show loading state in badges
   const getBadgeContent = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => {
-    if (loading[type]) return '...'
+    if (type === 'goodFirstIssues' || type === 'easyFixes') {
+      if (quickWinsLoading.goodIssues || quickWinsLoading.easyFixes) return '...'
+    } else {
+      if (loading[type]) return '...'
+    }
     return getBadgeCount(type)
   }
 
-  // Active states for highlighting (separate from accordion state)
-  const isQuickWinsTab = currentTab === 'good-first-issues' || currentTab === 'easy-fixes'
-  const isActionRequiredTab = ['assigned', 'mentions', 'stale'].includes(currentTab)
+  const isQuickWinsTab = pathname === '/quick-wins'
+  const isActionRequiredTab = pathname === '/action-required'
 
   const handleLogout = () => {
     logout()
@@ -59,11 +63,11 @@ export function Sidebar() {
       )}
 
       <aside className={`
-        fixed top-0 left-0 bg-sidebar border-r border-sidebar-border z-50 transform transition-transform duration-300 ease-in-out
+        fixed top-0 left-0 w-64 bg-sidebar border-r border-sidebar-border z-50 transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0
-        flex flex-col
-        w-80 min-w-[20rem] max-w-[20rem]
+        flex flex-col 
+
         h-screen
       `}>
 
@@ -83,8 +87,21 @@ export function Sidebar() {
 
         <div className="flex-1 overflow-y-auto">
           {/* Navigation Menu */}
-          <div className="p-4">
+          <div className="p-3">
             <nav className="space-y-2">
+              {/* Dashboard Link */}
+              <Link
+                href="/dashboard"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                  ${pathname === '/dashboard'
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                  }`}
+              >
+                <Home className="w-5 h-5" />
+                <span>Dashboard</span>
+              </Link>
+
               {/* Action Required Accordion */}
               <Collapsible open={actionRequiredOpen} onOpenChange={setActionRequiredOpen}>
                 <CollapsibleTrigger className={`
@@ -94,24 +111,26 @@ export function Sidebar() {
                     : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                   }
                 `}>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center  gap-1 ">
                     <Zap className="w-5 h-5" />
                     <span>Action Required</span>
+                  </div>
+                  <div className="flex items-center gap-1">
                     {getActionRequiredTotal() > 0 && (
-                      <Badge variant="destructive" className="ml-1 text-xs min-w-[1.25rem] h-5">
+                      <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
                         {getActionRequiredTotal()}
                       </Badge>
                     )}
-                  </div>
                   <ChevronRight className={`w-4 h-4 transition-transform ${actionRequiredOpen ? 'rotate-90' : ''}`} />
+                  </div>
                 </CollapsibleTrigger>
 
                 {/* Action Required sub-items */}
                 <CollapsibleContent className="pl-8 space-y-1 mt-1">
                   <Link
-                    href="/dashboard?tab=assigned"
+                    href="/action-required?tab=assigned"
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                        ${currentTab === 'assigned'
+                        ${(pathname === '/action-required' && currentTab === 'assigned')
                         ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
                         : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}
@@ -119,16 +138,16 @@ export function Sidebar() {
                     <Target className="w-4 h-4" />
                     Assigned
                     <Badge
-                      variant={getBadgeCount('assigned') > 0 ? "default" : "secondary"}
-                      className="ml-auto text-xs"
+                      variant="outline"
+                      className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
                     >
                       {getBadgeContent('assigned')}
                     </Badge>
                   </Link>
                   <Link
-                    href="/dashboard?tab=mentions"
+                    href="/action-required?tab=mentions"
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                        ${currentTab === 'mentions'
+                        ${(pathname === '/action-required' && currentTab === 'mentions')
                         ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
                         : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}
@@ -136,16 +155,16 @@ export function Sidebar() {
                     <MessageSquare className="w-4 h-4" />
                     Mentions
                     <Badge
-                      variant={getBadgeCount('mentions') > 0 ? "default" : "secondary"}
-                      className="ml-auto text-xs"
+                      variant="outline"
+                      className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
                     >
                       {getBadgeContent('mentions')}
                     </Badge>
                   </Link>
                   <Link
-                    href="/dashboard?tab=stale"
+                    href="/action-required?tab=stale"
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                        ${currentTab === 'stale'
+                        ${(pathname === '/action-required' && currentTab === 'stale')
                         ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
                         : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}
@@ -153,8 +172,8 @@ export function Sidebar() {
                     <Clock className="w-4 h-4" />
                     Stale PRs
                     <Badge
-                      variant={getBadgeCount('stale') > 0 ? "destructive" : "secondary"}
-                      className="ml-auto text-xs"
+                      variant="outline"
+                      className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
                     >
                       {getBadgeContent('stale')}
                     </Badge>
@@ -174,44 +193,46 @@ export function Sidebar() {
                   <div className="flex items-center gap-3">
                     <Target className="w-5 h-5" />
                     <span>Quick Wins</span>
+                  </div>
+                   <div className="flex items-center gap-1">
                     {getQuickWinsTotal() > 0 && (
-                      <Badge variant="default" className="ml-1 text-xs min-w-[1.25rem] h-5">
+                      <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
                         {getQuickWinsTotal()}
                       </Badge>
                     )}
-                  </div>
                   <ChevronRight className={`w-4 h-4 transition-transform ${quickWinsOpen ? 'rotate-90' : ''}`} />
+                  </div>
                 </CollapsibleTrigger>
 
                 {/* Quick Wins sub-items */}
                 <CollapsibleContent className="pl-8 space-y-1 mt-1">
                   <Link
-                    href="/dashboard?tab=good-first-issues"
+                    href="/quick-wins?tab=good-first-issues"
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                        ${currentTab === 'good-first-issues'
+                        ${(pathname === '/quick-wins' && currentTab === 'good-first-issues')
                         ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
                         : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}>
                     <Target className="w-4 h-4" />
                     <span className="font-medium">Good First Issues</span>
                     <Badge
-                      variant={getBadgeCount('goodFirstIssues') > 0 ? "default" : "secondary"}
-                      className="ml-auto text-xs">
+                      variant="outline"
+                      className="ml-auto text-xs bg-muted/30 border-muted-foreground/20">
                       {getBadgeContent('goodFirstIssues')}
                     </Badge>
                   </Link>
                   <Link
-                    href="/dashboard?tab=easy-fixes"
+                    href="/quick-wins?tab=easy-fixes"
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                        ${currentTab === 'easy-fixes'
+                        ${(pathname === '/quick-wins' && currentTab === 'easy-fixes')
                         ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
                         : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}>
                     <Sparkles className="w-4 h-4" />
                     <span className="font-medium">Easy Fixes</span>
                     <Badge
-                      variant={getBadgeCount('easyFixes') > 0 ? "default" : "secondary"}
-                      className="ml-auto text-xs">
+                      variant="outline"
+                      className="ml-auto text-xs bg-muted/30 border-muted-foreground/20">
                       {getBadgeContent('easyFixes')}
                     </Badge>
                   </Link>
@@ -258,7 +279,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Logout - Fixed at bottom with fixed height */}
+        {/* Footer - Logout Button */}              
         {hasHydrated && isConnected && (
           <div className="p-4 border-t border-sidebar-border flex-shrink-0">
             <Button
@@ -277,15 +298,3 @@ export function Sidebar() {
   )
 }
 
-export function SidebarToggle({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="lg:hidden fixed top-4 left-4 z-50 bg-background p-2 rounded-lg shadow-lg border border-border hover:bg-accent transition-colors"
-    >
-      <svg className="w-6 h-6 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </button>
-  )
-}

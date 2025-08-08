@@ -60,6 +60,22 @@ interface GitHubIssueResponse {
   pull_request?: unknown
 }
 
+export interface MappedIssue {
+  id: number
+  title: string
+  repo: string
+  type: 'issue' | 'pr'
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  url: string
+  createdAt: string
+  updatedAt: string
+  author: string
+  labels: string[]
+  stars: number
+  language: string
+  daysOld: number
+}
+
 class GitHubAPIClient {
   private baseUrl = 'https://api.github.com'
   private cache = new Map<string, { data: unknown; timestamp: number }>()
@@ -67,23 +83,12 @@ class GitHubAPIClient {
   private githubToken = process.env.GITHUB_TOKEN || ''
 
  setUserToken(token: string) {
-    // Basic validation
     if (!token || typeof token !== 'string' || token.trim().length === 0) {
       throw new Error('Invalid GitHub token: must be a non-empty string')
     }
 
     const trimmedToken = token.trim()
-    
  
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Token validation debug:', {
-        tokenLength: trimmedToken.length,
-        tokenPrefix: trimmedToken.substring(0, 10) + '...',
-        tokenPattern: trimmedToken.substring(0, 4)
-      })
-    }
-
-   
     const isClassicToken = /^ghp_[A-Za-z0-9]{36}$/.test(trimmedToken)
     const isFineGrainedToken = /^github_pat_[A-Za-z0-9_]{82}$/.test(trimmedToken)
     const isGitHubAppToken = /^ghs_[A-Za-z0-9]{36}$/.test(trimmedToken)
@@ -94,15 +99,7 @@ class GitHubAPIClient {
                         (!isClassicToken && !isFineGrainedToken && !isGitHubAppToken && !isLegacyToken && 
                          /^[A-Za-z0-9_-]{20,255}$/.test(trimmedToken))
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Token type checks:', {
-        isClassicToken,
-        isFineGrainedToken,
-        isGitHubAppToken,
-        isLegacyToken,
-        isOAuthToken
-      })
-    }
+   
 
     if (!isClassicToken && !isFineGrainedToken && !isGitHubAppToken && !isLegacyToken && !isOAuthToken) {
       throw new Error(
@@ -136,6 +133,15 @@ class GitHubAPIClient {
     this.githubToken = ''
   }
 
+  // Debug fonksiyonu - token durumunu kontrol et
+  getTokenInfo(): { hasToken: boolean, tokenPrefix: string, source: string } {
+    return {
+      hasToken: !!this.githubToken,
+      tokenPrefix: this.githubToken ? this.githubToken.substring(0, 10) + '...' : 'NO_TOKEN',
+      source: this.githubToken === process.env.GITHUB_TOKEN ? 'ENV_VAR' : 'USER_SET'
+    }
+  }
+
   private async fetchWithCache<T>(endpoint: string, useGithub = false): Promise<T> {
     const cacheKey = endpoint
     const cached = this.cache.get(cacheKey)
@@ -158,8 +164,11 @@ class GitHubAPIClient {
 
       if (!response.ok) {
         console.warn(`API Error ${response.status} for ${endpoint}`)
-        if (response.status === 403) {
-          console.warn('GitHub API rate limit exceeded')
+        if (response.status === 403 || response.status === 429) {
+          console.warn('GitHub API rate limit exceeded - using fallback data')
+          if (cached) {
+            return cached.data as T
+          }
         }
         return this.getFallbackData(endpoint) as T
       }
@@ -173,7 +182,6 @@ class GitHubAPIClient {
       console.error(`API request failed for ${endpoint}:`, error)
 
       if (cached) {
-        console.log('Returning stale cached data due to error')
         return cached.data as T
       }
 
@@ -419,59 +427,86 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
     }
   }
 
-  async getGoodFirstIssues(): Promise<unknown[]> {
-    try {
-      const endpoint = `/search/issues?q=label:"good first issue"+state:open+type:issue&sort=updated&order=desc&per_page=50`
-      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(endpoint, true)
-      
-      return response.items?.map((item: GitHubIssueResponse) => ({
-        id: item.id,
-        title: item.title,
-        repo: item.repository_url 
-          ? item.repository_url.split('/').slice(-2).join('/')
-          : 'unknown/unknown',
-        type: 'issue',
-        priority: this.calculatePriority(item),
-        url: item.html_url,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
-        author: item.user?.login,
-        labels: item.labels?.map((l: { name: string }) => l.name) || [],
-        daysOld: Math.floor((Date.now() - new Date(item.created_at).getTime()) / (1000 * 60 * 60 * 24))
-      })) || []
-    } catch (error) {
-      console.error('Failed to fetch good first issues:', error)
-      return []
-    }
-  }
+private async fetchIssuesFromPopularRepos(
+    minStars: number,
+    labels: string[],
+    issuesPerRepo: number = 10
+  ): Promise<MappedIssue[]> {
+ try {
+    const repoEndpoint = `/search/repositories?q=stars:>${minStars}&sort=stars&order=desc&per_page=50`
+    const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
 
-  async getEasyFixes(): Promise<unknown[]> {
-    try {
-      const labels = ['easy', 'easy fix', 'beginner', 'starter', 'help wanted']
-      const labelQuery = labels.map(label => `label:"${label}"`).join(' OR ')
-      const endpoint = `/search/issues?q=(${labelQuery})+state:open+type:issue&sort=updated&order=desc&per_page=50`
-      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(endpoint, true)
-      
-      return response.items?.map((item: GitHubIssueResponse) => ({
-        id: item.id,
-        title: item.title,
-        repo: item.repository_url 
-          ? item.repository_url.split('/').slice(-2).join('/')
-          : 'unknown/unknown',
-        type: 'issue',
-        priority: this.calculatePriority(item),
-        url: item.html_url,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
-        author: item.user?.login,
-        labels: item.labels?.map((l: { name: string }) => l.name) || [],
-        daysOld: Math.floor((Date.now() - new Date(item.created_at).getTime()) / (1000 * 60 * 60 * 24))
-      })) || []
-    } catch (error) {
-      console.error('Failed to fetch easy fixes:', error)
+    if (!repoResponse.items || repoResponse.items.length === 0) {
       return []
     }
+
+    const batchSize = 2
+    const allIssues: MappedIssue[] = []
+
+    for (let i = 0; i < Math.min(repoResponse.items.length, 20); i += batchSize) {
+      const batch = repoResponse.items.slice(i, i + batchSize)
+      
+      const batchIssues = await Promise.all(
+        batch.map(async (repo: GitHubRepositoryResponse) => {
+          try {
+            const issuePromises = labels.map(async (label) => {
+              const issueEndpoint = `/repos/${repo.full_name}/issues?labels=${encodeURIComponent(label)}&state=open&per_page=${issuesPerRepo}`
+              const issueResponse = await this.fetchWithCache<GitHubIssueResponse[]>(issueEndpoint, true)
+              
+              return (issueResponse || [])
+                .filter((issue: GitHubIssueResponse) => !issue.pull_request) // Filter out pull requests
+                .map((issue: GitHubIssueResponse) => ({
+                  id: issue.id,
+                  title: issue.title,
+                  repo: repo.full_name,
+                  type: 'issue' as const,
+                  priority: this.calculatePriority(issue),
+                  url: issue.html_url,
+                  createdAt: issue.created_at,
+                  updatedAt: issue.updated_at,
+                  author: issue.user?.login,
+                  labels: issue.labels?.map((l: { name: string }) => l.name) || [],
+                  stars: repo.stargazers_count,
+                  language: repo.language || 'unknown',
+                  daysOld: Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                }))
+            })
+
+            const issueResults = await Promise.all(issuePromises)
+            return issueResults.flat()
+          } catch (error) {
+            console.warn(`Failed to fetch issues from ${repo.full_name}:`, error)
+            return []
+          }
+        })
+      )
+
+      allIssues.push(...batchIssues.flat())
+      await new Promise(resolve => setTimeout(resolve, 250))
+    }
+
+    const uniqueIssues = allIssues
+      .filter((issue, index, self) => 
+        index === self.findIndex(i => i.id === issue.id)
+      )
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 50)
+
+    return uniqueIssues
+  } catch (error) {
+    console.error('Failed to fetch issues:', error)
+    return []
   }
+}
+
+async getGoodFirstIssues(): Promise<MappedIssue[]> {
+  return this.fetchIssuesFromPopularRepos(20, ['good first issue'], 10)
+}
+
+async getEasyFixes(): Promise<MappedIssue[]> {
+  return this.fetchIssuesFromPopularRepos(15, ['easy', 'easy fix', 'beginner', 'starter', 'help wanted'], 5)
+}
+
 
   private calculatePriority(item: GitHubIssueResponse): 'low' | 'medium' | 'high' | 'urgent' {
     const labels = item.labels?.map((l: { name: string }) => l.name.toLowerCase()) || []

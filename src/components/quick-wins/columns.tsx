@@ -1,13 +1,9 @@
-// src/components/quick-wins/columns.ts
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ExternalLink, Star, MessageSquare, Calendar } from 'lucide-react'
+import { ExternalLink,  Calendar } from 'lucide-react'
 import type { GitHubIssue } from '@/types/quickWins'
-
-
-
 
 export const createColumns = (): ColumnDef<GitHubIssue>[] => [
     {
@@ -103,65 +99,6 @@ export const createColumns = (): ColumnDef<GitHubIssue>[] => [
                 </Badge>
             ) : (
                 <span className="text-gray-400 text-sm" > -</span>
-            )
-        }
-    },
-    {
-        accessorKey: 'stars',
-        header: ({ column }) => (
-            <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')
-                }
-                className="h-auto p-0 font-semibold"
-            >
-                <Star className="w-4 h-4 mr-1" />
-                Stars
-            </Button>
-        ),
-        cell: ({ row }) => (
-            <div className="flex items-center gap-1" >
-                <Star className="w-3 h-3 text-yellow-500" />
-                <span className="text-sm font-medium" >
-                    {row.original.stars.toLocaleString()}
-                </span>
-            </div>
-        )
-    },
-    {
-        accessorKey: 'comments',
-        header: ({ column }) => (
-            <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')
-                }
-                className="h-auto p-0 font-semibold"
-            >
-                <MessageSquare className="w-4 h-4 mr-1" />
-                Comments
-            </Button>
-        ),
-        cell: ({ row }) => (
-            <div className="flex items-center gap-1" >
-                <MessageSquare className="w-3 h-3 text-gray-500" />
-                <span className="text-sm" > {row.original.comments} </span>
-            </div>
-        )
-    },
-    {
-        accessorKey: 'difficulty',
-        header: 'Difficulty',
-        cell: ({ row }) => {
-            const difficulty = row.original.difficulty
-            return (
-                <Badge
-                    variant={difficulty === 'easy' ? 'default' : 'secondary'
-                    }
-                    className="text-xs"
-                >
-                    {difficulty === 'easy' ? '✨ Easy' : '⚡ Medium'
-                    }
-                </Badge>
             )
         }
     },
