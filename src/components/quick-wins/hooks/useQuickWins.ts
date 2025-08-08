@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useQuickWinsStore } from '@/stores/quickWins'
 import { useDataCacheStore } from '@/stores/cache'
 import { useActionItemsStore } from '@/stores'
@@ -33,6 +33,25 @@ export function useQuickWins() {
 
     const { isQuickWinsCacheExpired } = useDataCacheStore()
     const { setGoodFirstIssues, setEasyFixes } = useActionItemsStore()
+    
+    const isInitialized = useRef(false)
+
+    const initializeData = useCallback(async () => {
+        if (isInitialized.current) return
+        
+        loadFromCache()
+        
+        const needsFetch = isQuickWinsCacheExpired() || (goodIssues.length === 0 && easyFixes.length === 0)
+        
+        if (needsFetch) {
+            await Promise.all([
+                fetchGoodIssues(false),
+                fetchEasyFixes(false)
+            ])
+        }
+        
+        isInitialized.current = true
+    }, [loadFromCache, isQuickWinsCacheExpired, goodIssues.length, easyFixes.length, fetchGoodIssues, fetchEasyFixes])
 
     useEffect(() => {
         if (goodIssues.length > 0) {
@@ -69,13 +88,8 @@ export function useQuickWins() {
     }, [easyFixes, setEasyFixes])
 
     useEffect(() => {
-        loadFromCache()
-        
-        if (isQuickWinsCacheExpired() || (goodIssues.length === 0 && easyFixes.length === 0)) { 
-            fetchGoodIssues(false)
-            fetchEasyFixes(false)
-        } 
-    }, [])
+        initializeData()
+    }, [initializeData])
 
     const totalIssues = goodIssues.length + easyFixes.length
     const hasData = totalIssues > 0

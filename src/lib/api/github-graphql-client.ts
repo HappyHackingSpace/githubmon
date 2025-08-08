@@ -84,7 +84,7 @@ class GitHubGraphQLClient {
     
     if (data.data?.rateLimit) {
       if (typeof window !== 'undefined') {
-        const updateRateLimit = (window as any).updateRateLimit
+        const updateRateLimit = (window as typeof window & { updateRateLimit?: (headers: Headers) => void }).updateRateLimit
         if (updateRateLimit) {
           const headers = new Headers()
           headers.set('x-ratelimit-remaining', data.data.rateLimit.remaining.toString())
@@ -97,7 +97,7 @@ class GitHubGraphQLClient {
     }
 
     if (data.errors) {
-      throw new Error(`GraphQL errors: ${data.errors.map((e: any) => e.message).join(', ')}`)
+      throw new Error(`GraphQL errors: ${data.errors.map((e: { message: string }) => e.message).join(', ')}`)
     }
 
     return data
@@ -186,7 +186,7 @@ class GitHubGraphQLClient {
     const dateString = oneMonthAgo.toISOString().split('T')[0]
     
     const labels = ['beginner', 'easy', 'help wanted', 'good first issue']
-    let allIssues: Issue[] = []
+    const allIssues: Issue[] = []
     
     for (const label of labels) {
         const query = `
@@ -245,7 +245,7 @@ class GitHubGraphQLClient {
         `
         
         try {
-            const result = await this.query<SearchResult>(query, { count: 25 })
+            const result = await this.query<SearchResult>(query, { count: Math.floor(count / labels.length) })
             allIssues.push(...result.data.search.nodes)
             
             await new Promise(resolve => setTimeout(resolve, 100))
