@@ -245,7 +245,7 @@ class GitHubGraphQLClient {
         `
         
         try {
-            const result = await this.query<SearchResult>(query, { count: Math.floor(count / labels.length) })
+            const result = await this.query<SearchResult>(query, { count: Math.max(1, Math.floor(count / labels.length)) })
             allIssues.push(...result.data.search.nodes)
             
             await new Promise(resolve => setTimeout(resolve, 100))
