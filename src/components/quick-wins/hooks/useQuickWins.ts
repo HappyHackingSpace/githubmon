@@ -3,7 +3,6 @@ import { useEffect } from 'react'
 import { useQuickWinsStore } from '@/stores/quickWins'
 import { useDataCacheStore } from '@/stores/cache'
 import { useActionItemsStore } from '@/stores'
-import { githubAPIClient } from '@/lib/api/github-api-client'
 
 interface QuickWinsCount {
     goodIssuesCount: number
@@ -34,7 +33,6 @@ export function useQuickWins() {
     const { isQuickWinsCacheExpired } = useDataCacheStore()
     const { setGoodFirstIssues, setEasyFixes } = useActionItemsStore()
 
-    // ActionItems store'unu da güncelle
     useEffect(() => {
         if (goodIssues.length > 0) {
             setGoodFirstIssues(goodIssues.map(issue => ({
@@ -69,21 +67,14 @@ export function useQuickWins() {
         }
     }, [easyFixes, setEasyFixes])
 
-    // Load from cache first, then fetch if expired
     useEffect(() => {
-        // Debug: Token durumunu göster
-        const tokenInfo = githubAPIClient.getTokenInfo()
-        console.log('🔍 GitHub API Token Info:', tokenInfo)
         
         loadFromCache()
         
-        if (isQuickWinsCacheExpired()) {
-            console.log('⏰ Cache expired, fetching fresh data')
+        if (isQuickWinsCacheExpired()) { 
             fetchGoodIssues(true)
             fetchEasyFixes(true)
-        } else {
-            console.log('📦 Using cached data, no API calls needed')
-        }
+        } 
     }, [loadFromCache, isQuickWinsCacheExpired, fetchGoodIssues, fetchEasyFixes])
 
     const totalIssues = goodIssues.length + easyFixes.length
