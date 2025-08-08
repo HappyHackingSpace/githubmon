@@ -45,7 +45,15 @@ export default function PieChart({
         }
       }
     };
-    return <EChartsBase option={option} {...chartProps} />;
+    return (
+      <div className="w-full flex flex-col items-center">
+        {/* Optional: keep external title for consistency */}
+        {title && (
+          <h2 className="text-center text-lg font-bold mb-2">{title}</h2>
+        )}
+        <EChartsBase option={option} {...chartProps} />
+      </div>
+    );
   }
 
   const dataWithColors = data.map((item, index) => ({

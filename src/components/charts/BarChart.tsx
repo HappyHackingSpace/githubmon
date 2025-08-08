@@ -42,7 +42,11 @@ export default function BarChart({
         }
       }
     };
-    return <EChartsBase option={option} {...chartProps} />;
+    return (
+      <div className={`w-full h-full ${className}`}>
+        <EChartsBase option={option} {...chartProps} />
+      </div>
+    );
   }
 
   const option: EChartsOption = {

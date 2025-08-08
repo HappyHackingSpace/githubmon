@@ -2,6 +2,7 @@ import type {
   TrendingRepo,
   TopContributor
 } from '@/types/oss-insight'
+import { error } from 'console'
 
 interface GitHubSearchResponse<T> {
   items: T[]
@@ -797,8 +798,7 @@ class GitHubAPIClient {
               const allCommits = await this.fetchWithCache<GitHubCommitResponse[]>(endpoint2, true, true) || [];
               commits = allCommits.filter(commit =>
                 commit.author?.login === username ||
-                commit.commit?.author?.name?.toLowerCase().includes(username.toLowerCase()) ||
-                commit.commit?.author?.email?.includes(username.toLowerCase())
+                (commit.commit?.author?.name?.toLowerCase() ?? '').includes(username.toLowerCase())
               );
             } catch {
               // Silent fail

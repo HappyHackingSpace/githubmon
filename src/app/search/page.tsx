@@ -180,16 +180,22 @@ export default function SearchPage() {
 
   const loadUserAnalytics = useCallback(async () => {
     if (!userParam) return;
+    const requestedUser = userParam;
 
     setLoadingAnalytics(true);
     try {
-      const analytics = await githubAPIClient.getUserAnalytics(userParam);
+      const analytics = await githubAPIClient.getUserAnalytics(requestedUser);
+      // Ignore if param changed while awaiting
+      if (requestedUser !== userParam) return;
       setUserAnalytics(analytics);
     } catch {
       // Fallback to null if API fails
+      if (requestedUser !== userParam) return;
       setUserAnalytics(null);
     } finally {
-      setLoadingAnalytics(false);
+      if (requestedUser === userParam) {
+        setLoadingAnalytics(false);
+      }
     }
   }, [userParam]);
 
