@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { GitHubIssue } from '@/types/quickWins'
-import { githubAPIClient, type MappedIssue } from '@/lib/api/github-api-client';
 import { useDataCacheStore } from './cache'
 import { githubGraphQLClient } from '@/lib/api/github-graphql-client'
 import { useAuthStore } from './auth';
@@ -40,14 +39,24 @@ export const useQuickWinsStore = create<QuickWinsState>((set, get) => ({
         }
     },
 
-   fetchGoodIssues: async () => {
+   fetchGoodIssues: async (forceRefresh = false) => {
+    if (!forceRefresh) {
+        const cache = useDataCacheStore.getState().getQuickWinsCache()
+        if (cache && cache.goodIssues.length > 0) {
+            set((state) => ({
+                goodIssues: cache.goodIssues,
+                loading: { ...state.loading, goodIssues: false }
+            }))
+            return
+        }
+    }
+
     set((state) => ({
         loading: { ...state.loading, goodIssues: true },
         error: { ...state.error, goodIssues: null }
     }));
 
     try {
-        // Get user token from auth store
         const authState = useAuthStore.getState();
         const userToken = authState.orgData?.token;
         
@@ -55,17 +64,21 @@ export const useQuickWinsStore = create<QuickWinsState>((set, get) => ({
             throw new Error('GitHub token required');
         }
         
-        // Set token in GraphQL client
         githubGraphQLClient.setToken(userToken);
         
-        // Fetch using GraphQL - now returns GitHubIssue[]
         const issues = await githubGraphQLClient.getGoodFirstIssues(100);
         
         set((state) => ({
-            goodIssues: issues, // Now type-compatible!
+            goodIssues: issues,
             loading: { ...state.loading, goodIssues: false },
             error: { ...state.error, goodIssues: null }
         }));
+
+        const currentState = get()
+        useDataCacheStore.getState().setQuickWinsCache({
+            goodIssues: issues,
+            easyFixes: currentState.easyFixes
+        })
         
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -76,14 +89,24 @@ export const useQuickWinsStore = create<QuickWinsState>((set, get) => ({
         }));
     }
 },
-   fetchEasyFixes: async () => {
+   fetchEasyFixes: async (forceRefresh = false) => {
+    if (!forceRefresh) {
+        const cache = useDataCacheStore.getState().getQuickWinsCache()
+        if (cache && cache.easyFixes.length > 0) {
+            set((state) => ({
+                easyFixes: cache.easyFixes,
+                loading: { ...state.loading, easyFixes: false }
+            }))
+            return 
+        }
+    }
+
     set((state) => ({
         loading: { ...state.loading, easyFixes: true },
         error: { ...state.error, easyFixes: null }
     }));
 
     try {
-        // Get user token from auth store
         const authState = useAuthStore.getState();
         const userToken = authState.orgData?.token;
         
@@ -91,10 +114,8 @@ export const useQuickWinsStore = create<QuickWinsState>((set, get) => ({
             throw new Error('GitHub token required');
         }
         
-        // Set token in GraphQL client
         githubGraphQLClient.setToken(userToken);
         
-        // Fetch using GraphQL (much more efficient!)
         const issues = await githubGraphQLClient.getEasyFixes(100);
         
         set((state) => ({
@@ -102,8 +123,12 @@ export const useQuickWinsStore = create<QuickWinsState>((set, get) => ({
             loading: { ...state.loading, easyFixes: false },
             error: { ...state.error, easyFixes: null }
         }));
-        
-       
+
+        const currentState = get()
+        useDataCacheStore.getState().setQuickWinsCache({
+            goodIssues: currentState.goodIssues,
+            easyFixes: issues
+        })
         
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';

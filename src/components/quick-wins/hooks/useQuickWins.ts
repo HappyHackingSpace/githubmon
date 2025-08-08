@@ -3,7 +3,6 @@ import { useEffect } from 'react'
 import { useQuickWinsStore } from '@/stores/quickWins'
 import { useDataCacheStore } from '@/stores/cache'
 import { useActionItemsStore } from '@/stores'
-import { githubGraphQLClient } from '@/lib/api/github-graphql-client'
 
 
 interface QuickWinsCount {
@@ -70,14 +69,13 @@ export function useQuickWins() {
     }, [easyFixes, setEasyFixes])
 
     useEffect(() => {
-        
         loadFromCache()
         
-        if (isQuickWinsCacheExpired()) { 
-            fetchGoodIssues(true)
-            fetchEasyFixes(true)
+        if (isQuickWinsCacheExpired() || (goodIssues.length === 0 && easyFixes.length === 0)) { 
+            fetchGoodIssues(false)
+            fetchEasyFixes(false)
         } 
-    }, [loadFromCache, isQuickWinsCacheExpired, fetchGoodIssues, fetchEasyFixes])
+    }, [])
 
     const totalIssues = goodIssues.length + easyFixes.length
     const hasData = totalIssues > 0
@@ -89,8 +87,16 @@ export function useQuickWins() {
         loadingEasyFixes: loading.easyFixes,
         goodIssuesError: null,
         easyFixesError: null,
-        refreshGoodIssues: () => fetchGoodIssues(true),
-        refreshEasyFixes: () => fetchEasyFixes(true),
+        refreshGoodIssues: () => {
+            const { clearQuickWinsCache } = useDataCacheStore.getState()
+            clearQuickWinsCache()
+            fetchGoodIssues(true)
+        },
+        refreshEasyFixes: () => {
+            const { clearQuickWinsCache } = useDataCacheStore.getState()
+            clearQuickWinsCache()
+            fetchEasyFixes(true)
+        },
         refreshAll: async () => {
             await Promise.all([
                 fetchGoodIssues(true),
