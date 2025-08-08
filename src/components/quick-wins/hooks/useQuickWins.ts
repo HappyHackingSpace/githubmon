@@ -26,6 +26,7 @@ export function useQuickWins() {
         goodIssues,
         easyFixes,
         loading,
+        error,
         fetchGoodIssues,
         fetchEasyFixes,
         loadFromCache
@@ -71,41 +72,39 @@ export function useQuickWins() {
 
     // Load from cache first, then fetch if expired
     useEffect(() => {
-        // Debug: Token durumunu göster
-        const tokenInfo = githubAPIClient.getTokenInfo()
-        console.log('🔍 GitHub API Token Info:', tokenInfo)
-        
+        // Load from cache first
         loadFromCache()
-        
+
+        // Then check if we need to fetch fresh data
         if (isQuickWinsCacheExpired()) {
-            console.log('⏰ Cache expired, fetching fresh data')
-            fetchGoodIssues(true)
-            fetchEasyFixes(true)
-        } else {
-            console.log('📦 Using cached data, no API calls needed')
+            fetchGoodIssues()
+            fetchEasyFixes()
         }
     }, [loadFromCache, isQuickWinsCacheExpired, fetchGoodIssues, fetchEasyFixes])
 
     const totalIssues = goodIssues.length + easyFixes.length
+    const needsToken = !githubAPIClient.hasValidToken()
     const hasData = totalIssues > 0
+
+    // Create refresh functions
+    const refreshGoodIssues = () => fetchGoodIssues(true)
+    const refreshEasyFixes = () => fetchEasyFixes(true)
 
     return {
         goodIssues,
         easyFixes,
+        loading,
+        totalIssues,
+        needsToken,
+        hasData,
+        // Individual loading states for compatibility
         loadingGoodIssues: loading.goodIssues,
         loadingEasyFixes: loading.easyFixes,
-        goodIssuesError: null,
-        easyFixesError: null,
-        refreshGoodIssues: () => fetchGoodIssues(true),
-        refreshEasyFixes: () => fetchEasyFixes(true),
-        refreshAll: async () => {
-            await Promise.all([
-                fetchGoodIssues(true),
-                fetchEasyFixes(true)
-            ]);
-        },
-        totalIssues,
-        needsToken: false,
-        hasData
+        // Individual error states
+        goodIssuesError: error.goodIssues,
+        easyFixesError: error.easyFixes,
+        // Refresh functions
+        refreshGoodIssues,
+        refreshEasyFixes
     }
 }
