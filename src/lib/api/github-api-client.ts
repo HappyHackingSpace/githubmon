@@ -425,15 +425,22 @@ class GitHubAPIClient {
   private async fetchIssuesFromPopularRepos(
     minStars: number,
     labels: string[],
-    issuesPerRepo: number = 10
+    issuesPerRepo: number = 30
   ): Promise<MappedIssue[]> {
-    try {
-      const repoEndpoint = `/search/repositories?q=stars:>${minStars}&sort=stars&order=desc&per_page=50`
-      const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
+
+ try {
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+    const dateString = oneMonthAgo.toISOString().split('T')[0]
+    
+    const repoEndpoint = `/search/repositories?q=stars:>${minStars}&sort=stars&order=desc&per_page=50`
+    const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
+
 
       if (!repoResponse.items || repoResponse.items.length === 0) {
         return []
       }
+
 
       const batchSize = 2
       const allIssues: MappedIssue[] = []
@@ -475,6 +482,7 @@ class GitHubAPIClient {
           })
         )
 
+
         allIssues.push(...batchIssues.flat())
         await new Promise(resolve => setTimeout(resolve, 250))
       }
@@ -492,13 +500,15 @@ class GitHubAPIClient {
     }
   }
 
-  async getGoodFirstIssues(): Promise<MappedIssue[]> {
-    return this.fetchIssuesFromPopularRepos(20, ['good first issue'], 10)
-  }
 
-  async getEasyFixes(): Promise<MappedIssue[]> {
-    return this.fetchIssuesFromPopularRepos(15, ['easy', 'easy fix', 'beginner', 'starter', 'help wanted'], 5)
-  }
+async getGoodFirstIssues(): Promise<MappedIssue[]> {
+  return this.fetchIssuesFromPopularRepos(5, ['good first issue'], 10)
+}
+
+async getEasyFixes(): Promise<MappedIssue[]> {
+  return this.fetchIssuesFromPopularRepos(5, ['easy', 'easy fix', 'beginner', 'starter', 'help wanted'], 5)
+}
+
 
   private calculatePriority(item: GitHubIssueResponse): 'low' | 'medium' | 'high' | 'urgent' {
     const labels = item.labels?.map((l: { name: string }) => l.name.toLowerCase()) || []
