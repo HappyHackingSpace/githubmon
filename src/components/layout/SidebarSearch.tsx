@@ -3,11 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-
-
 import { useSidebarState } from '@/stores'
 import {
-
     Activity,
     Star,
     Code,
@@ -47,7 +44,7 @@ export function SidebarSearch() {
         return () => window.removeEventListener('activeSectionChange', handleActiveSection as EventListener);
     }, []);
 
-  
+
 
     const mainItems = navigationItems.filter(item => item.section === 'main')
     const analyticsItems = navigationItems.filter(item => item.section === 'analytics')
@@ -55,7 +52,11 @@ export function SidebarSearch() {
     const scrollToSection = (sectionId: string) => {
         const element = document.getElementById(sectionId);
         if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
+            // Close sidebar on mobile after navigation
+            if (window.innerWidth < 1024) { // lg breakpoint
+                setOpen(false);
+            }
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     };
 
@@ -124,12 +125,12 @@ export function SidebarSearch() {
                                         className={`
                                             w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm text-left
                                             ${isActive
-                                                ? 'bg-sidebar-accent text-sidebar-primary font-medium'
+                                                ? 'bg-sidebar-accent text-sidebar-primary font-medium border-l-2 border-blue-500'
                                                 : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                                             }
                                         `}
                                     >
-                                        <Icon size={16} className="text-muted-foreground" />
+                                        <Icon size={16} className={`${isActive ? 'text-blue-500' : 'text-muted-foreground'}`} />
                                         <span>{item.label}</span>
                                     </button>
                                 )
