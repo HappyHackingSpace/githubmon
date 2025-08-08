@@ -35,7 +35,7 @@ interface Issue {
   repository: {
     name: string
     nameWithOwner: string
-    stargazerCount: number
+    stargazerCount?: number
     primaryLanguage: { name: string } | null
     owner: {
       login: string
@@ -169,7 +169,7 @@ class GitHubGraphQLClient {
       })
 
       const filteredIssues = result.data.search.nodes
-        .filter(issue => issue.repository.stargazerCount >= 5)
+        .filter(issue => issue.repository?.stargazerCount && issue.repository.stargazerCount >= 5)
         .map(issue => this.mapIssueToGitHubIssue(issue))
 
       return filteredIssues
@@ -259,7 +259,7 @@ class GitHubGraphQLClient {
     )
     
     const filteredIssues = uniqueIssues
-        .filter(issue => issue.repository?.stargazerCount >= 5)
+        .filter(issue => issue.repository?.stargazerCount && issue.repository.stargazerCount >= 5)
         .map(issue => this.mapIssueToGitHubIssue(issue))
 
     return filteredIssues
@@ -279,7 +279,7 @@ class GitHubGraphQLClient {
       updated_at: issue.updatedAt,
       difficulty: 'easy' as const, 
       language: issue.repository.primaryLanguage?.name || 'unknown',
-      stars: issue.repository.stargazerCount,
+      stars: issue.repository.stargazerCount || 0,
       author: {
         login: issue.author?.login || 'unknown',
         avatar_url: issue.author?.avatarUrl || ''
