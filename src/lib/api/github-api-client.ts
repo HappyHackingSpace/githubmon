@@ -60,7 +60,7 @@ interface GitHubIssueResponse {
   pull_request?: unknown
 }
 
-interface MappedIssue {
+export interface MappedIssue {
   id: number
   title: string
   repo: string
