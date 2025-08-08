@@ -444,56 +444,63 @@ class GitHubAPIClient {
   private async fetchIssuesFromPopularRepos(
     minStars: number,
     labels: string[],
-    issuesPerRepo: number = 10
+    issuesPerRepo: number = 30
   ): Promise<MappedIssue[]> {
-    try {
-      const repoEndpoint = `/search/repositories?q=stars:>${minStars}&sort=stars&order=desc&per_page=50`
-      const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
+
+ try {
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+    const dateString = oneMonthAgo.toISOString().split('T')[0]
+    
+    const repoEndpoint = `/search/repositories?q=stars:>${minStars}&sort=stars&order=desc&per_page=50`
+    const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
+
 
       if (!repoResponse.items || repoResponse.items.length === 0) {
         return []
       }
 
-      const batchSize = 2
-      const allIssues: MappedIssue[] = []
+    const batchSize = 2
+    const allIssues: MappedIssue[] = []
 
-      for (let i = 0; i < Math.min(repoResponse.items.length, 20); i += batchSize) {
-        const batch = repoResponse.items.slice(i, i + batchSize)
+    for (let i = 0; i < Math.min(repoResponse.items.length, 20); i += batchSize) {
+      const batch = repoResponse.items.slice(i, i + batchSize)
+      
+      const batchIssues = await Promise.all(
+        batch.map(async (repo: GitHubRepositoryResponse) => {
+          try {
+            const issuePromises = labels.map(async (label) => {
+              const issueEndpoint = `/repos/${repo.full_name}/issues?labels=${encodeURIComponent(label)}&state=open&since=${dateString}&per_page=${issuesPerRepo}`
+              const issueResponse = await this.fetchWithCache<GitHubIssueResponse[]>(issueEndpoint, true)
+              
+              return (issueResponse || [])
+                .filter((issue: GitHubIssueResponse) => !issue.pull_request) // Filter out pull requests
+                .map((issue: GitHubIssueResponse) => ({
+                  id: issue.id,
+                  title: issue.title,
+                  repo: repo.full_name,
+                  type: 'issue' as const,
+                  priority: this.calculatePriority(issue),
+                  url: issue.html_url,
+                  createdAt: issue.created_at,
+                  updatedAt: issue.updated_at,
+                  author: issue.user?.login,
+                  labels: issue.labels?.map((l: { name: string }) => l.name) || [],
+                  stars: repo.stargazers_count,
+                  language: repo.language || 'unknown',
+                  daysOld: Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                }))
+            })
 
-        const batchIssues = await Promise.all(
-          batch.map(async (repo: GitHubRepositoryResponse) => {
-            try {
-              const issuePromises = labels.map(async (label) => {
-                const issueEndpoint = `/repos/${repo.full_name}/issues?labels=${encodeURIComponent(label)}&state=open&per_page=${issuesPerRepo}`
-                const issueResponse = await this.fetchWithCache<GitHubIssueResponse[]>(issueEndpoint, true)
+            const issueResults = await Promise.all(issuePromises)
+            return issueResults.flat()
+          } catch (error) {
+            console.warn(`Failed to fetch issues from ${repo.full_name}:`, error)
+            return []
+          }
+        })
+      )
 
-                return (issueResponse || [])
-                  .filter((issue: GitHubIssueResponse) => !issue.pull_request) // Filter out pull requests
-                  .map((issue: GitHubIssueResponse) => ({
-                    id: issue.id,
-                    title: issue.title,
-                    repo: repo.full_name,
-                    type: 'issue' as const,
-                    priority: this.calculatePriority(issue),
-                    url: issue.html_url,
-                    createdAt: issue.created_at,
-                    updatedAt: issue.updated_at,
-                    author: issue.user?.login,
-                    labels: issue.labels?.map((l: { name: string }) => l.name) || [],
-                    stars: repo.stargazers_count,
-                    language: repo.language || 'unknown',
-                    daysOld: Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
-                  }))
-              })
-
-              const issueResults = await Promise.all(issuePromises)
-              return issueResults.flat()
-            } catch (error) {
-              console.warn(`Failed to fetch issues from ${repo.full_name}:`, error)
-              return []
-            }
-          })
-        )
 
         allIssues.push(...batchIssues.flat())
         await new Promise(resolve => setTimeout(resolve, 250))
@@ -513,13 +520,15 @@ class GitHubAPIClient {
     }
   }
 
-  async getGoodFirstIssues(): Promise<MappedIssue[]> {
-    return this.fetchIssuesFromPopularRepos(20, ['good first issue'], 10)
-  }
 
-  async getEasyFixes(): Promise<MappedIssue[]> {
-    return this.fetchIssuesFromPopularRepos(15, ['easy', 'easy fix', 'beginner', 'starter', 'help wanted'], 5)
-  }
+async getGoodFirstIssues(): Promise<MappedIssue[]> {
+  return this.fetchIssuesFromPopularRepos(5, ['good first issue'], 10)
+}
+
+async getEasyFixes(): Promise<MappedIssue[]> {
+  return this.fetchIssuesFromPopularRepos(5, ['easy', 'easy fix', 'beginner', 'starter', 'help wanted'], 5)
+}
+
 
 
   private calculatePriority(item: GitHubIssueResponse): 'low' | 'medium' | 'high' | 'urgent' {

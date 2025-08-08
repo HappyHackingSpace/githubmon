@@ -1,9 +1,9 @@
 
-import { useEffect } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useQuickWinsStore } from '@/stores/quickWins'
 import { useDataCacheStore } from '@/stores/cache'
 import { useActionItemsStore } from '@/stores'
-import { githubAPIClient } from '@/lib/api/github-api-client'
+
 
 interface QuickWinsCount {
     goodIssuesCount: number
@@ -33,8 +33,23 @@ export function useQuickWins() {
 
     const { isQuickWinsCacheExpired } = useDataCacheStore()
     const { setGoodFirstIssues, setEasyFixes } = useActionItemsStore()
+    
+    const isInitialized = useRef(false)
 
-    // ActionItems store'unu da güncelle
+    const initializeData = useCallback(async () => {
+        if (isInitialized.current) return
+        loadFromCache()
+        const { goodIssues: gi, easyFixes: ef } = useQuickWinsStore.getState()
+        const needsFetch = isQuickWinsCacheExpired() || (gi.length === 0 && ef.length === 0)
+        if (needsFetch) {
+            await Promise.all([
+                fetchGoodIssues(false),
+                fetchEasyFixes(false)
+            ])
+        }
+        isInitialized.current = true
+    }, [loadFromCache, isQuickWinsCacheExpired, goodIssues.length, easyFixes.length, fetchGoodIssues, fetchEasyFixes])
+
     useEffect(() => {
         if (goodIssues.length > 0) {
             setGoodFirstIssues(goodIssues.map(issue => ({
@@ -69,22 +84,9 @@ export function useQuickWins() {
         }
     }, [easyFixes, setEasyFixes])
 
-    // Load from cache first, then fetch if expired
     useEffect(() => {
-        // Debug: Token durumunu göster
-        const tokenInfo = githubAPIClient.getTokenInfo()
-        console.log('🔍 GitHub API Token Info:', tokenInfo)
-        
-        loadFromCache()
-        
-        if (isQuickWinsCacheExpired()) {
-            console.log('⏰ Cache expired, fetching fresh data')
-            fetchGoodIssues(true)
-            fetchEasyFixes(true)
-        } else {
-            console.log('📦 Using cached data, no API calls needed')
-        }
-    }, [loadFromCache, isQuickWinsCacheExpired, fetchGoodIssues, fetchEasyFixes])
+        initializeData()
+    }, [initializeData])
 
     const totalIssues = goodIssues.length + easyFixes.length
     const hasData = totalIssues > 0
@@ -96,8 +98,16 @@ export function useQuickWins() {
         loadingEasyFixes: loading.easyFixes,
         goodIssuesError: null,
         easyFixesError: null,
-        refreshGoodIssues: () => fetchGoodIssues(true),
-        refreshEasyFixes: () => fetchEasyFixes(true),
+        refreshGoodIssues: () => {
+            const { clearQuickWinsCache } = useDataCacheStore.getState()
+            clearQuickWinsCache()
+            fetchGoodIssues(true)
+        },
+        refreshEasyFixes: () => {
+            const { clearQuickWinsCache } = useDataCacheStore.getState()
+            clearQuickWinsCache()
+            fetchEasyFixes(true)
+        },
         refreshAll: async () => {
             await Promise.all([
                 fetchGoodIssues(true),
