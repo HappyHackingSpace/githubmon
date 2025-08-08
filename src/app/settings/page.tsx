@@ -1,20 +1,20 @@
 'use client'
 
-import { useState} from 'react'
+import { useState } from 'react'
 import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {  usePreferencesStore } from '@/stores'
+import { usePreferencesStore } from '@/stores'
 import { useRequireAuth } from '@/hooks/useAuth'
 import { ThemeSelector } from '@/components/theme/ThemeToggle'
+import { GitHubTokenSetup } from '@/components/common/GitHubTokenSetup'
 import { cookieUtils } from '@/lib/cookies'
 
 export default function SettingsPage() {
-  const {  isLoading, orgData } = useRequireAuth()
+  const { isLoading, orgData } = useRequireAuth()
   const { resetPreferences } = usePreferencesStore()
   const [tempOrgName, setTempOrgName] = useState(orgData?.orgName || '')
-  const [tempToken, setTempToken] = useState('')
 
   const handleClearData = () => {
     if (confirm('Tüm veriler silinecek. Emin misiniz?')) {
@@ -24,8 +24,6 @@ export default function SettingsPage() {
       window.location.reload()
     }
   }
-
-
 
   if (isLoading) {
     return (
@@ -42,10 +40,17 @@ export default function SettingsPage() {
 
   return (
     <Layout>
-      <div className="max-w-2xl">
-        <h2 className="text-xl font-semibold mb-4">Ayarlar</h2>
+      <div className="max-w-4xl mx-auto">
+        <h2 className="text-xl font-semibold mb-6">Ayarlar</h2>
 
-        <div className="space-y-6">
+        <div className="space-y-8">
+
+          {/* GitHub API Token Setup */}
+          <section>
+            <h3 className="text-lg font-medium mb-4">🔑 GitHub API Token</h3>
+            <GitHubTokenSetup />
+          </section>
+
           <Card>
             <CardHeader>
               <CardTitle>GitHub Bağlantısı</CardTitle>
@@ -58,19 +63,6 @@ export default function SettingsPage() {
                   onChange={(e) => setTempOrgName(e.target.value)}
                   placeholder="örnek: microsoft, facebook"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">API Token (Opsiyonel)</label>
-                <Input
-                  type="password"
-                  value={tempToken}
-                  onChange={(e) => setTempToken(e.target.value)}
-                  placeholder="Mevcut token'ı değiştirmek için girin"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Token olmadan da çalışır, ancak rate limit düşük olur.
-                </p>
               </div>
 
               <Button>
