@@ -28,7 +28,7 @@ export default function QuickWinsPage() {
     const [currentTab, setCurrentTab] = useState<ValidTab>('good-issues')
 
     useEffect(() => {
-        const tabParam = searchParams.get('tab')
+        const tabParam = searchParams?.get('tab')
         if (tabParam && VALID_TABS.includes(tabParam as ValidTab)) {
             setCurrentTab(tabParam as ValidTab)
         }
@@ -41,9 +41,7 @@ export default function QuickWinsPage() {
         goodIssuesError,
         easyFixesError,
         refreshGoodIssues,
-        refreshEasyFixes,
-     
-       
+        refreshEasyFixes
     } = useQuickWins()
 
     const handleTabChange = (tab: string) => {
@@ -52,7 +50,6 @@ export default function QuickWinsPage() {
             router.push(`/quick-wins?tab=${tab}`)
         }
     }
-   
 
     if (isLoading) {
         return (
@@ -70,11 +67,11 @@ export default function QuickWinsPage() {
     return (
         <Layout>
             <div className="max-w-7xl mx-auto p-6 space-y-6">
-                <PageHeader   />
-                
+                <PageHeader />
+
                 {/* Rate Limit Warning */}
                 <RateLimitWarning />
-               
+
                 {/* Hero Section */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-2">
@@ -91,7 +88,6 @@ export default function QuickWinsPage() {
                     </p>
                 </div>
 
-              
                 {/* Quick Wins Tabs */}
                 <Tabs
                     value={currentTab}
@@ -122,7 +118,7 @@ export default function QuickWinsPage() {
                             error={goodIssuesError}
                             onRefresh={refreshGoodIssues}
                             title="Good First Issues"
-                           
+
                             emptyMessage="No good first issues found"
                         />
                     </TabsContent>
@@ -139,10 +135,8 @@ export default function QuickWinsPage() {
                     </TabsContent>
                 </Tabs>
 
-
             </div>
 
-           
         </Layout >
     )
 }
