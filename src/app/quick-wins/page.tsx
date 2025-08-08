@@ -7,8 +7,6 @@ import { useRequireAuth } from '@/hooks/useAuth'
 import { useQuickWins } from '@/components/quick-wins/hooks/useQuickWins'
 import { QuickWinsTable } from '@/components/quick-wins/QuickWinsTable'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { CacheStatus } from '@/components/common/CacheStatus'
-import { RateLimitWarning } from '@/components/common/RateLimitWarning'
 import {
     Lightbulb,
     Wrench,
@@ -71,9 +69,6 @@ export default function QuickWinsPage() {
         <Layout>
             <div className="max-w-7xl mx-auto p-6 space-y-6">
                 <PageHeader   />
-                
-                {/* Rate Limit Warning */}
-                <RateLimitWarning />
                
                 {/* Hero Section */}
                 <div className="mb-8">
@@ -84,7 +79,6 @@ export default function QuickWinsPage() {
                                 Quick Wins
                             </h1>
                         </div>
-                        <CacheStatus />
                     </div>
                     <p className="text-gray-600 dark:text-gray-300">
                         Discover easy issues and good first contributions to jumpstart your open source journey
