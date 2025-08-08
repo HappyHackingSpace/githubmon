@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useSidebarState, useAuthStore, useStoreHydration, useActionItemsStore } from '@/stores'
 import { useQuickWinsStore } from '@/stores/quickWins'
-import { ChevronRight, Clock, LogOut, MessageSquare, Sparkles, Star, Target, Zap, Home } from 'lucide-react'
+import { ChevronRight, Clock, LogOut, MessageSquare, Sparkles, Star, Target, Zap, Home, UserCheck, Lightbulb, Wrench } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
 
@@ -19,7 +19,7 @@ export function Sidebar() {
   const { isConnected, logout } = useAuthStore()
 
   const { getCountByType, loading } = useActionItemsStore()
-  
+
   const { goodIssues, easyFixes, loading: quickWinsLoading } = useQuickWinsStore()
 
   const [actionRequiredOpen, setActionRequiredOpen] = useState(true)
@@ -32,7 +32,7 @@ export function Sidebar() {
     if (type === 'easyFixes') return easyFixes.length
     return getCountByType(type)
   }
-  
+
   const getActionRequiredTotal = () => getBadgeCount('assigned') + getBadgeCount('mentions') + getBadgeCount('stale')
   const getQuickWinsTotal = () => getBadgeCount('goodFirstIssues') + getBadgeCount('easyFixes')
 
@@ -121,7 +121,7 @@ export function Sidebar() {
                         {getActionRequiredTotal()}
                       </Badge>
                     )}
-                  <ChevronRight className={`w-4 h-4 transition-transform ${actionRequiredOpen ? 'rotate-90' : ''}`} />
+                    <ChevronRight className={`w-4 h-4 transition-transform ${actionRequiredOpen ? 'rotate-90' : ''}`} />
                   </div>
                 </CollapsibleTrigger>
 
@@ -135,7 +135,7 @@ export function Sidebar() {
                         : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}
                   >
-                    <Target className="w-4 h-4" />
+                    <UserCheck className="w-4 h-4" />
                     Assigned
                     <Badge
                       variant="outline"
@@ -194,13 +194,13 @@ export function Sidebar() {
                     <Target className="w-5 h-5" />
                     <span>Quick Wins</span>
                   </div>
-                   <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                     {getQuickWinsTotal() > 0 && (
                       <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
                         {getQuickWinsTotal()}
                       </Badge>
                     )}
-                  <ChevronRight className={`w-4 h-4 transition-transform ${quickWinsOpen ? 'rotate-90' : ''}`} />
+                    <ChevronRight className={`w-4 h-4 transition-transform ${quickWinsOpen ? 'rotate-90' : ''}`} />
                   </div>
                 </CollapsibleTrigger>
 
@@ -213,7 +213,7 @@ export function Sidebar() {
                         ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
                         : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}>
-                    <Target className="w-4 h-4" />
+                    <Lightbulb className="w-4 h-4" />
                     <span className="font-medium">Good First Issues</span>
                     <Badge
                       variant="outline"
@@ -228,7 +228,7 @@ export function Sidebar() {
                         ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
                         : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}>
-                    <Sparkles className="w-4 h-4" />
+                    <Wrench className="w-4 h-4" />
                     <span className="font-medium">Easy Fixes</span>
                     <Badge
                       variant="outline"
@@ -279,7 +279,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Footer - Logout Button */}              
+        {/* Footer - Logout Button */}
         {hasHydrated && isConnected && (
           <div className="p-4 border-t border-sidebar-border flex-shrink-0">
             <Button
