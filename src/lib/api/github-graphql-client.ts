@@ -35,7 +35,7 @@ interface Issue {
   repository: {
     name: string
     nameWithOwner: string
-    stargazerCount?: number
+    stargazerCount: number | null
     primaryLanguage: { name: string } | null
     owner: {
       login: string
