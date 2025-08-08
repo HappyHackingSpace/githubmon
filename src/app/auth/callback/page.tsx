@@ -18,10 +18,10 @@ interface ExtendedSession {
 
 export default function AuthCallback() {
   const { data: session, status } = useSession()
-  const router = useRouter()  
+  const router = useRouter()
   const { setOrgData, setConnected, setTokenExpiry } = useAuthStore()
 
-useEffect(() => {
+  useEffect(() => {
     const extendedSession = session as ExtendedSession
     if (status === 'authenticated' && extendedSession?.accessToken && extendedSession.user) {
       try {
@@ -35,8 +35,7 @@ useEffect(() => {
         setTokenExpiry(expiryDate.toISOString())
         setConnected(true)
         router.replace('/dashboard')
-      } catch (error) {
-        console.error('Failed to set auth data:', error)
+      } catch {
         router.replace('/')
       }
     } else if (status === 'unauthenticated') {

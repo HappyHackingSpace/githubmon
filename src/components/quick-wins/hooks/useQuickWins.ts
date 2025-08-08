@@ -26,6 +26,7 @@ export function useQuickWins() {
         goodIssues,
         easyFixes,
         loading,
+        error,
         fetchGoodIssues,
         fetchEasyFixes,
         loadFromCache
@@ -85,37 +86,43 @@ export function useQuickWins() {
     }, [easyFixes, setEasyFixes])
 
     useEffect(() => {
-        initializeData()
-    }, [initializeData])
+
+        // Load from cache first
+        loadFromCache()
+
+        // Then check if we need to fetch fresh data
+        if (isQuickWinsCacheExpired()) {
+            fetchGoodIssues()
+            fetchEasyFixes()
+        }
+    }, [loadFromCache, isQuickWinsCacheExpired, fetchGoodIssues, fetchEasyFixes])
+
 
     const totalIssues = goodIssues.length + easyFixes.length
+    const needsToken = !githubAPIClient.hasValidToken()
     const hasData = totalIssues > 0
+
+    // Create refresh functions
+    const refreshGoodIssues = () => fetchGoodIssues(true)
+    const refreshEasyFixes = () => fetchEasyFixes(true)
 
     return {
         goodIssues,
         easyFixes,
+        loading,
+        totalIssues,
+        needsToken,
+        hasData,
+        // Individual loading states for compatibility
         loadingGoodIssues: loading.goodIssues,
         loadingEasyFixes: loading.easyFixes,
-        goodIssuesError: null,
-        easyFixesError: null,
-        refreshGoodIssues: () => {
-            const { clearQuickWinsCache } = useDataCacheStore.getState()
-            clearQuickWinsCache()
-            fetchGoodIssues(true)
-        },
-        refreshEasyFixes: () => {
-            const { clearQuickWinsCache } = useDataCacheStore.getState()
-            clearQuickWinsCache()
-            fetchEasyFixes(true)
-        },
-        refreshAll: async () => {
-            await Promise.all([
-                fetchGoodIssues(true),
-                fetchEasyFixes(true)
-            ]);
-        },
-        totalIssues,
-        needsToken: false,
-        hasData
+
+        // Individual error states
+        goodIssuesError: error.goodIssues,
+        easyFixesError: error.easyFixes,
+        // Refresh functions
+        refreshGoodIssues,
+        refreshEasyFixes
+
     }
 }
