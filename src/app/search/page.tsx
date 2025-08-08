@@ -1,10 +1,9 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useCallback } from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -83,22 +82,12 @@ interface UserAnalytics {
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
-  const userParam = searchParams.get("user");
-  const repoParam = searchParams.get("repo");
+  const userParam = searchParams?.get("user");
+  const repoParam = searchParams?.get("repo");
   const { isLoading } = useRequireAuth();
   const { setCurrentQuery, setCurrentSearchType, setSearchModalOpen } =
     useSearchStore();
   const { setOpen } = useSidebarState();
-
-  // Refs for scroll sections
-  const overviewRef = useRef<HTMLDivElement>(null);
-  const behaviorRef = useRef<HTMLDivElement>(null);
-  const starRef = useRef<HTMLDivElement>(null);
-  const codeRef = useRef<HTMLDivElement>(null);
-  const codeReviewRef = useRef<HTMLDivElement>(null);
-  const issueRef = useRef<HTMLDivElement>(null);
-  const monthlyStatsRef = useRef<HTMLDivElement>(null);
-  const contributionActivitiesRef = useRef<HTMLDivElement>(null);
 
   const [searchResults, setSearchResults] = useState<{
     repos: TrendingRepo[];
@@ -147,46 +136,61 @@ export default function SearchPage() {
     []
   );
 
-  // Scroll spy effect
+  // Scroll spy effect - ONLY h2 titles matter
   useEffect(() => {
     const handleScroll = throttle(() => {
-      const sections = [
-        { id: "overview", ref: overviewRef },
-        { id: "behavior", ref: behaviorRef },
-        { id: "star", ref: starRef },
-        { id: "code", ref: codeRef },
-        { id: "code-review", ref: codeReviewRef },
-        { id: "issue", ref: issueRef },
-        { id: "monthly-stats", ref: monthlyStatsRef },
-        { id: "contribution-activities", ref: contributionActivitiesRef },
-      ];
-      const scrollPosition = window.scrollY + 200; // 200px offset
-      let currentSection = sections[0].id;
+      const sectionIds = ['overview', 'behavior', 'star', 'code', 'code-review', 'issue', 'monthly-stats', 'contribution-activities'];
+      const headerOffset = 150; // Increased offset
+      let currentActiveSection = 'overview';
 
-      // En alttaki section'ı bul
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const element = sections[i].ref.current;
-        if (element) {
-          const elementTop = element.offsetTop;
+      // Check each section's h2 title position
+      for (const sectionId of sectionIds) {
+        const sectionElement = document.getElementById(sectionId);
+        if (!sectionElement) continue;
 
-          if (scrollPosition >= elementTop) {
-            currentSection = sections[i].id;
-            break;
-          }
+        const h2Element = sectionElement.querySelector('h2');
+        if (!h2Element) continue;
+
+        const h2Rect = h2Element.getBoundingClientRect();
+
+        // If h2 title is at or above header offset, this section is active
+        if (h2Rect.top <= headerOffset) {
+          currentActiveSection = sectionId;
+        } else {
+          // First h2 that hasn't reached header yet - stop here
+          break;
         }
       }
 
-      setActiveSection(currentSection);
+      // Bottom of page special case
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50) {
+        currentActiveSection = 'contribution-activities';
+      }
+
+      if (currentActiveSection !== activeSection) {
+        setActiveSection(currentActiveSection);
+      }
     }, 100);
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // Initial call
+
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [throttle]);
+  }, [activeSection, throttle]);
 
   useEffect(() => {
     if (userParam || repoParam) {
       const query = userParam || repoParam || "";
       const type = userParam ? "users" : "repos";
+
+      // Clear previous state when switching users
+      setUserAnalytics(null);
+      setSearchResults({
+        repos: [],
+        users: [],
+        loading: false,
+        error: null,
+      });
 
       setCurrentQuery(query);
       setCurrentSearchType(type);
@@ -236,11 +240,12 @@ export default function SearchPage() {
   };
 
   const loadUserAnalytics = async () => {
+    if (!userParam) return;
+
     setLoadingAnalytics(true);
     try {
-      // User analytics method was removed - no longer available
-      console.log("User analytics feature temporarily disabled");
-      setUserAnalytics(null);
+      const analytics = await githubAPIClient.getUserAnalytics(userParam);
+      setUserAnalytics(analytics);
     } catch (error) {
       console.error("Analytics error:", error);
       // Fallback to null if API fails
@@ -437,7 +442,7 @@ export default function SearchPage() {
               !loadingAnalytics && (
                 <>
                   {/* Overview Section */}
-                  <div id="overview" ref={overviewRef} className="scroll-mt-24">
+                  <div id="overview" className="scroll-mt-20">
                     <div className="flex items-center mb-6">
                       <Eye className="w-6 h-6 mr-2" />
                       <h2 className="text-2xl font-bold">Overview</h2>
@@ -571,8 +576,7 @@ export default function SearchPage() {
                     {/* Behavior Section */}
                     <div
                       id="behavior"
-                      ref={behaviorRef}
-                      className="scroll-mt-24"
+                      className="scroll-mt-20 mt-12"
                     >
                       <div className="flex items-center mb-6">
                         <Activity className="w-6 h-6 mr-2" />
@@ -680,7 +684,7 @@ export default function SearchPage() {
                     </div>
 
                     {/* Star Section */}
-                    <div id="star" ref={starRef} className="scroll-mt-24">
+                    <div id="star" className="scroll-mt-20 mt-12">
                       <div className="flex items-center mb-6">
                         <Star className="w-6 h-6 mr-2" />
                         <h2 className="text-2xl font-bold">Star Activity</h2>
@@ -701,7 +705,7 @@ export default function SearchPage() {
                       </ChartWrapper>
                     </div>
                     {/* Code Section */}
-                    <div id="code" ref={codeRef} className="scroll-mt-24">
+                    <div id="code" className="scroll-mt-20 mt-12">
                       <div className="flex items-center mb-6">
                         <Code className="w-6 h-6 mr-2" />
                         <h2 className="text-2xl font-bold">
@@ -727,8 +731,7 @@ export default function SearchPage() {
                     {/* Code Review Section */}
                     <div
                       id="code-review"
-                      ref={codeReviewRef}
-                      className="scroll-mt-24"
+                      className="scroll-mt-20 mt-12"
                     >
                       <div className="flex items-center mb-6">
                         <GitPullRequest className="w-6 h-6 mr-2" />
@@ -751,7 +754,7 @@ export default function SearchPage() {
                     </div>
 
                     {/* Issue Section */}
-                    <div id="issue" ref={issueRef} className="scroll-mt-24">
+                    <div id="issue" className="scroll-mt-20 mt-12">
                       <div className="flex items-center mb-6">
                         <AlertCircle className="w-6 h-6 mr-2" />
                         <h2 className="text-2xl font-bold">Issues</h2>
@@ -775,8 +778,7 @@ export default function SearchPage() {
                     {/* Monthly Statistics Section */}
                     <div
                       id="monthly-stats"
-                      ref={monthlyStatsRef}
-                      className="scroll-mt-24"
+                      className="scroll-mt-20 mt-12"
                     >
                       <div className="flex items-center mb-6">
                         <Calendar className="w-6 h-6 mr-2" />
@@ -804,8 +806,7 @@ export default function SearchPage() {
                     {/* Contribution Activities Section */}
                     <div
                       id="contribution-activities"
-                      ref={contributionActivitiesRef}
-                      className="scroll-mt-24"
+                      className="scroll-mt-20 mt-12"
                     >
                       <div className="flex items-center mb-6">
                         <Activity className="w-6 h-6 mr-2" />
