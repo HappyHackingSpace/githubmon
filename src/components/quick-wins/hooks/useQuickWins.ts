@@ -3,6 +3,7 @@ import { useEffect, useCallback, useRef } from 'react'
 import { useQuickWinsStore } from '@/stores/quickWins'
 import { useDataCacheStore } from '@/stores/cache'
 import { useActionItemsStore } from '@/stores'
+import { githubAPIClient } from '@/lib/api/github-api-client'
 
 
 interface QuickWinsCount {
@@ -34,7 +35,7 @@ export function useQuickWins() {
 
     const { isQuickWinsCacheExpired } = useDataCacheStore()
     const { setGoodFirstIssues, setEasyFixes } = useActionItemsStore()
-    
+
     const isInitialized = useRef(false)
 
     const initializeData = useCallback(async () => {
