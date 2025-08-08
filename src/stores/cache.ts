@@ -57,9 +57,9 @@ export const useDataCacheStore = create<DataCacheState>()(
         const cache = get().quickWinsCache
         if (!cache) return true
         
-        const TWELVE_HOURS_IN_MS = 12 * 60 * 60 * 1000 // 12 saat
+        const ONE_HOUR_IN_MS = 60 * 60 * 1000 // 1 saat
         const now = Date.now()
-        return (now - cache.timestamp) > TWELVE_HOURS_IN_MS
+        return (now - cache.timestamp) > ONE_HOUR_IN_MS
       },
       
       clearQuickWinsCache: () => set({ quickWinsCache: null }),
