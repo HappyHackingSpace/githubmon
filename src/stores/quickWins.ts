@@ -1,7 +1,10 @@
 import { create } from 'zustand'
 import { GitHubIssue } from '@/types/quickWins'
-import { githubAPIClient, type MappedIssue } from '@/lib/api/github-api-client';
 import { useDataCacheStore } from './cache'
+import { githubGraphQLClient } from '@/lib/api/github-graphql-client'
+import { useAuthStore } from './auth';
+
+
 
 interface QuickWinsState {
     goodIssues: GitHubIssue[]
@@ -36,136 +39,104 @@ export const useQuickWinsStore = create<QuickWinsState>((set, get) => ({
         }
     },
 
-    fetchGoodIssues: async (forceRefresh = false) => {
-        if (!forceRefresh) {
-            const cache = useDataCacheStore.getState().getQuickWinsCache()
-            if (cache) {
-                
-                set((state) => ({
-                    goodIssues: cache.goodIssues,
-                    error: { ...state.error, goodIssues: null }
-                }))
-                return
-            }
+   fetchGoodIssues: async (forceRefresh = false) => {
+    if (!forceRefresh) {
+        const cache = useDataCacheStore.getState().getQuickWinsCache()
+        if (cache && cache.goodIssues.length > 0) {
+            set((state) => ({
+                goodIssues: cache.goodIssues,
+                loading: { ...state.loading, goodIssues: false }
+            }))
+            return
         }
+    }
 
+    set((state) => ({
+        loading: { ...state.loading, goodIssues: true },
+        error: { ...state.error, goodIssues: null }
+    }));
+
+    try {
+        const authState = useAuthStore.getState();
+        const userToken = authState.orgData?.token;
+        
+        if (!userToken) {
+            throw new Error('GitHub token required');
+        }
+        
+        githubGraphQLClient.setToken(userToken);
+        
+        const issues = await githubGraphQLClient.getGoodFirstIssues(100);
+        
         set((state) => ({
-            loading: { ...state.loading, goodIssues: true },
+            goodIssues: issues,
+            loading: { ...state.loading, goodIssues: false },
             error: { ...state.error, goodIssues: null }
         }));
 
-        try {
-            const issues = await githubAPIClient.getGoodFirstIssues();
-            
-            const formattedIssues: GitHubIssue[] = issues.map((typedItem: MappedIssue) => {
-                const formatted = {
-                    id: typedItem.id,
-                    title: typedItem.title,
-                    repository: typedItem.repo,
-                    repositoryUrl: `https://github.com/${typedItem.repo}`,
-                    url: typedItem.url || '',
-                    labels: (typedItem.labels || []).map((name: string) => ({ name, color: '999999' })),
-                    created_at: typedItem.createdAt || '',
-                    updated_at: typedItem.updatedAt || '',
-                    difficulty: 'easy' as const,
-                    language: typedItem.language || 'unknown',
-                    stars: typedItem.stars || 0,
-                    author: { login: typedItem.author || '', avatar_url: '' },
-                    comments: 0,
-                    state: 'open' as const,
-                    assignee: null,
-                    priority: (typedItem.priority === 'urgent' ? 'high' : typedItem.priority) as 'low' | 'medium' | 'high',
-                };
-               
-                return formatted;
-            });
-
-            set((state) => ({
-                goodIssues: formattedIssues,
-                loading: { ...state.loading, goodIssues: false },
-                error: { ...state.error, goodIssues: null }
-            }));
-            
-            const currentEasyFixes = get().easyFixes
-            useDataCacheStore.getState().setQuickWinsCache({
-                goodIssues: formattedIssues,
-                easyFixes: currentEasyFixes
-            })
-            
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
-            set((state) => ({
-                goodIssues: [],
-                loading: { ...state.loading, goodIssues: false },
-                error: { ...state.error, goodIssues: errorMessage }
-            }));
-        }
-    },
-
-    fetchEasyFixes: async (forceRefresh = false) => {
-       
-        if (!forceRefresh) {
-            const cache = useDataCacheStore.getState().getQuickWinsCache()
-            if (cache) {
-               
-                set((state) => ({
-                    easyFixes: cache.easyFixes,
-                    error: { ...state.error, easyFixes: null }
-                }))
-                return
-            }
-        }
-
+        const currentState = get()
+        useDataCacheStore.getState().setQuickWinsCache({
+            goodIssues: issues,
+            easyFixes: currentState.easyFixes
+        })
+        
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         set((state) => ({
-            loading: { ...state.loading, easyFixes: true },
+            goodIssues: [],
+            loading: { ...state.loading, goodIssues: false },
+            error: { ...state.error, goodIssues: errorMessage }
+        }));
+    }
+},
+   fetchEasyFixes: async (forceRefresh = false) => {
+    if (!forceRefresh) {
+        const cache = useDataCacheStore.getState().getQuickWinsCache()
+        if (cache && cache.easyFixes.length > 0) {
+            set((state) => ({
+                easyFixes: cache.easyFixes,
+                loading: { ...state.loading, easyFixes: false }
+            }))
+            return 
+        }
+    }
+
+    set((state) => ({
+        loading: { ...state.loading, easyFixes: true },
+        error: { ...state.error, easyFixes: null }
+    }));
+
+    try {
+        const authState = useAuthStore.getState();
+        const userToken = authState.orgData?.token;
+        
+        if (!userToken) {
+            throw new Error('GitHub token required');
+        }
+        
+        githubGraphQLClient.setToken(userToken);
+        
+        const issues = await githubGraphQLClient.getEasyFixes(100);
+        
+        set((state) => ({
+            easyFixes: issues,
+            loading: { ...state.loading, easyFixes: false },
             error: { ...state.error, easyFixes: null }
         }));
 
-        try {
-            const issues = await githubAPIClient.getEasyFixes();
-            
-            const formattedIssues: GitHubIssue[] = issues.map((typedItem: MappedIssue) => {
-                const formatted = {
-                    id: typedItem.id,
-                    title: typedItem.title,
-                    repository: typedItem.repo,
-                    repositoryUrl: `https://github.com/${typedItem.repo}`,
-                    url: typedItem.url || '',
-                    labels: (typedItem.labels || []).map((name: string) => ({ name, color: '999999' })),
-                    created_at: typedItem.createdAt || '',
-                    updated_at: typedItem.updatedAt || '',
-                    difficulty: 'easy' as const,
-                    language: typedItem.language || 'unknown',
-                    stars: typedItem.stars || 0,
-                    author: { login: typedItem.author || '', avatar_url: '' },
-                    comments: 0,
-                    state: 'open' as const,
-                    assignee: null,
-                    priority: (typedItem.priority === 'urgent' ? 'high' : typedItem.priority) as 'low' | 'medium' | 'high',
-                };
-               
-                return formatted;
-            });
-
-            set((state) => ({
-                easyFixes: formattedIssues,
-                loading: { ...state.loading, easyFixes: false },
-                error: { ...state.error, easyFixes: null }
-            }));
-            
-            const currentGoodIssues = get().goodIssues
-            useDataCacheStore.getState().setQuickWinsCache({
-                goodIssues: currentGoodIssues,
-                easyFixes: formattedIssues
-            })
-            
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
-            set((state) => ({
-                easyFixes: [],
-                loading: { ...state.loading, easyFixes: false },
-                error: { ...state.error, easyFixes: errorMessage }
-            }));
-        }
+        const currentState = get()
+        useDataCacheStore.getState().setQuickWinsCache({
+            goodIssues: currentState.goodIssues,
+            easyFixes: issues
+        })
+        
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        set((state) => ({
+            easyFixes: [],
+            loading: { ...state.loading, easyFixes: false },
+            error: { ...state.error, easyFixes: errorMessage }
+        }));
     }
+}
 }));

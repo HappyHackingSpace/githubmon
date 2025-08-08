@@ -1,9 +1,9 @@
 
-import { useEffect } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useQuickWinsStore } from '@/stores/quickWins'
 import { useDataCacheStore } from '@/stores/cache'
 import { useActionItemsStore } from '@/stores'
-import { githubAPIClient } from '@/lib/api/github-api-client'
+
 
 interface QuickWinsCount {
     goodIssuesCount: number
@@ -34,8 +34,23 @@ export function useQuickWins() {
 
     const { isQuickWinsCacheExpired } = useDataCacheStore()
     const { setGoodFirstIssues, setEasyFixes } = useActionItemsStore()
+    
+    const isInitialized = useRef(false)
 
-    // ActionItems store'unu da güncelle
+    const initializeData = useCallback(async () => {
+        if (isInitialized.current) return
+        loadFromCache()
+        const { goodIssues: gi, easyFixes: ef } = useQuickWinsStore.getState()
+        const needsFetch = isQuickWinsCacheExpired() || (gi.length === 0 && ef.length === 0)
+        if (needsFetch) {
+            await Promise.all([
+                fetchGoodIssues(false),
+                fetchEasyFixes(false)
+            ])
+        }
+        isInitialized.current = true
+    }, [loadFromCache, isQuickWinsCacheExpired, goodIssues.length, easyFixes.length, fetchGoodIssues, fetchEasyFixes])
+
     useEffect(() => {
         if (goodIssues.length > 0) {
             setGoodFirstIssues(goodIssues.map(issue => ({
@@ -70,8 +85,8 @@ export function useQuickWins() {
         }
     }, [easyFixes, setEasyFixes])
 
-    // Load from cache first, then fetch if expired
     useEffect(() => {
+
         // Load from cache first
         loadFromCache()
 
@@ -81,6 +96,7 @@ export function useQuickWins() {
             fetchEasyFixes()
         }
     }, [loadFromCache, isQuickWinsCacheExpired, fetchGoodIssues, fetchEasyFixes])
+
 
     const totalIssues = goodIssues.length + easyFixes.length
     const needsToken = !githubAPIClient.hasValidToken()
@@ -100,11 +116,13 @@ export function useQuickWins() {
         // Individual loading states for compatibility
         loadingGoodIssues: loading.goodIssues,
         loadingEasyFixes: loading.easyFixes,
+
         // Individual error states
         goodIssuesError: error.goodIssues,
         easyFixesError: error.easyFixes,
         // Refresh functions
         refreshGoodIssues,
         refreshEasyFixes
+
     }
 }
