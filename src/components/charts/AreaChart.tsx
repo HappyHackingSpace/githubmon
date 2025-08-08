@@ -26,6 +26,23 @@ export default function AreaChart({
   stack = false,
   ...chartProps
 }: AreaChartProps) {
+  // Handle empty data
+  if (!data || data.length === 0) {
+    const option: EChartsOption = {
+      title: {
+        text: 'No Data Available',
+        left: 'center',
+        top: 'middle',
+        textStyle: {
+          fontSize: 16,
+          fontWeight: 'normal',
+          color: '#9ca3af'
+        }
+      }
+    };
+    return <EChartsBase option={option} {...chartProps} />;
+  }
+
   const option: EChartsOption = {
     title: title ? {
       text: title,
