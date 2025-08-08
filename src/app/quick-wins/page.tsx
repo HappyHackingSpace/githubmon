@@ -17,15 +17,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useState, useEffect } from 'react'
 
+const VALID_TABS = ['good-issues', 'easy-fixes'] as const
+type ValidTab = typeof VALID_TABS[number]
+
 export default function QuickWinsPage() {
     const { isLoading } = useRequireAuth()
     const router = useRouter()
     const searchParams = useSearchParams()
 
-    const VALID_TABS = ['good-issues', 'easy-fixes'] as const
-    type ValidTab = typeof VALID_TABS[number]
-
-    // URL'den tab parametresini al, yoksa default olarak 'good-issues' kullan
     const [currentTab, setCurrentTab] = useState<ValidTab>('good-issues')
 
     useEffect(() => {
@@ -43,7 +42,7 @@ export default function QuickWinsPage() {
         easyFixesError,
         refreshGoodIssues,
         refreshEasyFixes,
-        refreshAll,
+     
        
     } = useQuickWins()
 
@@ -55,7 +54,6 @@ export default function QuickWinsPage() {
     }
    
 
-    // Show loading state during initial load
     if (isLoading) {
         return (
             <Layout>
