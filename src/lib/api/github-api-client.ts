@@ -430,9 +430,13 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
 private async fetchIssuesFromPopularRepos(
     minStars: number,
     labels: string[],
-    issuesPerRepo: number = 10
+    issuesPerRepo: number = 30
   ): Promise<MappedIssue[]> {
  try {
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+    const dateString = oneMonthAgo.toISOString().split('T')[0]
+    
     const repoEndpoint = `/search/repositories?q=stars:>${minStars}&sort=stars&order=desc&per_page=50`
     const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
 
@@ -450,7 +454,7 @@ private async fetchIssuesFromPopularRepos(
         batch.map(async (repo: GitHubRepositoryResponse) => {
           try {
             const issuePromises = labels.map(async (label) => {
-              const issueEndpoint = `/repos/${repo.full_name}/issues?labels=${encodeURIComponent(label)}&state=open&per_page=${issuesPerRepo}`
+              const issueEndpoint = `/repos/${repo.full_name}/issues?labels=${encodeURIComponent(label)}&state=open&since=${dateString}&per_page=${issuesPerRepo}`
               const issueResponse = await this.fetchWithCache<GitHubIssueResponse[]>(issueEndpoint, true)
               
               return (issueResponse || [])
@@ -500,11 +504,11 @@ private async fetchIssuesFromPopularRepos(
 }
 
 async getGoodFirstIssues(): Promise<MappedIssue[]> {
-  return this.fetchIssuesFromPopularRepos(20, ['good first issue'], 10)
+  return this.fetchIssuesFromPopularRepos(5, ['good first issue'], 10)
 }
 
 async getEasyFixes(): Promise<MappedIssue[]> {
-  return this.fetchIssuesFromPopularRepos(15, ['easy', 'easy fix', 'beginner', 'starter', 'help wanted'], 5)
+  return this.fetchIssuesFromPopularRepos(5, ['easy', 'easy fix', 'beginner', 'starter', 'help wanted'], 5)
 }
 
 

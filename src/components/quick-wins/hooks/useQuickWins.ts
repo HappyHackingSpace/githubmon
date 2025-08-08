@@ -3,6 +3,8 @@ import { useEffect } from 'react'
 import { useQuickWinsStore } from '@/stores/quickWins'
 import { useDataCacheStore } from '@/stores/cache'
 import { useActionItemsStore } from '@/stores'
+import { githubGraphQLClient } from '@/lib/api/github-graphql-client'
+
 
 interface QuickWinsCount {
     goodIssuesCount: number
