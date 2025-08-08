@@ -2,6 +2,10 @@ import type {
   TrendingRepo,
   TopContributor
 } from '@/types/oss-insight'
+import type {
+  GitHubUserDetailed,
+  GitHubRepositoryDetailed
+} from '@/types/github'
 
 interface GitHubSearchResponse<T> {
   items: T[]
@@ -558,7 +562,7 @@ async getEasyFixes(): Promise<MappedIssue[]> {
 
   // ============ USER ANALYTICS API METHODS ============
 
-  async getUserProfile(username: string): Promise<any> {
+  async getUserProfile(username: string): Promise<GitHubUserDetailed | null> {
     try {
       const endpoint = `/users/${username}`
       return await this.fetchWithCache(endpoint, true)
@@ -566,24 +570,46 @@ async getEasyFixes(): Promise<MappedIssue[]> {
       console.error('Failed to fetch user profile:', error)
       // Return fallback profile data
       return {
-        avatar_url: `https://github.com/${username}.png`,
+        id: 0,
         login: username,
-        type: 'User',
-        bio: null,
+        node_id: '',
+        avatar_url: `https://github.com/${username}.png`,
+        gravatar_id: '',
+        url: '',
+        html_url: `https://github.com/${username}`,
+        followers_url: '',
+        following_url: '',
+        gists_url: '',
+        starred_url: '',
+        subscriptions_url: '',
+        organizations_url: '',
+        repos_url: '',
+        events_url: '',
+        received_events_url: '',
+        type: 'User' as const,
+        site_admin: false,
+        name: undefined,
+        company: undefined,
+        blog: undefined,
+        location: undefined,
+        email: undefined,
+        hireable: undefined,
+        bio: undefined,
+        twitter_username: undefined,
         public_repos: 0,
+        public_gists: 0,
         followers: 0,
         following: 0,
-        location: null,
-        company: null,
-        html_url: `https://github.com/${username}`
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
     }
   }
 
-  async getUserRepositories(username: string, limit = 100): Promise<any[]> {
+  async getUserRepositories(username: string, limit = 100): Promise<GitHubRepositoryDetailed[]> {
     try {
       const endpoint = `/users/${username}/repos?per_page=${limit}&sort=updated`
-      const repos = await this.fetchWithCache<any[]>(endpoint, true)
+      const repos = await this.fetchWithCache<GitHubRepositoryDetailed[]>(endpoint, true)
 
       // Ensure we always return an array
       if (Array.isArray(repos)) {
@@ -631,7 +657,7 @@ async getEasyFixes(): Promise<MappedIssue[]> {
   }
 
   async getUserAnalytics(username: string): Promise<{
-    profile: any
+    profile: GitHubUserDetailed | null
     overview: Array<{ name: string; commits: number; stars: number; repos: number }>
     languages: Array<{ name: string; value: number }>
     behavior: Array<{ day: string; commits: number; prs: number; issues: number }>
@@ -653,7 +679,7 @@ async getEasyFixes(): Promise<MappedIssue[]> {
 
       // Generate real overview data from repos
       const overview = Array.isArray(repos) && repos.length > 0
-        ? repos.slice(0, 10).map((repo: any) => ({
+        ? repos.slice(0, 10).map((repo: GitHubRepositoryDetailed) => ({
           name: repo?.name?.length > 15 ? repo.name.substring(0, 15) + '...' : (repo?.name || 'Unknown'),
           commits: Math.max(1, Math.floor(Math.random() * 50) + 10), // GitHub API doesn't provide commit counts easily
           stars: repo?.stargazers_count || 0,
@@ -695,24 +721,51 @@ async getEasyFixes(): Promise<MappedIssue[]> {
     keysToDelete.forEach(key => this.cache.delete(key));
   }
 
-  private getDemoAnalytics(username: string) {
+  private getDemoAnalytics(username: string): {
+    profile: GitHubUserDetailed | null
+    overview: Array<{ name: string; commits: number; stars: number; repos: number }>
+    languages: Array<{ name: string; value: number }>
+    behavior: Array<{ day: string; commits: number; prs: number; issues: number }>
+  } {
     const isRealUser = ['torvalds', 'octocat', 'gaearon', 'sindresorhus', 'tj', 'defunkt'].includes(username.toLowerCase());
 
     const baseData = {
       profile: {
-        avatar_url: `https://github.com/${username}.png`, // GitHub always provides avatar for any username
+        id: 0,
         login: username,
-        type: 'User',
+        node_id: '',
+        avatar_url: `https://github.com/${username}.png`, // GitHub always provides avatar for any username
+        gravatar_id: '',
+        url: '',
+        html_url: `https://github.com/${username}`,
+        followers_url: '',
+        following_url: '',
+        gists_url: '',
+        starred_url: '',
+        subscriptions_url: '',
+        organizations_url: '',
+        repos_url: '',
+        events_url: '',
+        received_events_url: '',
+        type: 'User' as const,
+        site_admin: false,
+        name: undefined,
+        company: isRealUser ? 'Open Source' : 'Demo Company',
+        blog: undefined,
+        location: isRealUser ? 'Global' : 'Demo Location',
+        email: undefined,
+        hireable: undefined,
         bio: isRealUser
           ? `Real GitHub user ${username} - Limited data due to API constraints`
           : `Demo profile for ${username}`,
+        twitter_username: undefined,
         public_repos: isRealUser ? Math.floor(Math.random() * 50) + 20 : 25,
+        public_gists: 0,
         followers: isRealUser ? Math.floor(Math.random() * 5000) + 500 : 150,
         following: isRealUser ? Math.floor(Math.random() * 200) + 50 : 75,
-        location: isRealUser ? 'Global' : 'Demo Location',
-        company: isRealUser ? 'Open Source' : 'Demo Company',
-        html_url: `https://github.com/${username}`
-      },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } satisfies GitHubUserDetailed,
       overview: isRealUser ? [
         { name: 'linux', commits: 145, stars: 150000, repos: 1 },
         { name: 'subsurface', commits: 95, stars: 2500, repos: 1 },
