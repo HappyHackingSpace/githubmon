@@ -427,20 +427,20 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
     }
   }
 
-  private async fetchIssuesFromPopularRepos(
-  minStars: number,
-  labels: string[],
-  issuesPerRepo: number = 10
-): Promise<MappedIssue[]> {
-  try {
+private async fetchIssuesFromPopularRepos(
+    minStars: number,
+    labels: string[],
+    issuesPerRepo: number = 10
+  ): Promise<MappedIssue[]> {
+ try {
     const repoEndpoint = `/search/repositories?q=stars:>${minStars}&sort=stars&order=desc&per_page=50`
     const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
-    
+
     if (!repoResponse.items || repoResponse.items.length === 0) {
       return []
     }
 
-    const batchSize = 5
+    const batchSize = 2
     const allIssues: MappedIssue[] = []
 
     for (let i = 0; i < Math.min(repoResponse.items.length, 20); i += batchSize) {
@@ -453,21 +453,23 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
               const issueEndpoint = `/repos/${repo.full_name}/issues?labels=${encodeURIComponent(label)}&state=open&per_page=${issuesPerRepo}`
               const issueResponse = await this.fetchWithCache<GitHubIssueResponse[]>(issueEndpoint, true)
               
-              return (issueResponse || []).map((issue: GitHubIssueResponse) => ({
-                id: issue.id,
-                title: issue.title,
-                repo: repo.full_name,
-                type: 'issue' as const,
-                priority: this.calculatePriority(issue),
-                url: issue.html_url,
-                createdAt: issue.created_at,
-                updatedAt: issue.updated_at,
-                author: issue.user?.login,
-                labels: issue.labels?.map((l: { name: string }) => l.name) || [],
-                stars: repo.stargazers_count,
-                language: repo.language || 'unknown',
-                daysOld: Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
-              }))
+              return (issueResponse || [])
+                .filter((issue: GitHubIssueResponse) => !issue.pull_request) // Filter out pull requests
+                .map((issue: GitHubIssueResponse) => ({
+                  id: issue.id,
+                  title: issue.title,
+                  repo: repo.full_name,
+                  type: 'issue' as const,
+                  priority: this.calculatePriority(issue),
+                  url: issue.html_url,
+                  createdAt: issue.created_at,
+                  updatedAt: issue.updated_at,
+                  author: issue.user?.login,
+                  labels: issue.labels?.map((l: { name: string }) => l.name) || [],
+                  stars: repo.stargazers_count,
+                  language: repo.language || 'unknown',
+                  daysOld: Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                }))
             })
 
             const issueResults = await Promise.all(issuePromises)
@@ -480,7 +482,7 @@ async getAssignedItems(username?: string): Promise<unknown[]> {
       )
 
       allIssues.push(...batchIssues.flat())
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise(resolve => setTimeout(resolve, 250))
     }
 
     const uniqueIssues = allIssues
