@@ -64,7 +64,7 @@ export interface MappedIssue {
   id: number
   title: string
   repo: string
-  type: string
+  type: 'issue' | 'pr'
   priority: 'low' | 'medium' | 'high' | 'urgent'
   url: string
   createdAt: string
@@ -158,9 +158,6 @@ class GitHubAPIClient {
 
       if (useGithub && this.githubToken) {
         headers['Authorization'] = `token ${this.githubToken}`
-        console.log(`🔑 API call to ${endpoint} with token: ${this.githubToken.substring(0, 10)}...`)
-      } else {
-        console.log(`🚫 API call to ${endpoint} WITHOUT token (rate limited)`)
       }
 
       const response = await fetch(`${this.baseUrl}${endpoint}`, { headers })
@@ -170,7 +167,6 @@ class GitHubAPIClient {
         if (response.status === 403 || response.status === 429) {
           console.warn('GitHub API rate limit exceeded - using fallback data')
           if (cached) {
-            console.log('Returning stale cached data due to rate limit')
             return cached.data as T
           }
         }
@@ -186,7 +182,6 @@ class GitHubAPIClient {
       console.error(`API request failed for ${endpoint}:`, error)
 
       if (cached) {
-        console.log('Returning stale cached data due to error')
         return cached.data as T
       }
 
