@@ -38,18 +38,15 @@ export function useQuickWins() {
 
     const initializeData = useCallback(async () => {
         if (isInitialized.current) return
-        
         loadFromCache()
-        
-        const needsFetch = isQuickWinsCacheExpired() || (goodIssues.length === 0 && easyFixes.length === 0)
-        
+        const { goodIssues: gi, easyFixes: ef } = useQuickWinsStore.getState()
+        const needsFetch = isQuickWinsCacheExpired() || (gi.length === 0 && ef.length === 0)
         if (needsFetch) {
             await Promise.all([
                 fetchGoodIssues(false),
                 fetchEasyFixes(false)
             ])
         }
-        
         isInitialized.current = true
     }, [loadFromCache, isQuickWinsCacheExpired, goodIssues.length, easyFixes.length, fetchGoodIssues, fetchEasyFixes])
 
