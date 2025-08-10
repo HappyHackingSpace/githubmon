@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useSearchParams, usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useSidebarState, useAuthStore, useStoreHydration, useActionItemsStore } from '@/stores'
 import { useQuickWinsStore } from '@/stores/quickWins'
@@ -22,8 +22,16 @@ export function Sidebar() {
 
   const { goodIssues, easyFixes, loading: quickWinsLoading } = useQuickWinsStore()
 
-  const [actionRequiredOpen, setActionRequiredOpen] = useState(true)
-  const [quickWinsOpen, setQuickWinsOpen] = useState(true)
+  const [actionRequiredOpen, setActionRequiredOpen] = useState(false)
+  const [quickWinsOpen, setQuickWinsOpen] = useState(false)
+
+  // Close accordions when navigating to dashboard
+  useEffect(() => {
+    if (pathname === '/dashboard') {
+      setActionRequiredOpen(false)
+      setQuickWinsOpen(false)
+    }
+  }, [pathname])
 
   const currentTab = searchParams?.get('tab') || 'assigned'
 
@@ -207,9 +215,9 @@ export function Sidebar() {
                 {/* Quick Wins sub-items */}
                 <CollapsibleContent className="pl-8 space-y-1 mt-1">
                   <Link
-                    href="/quick-wins?tab=good-first-issues"
+                    href="/quick-wins?tab=good-issues"
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                        ${(pathname === '/quick-wins' && currentTab === 'good-first-issues')
+                        ${(pathname === '/quick-wins' && currentTab === 'good-issues')
                         ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
                         : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}>
@@ -221,7 +229,7 @@ export function Sidebar() {
                       {getBadgeContent('goodFirstIssues')}
                     </Badge>
                   </Link>
-                  <Link
+                    <Link
                     href="/quick-wins?tab=easy-fixes"
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
                         ${(pathname === '/quick-wins' && currentTab === 'easy-fixes')
