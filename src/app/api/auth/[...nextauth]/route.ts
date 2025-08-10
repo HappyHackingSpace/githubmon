@@ -18,8 +18,8 @@ const authOptions = {
   secret: NEXTAUTH_SECRET,
   providers: [
     GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      clientId: GITHUB_CLIENT_ID!,
+      clientSecret: GITHUB_CLIENT_SECRET!,
     }),
   ],
   pages: {
