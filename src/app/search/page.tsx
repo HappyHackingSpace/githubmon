@@ -64,12 +64,12 @@ interface UserAnalytics {
     avatar_url: string;
     login: string;
     type: string;
-    bio?: string;
+    bio: string | null;
     public_repos: number;
     followers: number;
     following: number;
-    location?: string;
-    company?: string;
+    location: string | null;
+    company: string | null;
     html_url: string;
   };
   overview?: Array<UserOverviewData>;
@@ -216,6 +216,27 @@ export default function SearchPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [activeSection, throttle]);
 
+  const loadUserAnalytics = useCallback(async () => {
+    if (!userParam) return;
+    const requestedUser = userParam;
+
+    setLoadingAnalytics(true);
+    try {
+      const analytics = await githubAPIClient.getUserAnalytics(requestedUser);
+      // Ignore if param changed while awaiting
+      if (requestedUser !== userParam) return;
+      setUserAnalytics(analytics);
+    } catch {
+      // Fallback to null if API fails
+      if (requestedUser !== userParam) return;
+      setUserAnalytics(null);
+    } finally {
+      if (requestedUser === userParam) {
+        setLoadingAnalytics(false);
+      }
+    }
+  }, [userParam]);
+
   useEffect(() => {
     if (userParam || repoParam) {
       const query = userParam || repoParam || "";
@@ -267,7 +288,6 @@ export default function SearchPage() {
         });
       }
     } catch (error) {
-      console.error("Search error:", error);
       setSearchResults({
         repos: [],
         users: [],

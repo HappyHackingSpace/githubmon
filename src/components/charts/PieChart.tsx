@@ -31,6 +31,31 @@ export default function PieChart({
   colors = githubColors,
   ...chartProps
 }: PieChartProps) {
+  // Handle empty data
+  if (!data || data.length === 0) {
+    const option: EChartsOption = {
+      title: {
+        text: 'No Data Available',
+        left: 'center',
+        top: 'middle',
+        textStyle: {
+          fontSize: 16,
+          fontWeight: 'normal',
+          color: '#9ca3af'
+        }
+      }
+    };
+    return (
+      <div className="w-full flex flex-col items-center">
+        {/* Optional: keep external title for consistency */}
+        {title && (
+          <h2 className="text-center text-lg font-bold mb-2">{title}</h2>
+        )}
+        <EChartsBase option={option} {...chartProps} />
+      </div>
+    );
+  }
+
   const dataWithColors = data.map((item, index) => ({
     ...item,
     itemStyle: {

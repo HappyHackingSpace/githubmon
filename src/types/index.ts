@@ -1,4 +1,3 @@
-// OSS Insight Types
 export type {
   TrendingRepo,
   TopLanguage,
@@ -29,7 +28,6 @@ export type {
   CacheConfig
 } from './oss-insight'
 
-// GitHub API Types
 export type {
   GitHubUser,
   GitHubRepository,
@@ -55,49 +53,25 @@ export type {
   RetryConfig
 } from './api'
 
-// Auth Types (from existing)
 export type {
   OrgData
 } from './auth'
 
-// GitHub Types (from existing) 
 export type {
   GitHubRepo,
   GitHubUser as GitHubUserLegacy,
   GitHubCommit,
-  ContributorWithRepos
-} from './github'
-
-// Issue Types (from existing)
-export type {
+  ContributorWithRepos,
   GitHubIssue
 } from './github'
 
-// Repository Types (from existing)
-export type {
-  // Add any existing repository types here
-} from './repository'
-
-// Contributor Types (from existing)
-export type {
-  // Add any existing contributor types here  
-} from './contributor'
-
-// Commit Types (from existing)
-export type {
-  // Add any existing commit types here
-} from './commit'
-
-// Common utility types
 export type ValueOf<T> = T[keyof T]
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>
 
-// Event handler types
 export type EventHandler<T = void> = (data: T) => void | Promise<void>
 export type AsyncEventHandler<T = void> = (data: T) => Promise<void>
 
-// Component base types
 export interface BaseComponentProps {
   className?: string
   children?: React.ReactNode
@@ -112,7 +86,6 @@ export interface DataState<T> extends LoadingState {
   data: T | null
 }
 
-// Form types
 export interface FormField<T = string> {
   value: T
   error?: string
@@ -129,7 +102,6 @@ export interface FormState<T extends Record<string, unknown>> {
   errors: Partial<Record<keyof T, string>>
 }
 
-// Navigation types
 export interface NavItem {
   href: string
   label: string
@@ -145,7 +117,6 @@ export interface BreadcrumbItem {
   active?: boolean
 }
 
-// Theme types
 export type Theme = 'light' | 'dark' | 'system'
 
 export interface ThemeContextValue {
@@ -154,7 +125,6 @@ export interface ThemeContextValue {
   systemTheme: 'light' | 'dark'
 }
 
-// Feature flags
 export interface FeatureFlags {
   enableAdvancedSearch: boolean
   enableRealTimeUpdates: boolean
@@ -163,7 +133,6 @@ export interface FeatureFlags {
   enableNotifications: boolean
 }
 
-// Analytics types
 export interface AnalyticsEvent {
   name: string
   properties?: Record<string, unknown>
@@ -178,7 +147,6 @@ export interface AnalyticsProvider {
   page: (name: string, properties?: Record<string, unknown>) => void
 }
 
-// Notification types
 export type NotificationType = 'success' | 'error' | 'warning' | 'info'
 
 export interface Notification {
@@ -193,6 +161,5 @@ export interface Notification {
   }>
 }
 
-// Export everything for convenience
 export * from './oss-insight'
 export * from './api'

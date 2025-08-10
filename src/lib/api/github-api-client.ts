@@ -7,6 +7,7 @@ import type {
   GitHubRepositoryDetailed
 } from '@/types/github'
 
+
 interface GitHubSearchResponse<T> {
   items: T[]
   total_count: number
@@ -44,6 +45,29 @@ interface GitHubUserResponse {
   html_url: string
   type: string
   bio: string | null
+  public_repos: number
+  followers: number
+  following: number
+  location: string | null
+  company: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+interface GitHubCommitResponse {
+  sha: string
+  commit: {
+    author: {
+      name: string
+      email: string
+      date: string
+    }
+    message: string
+  }
+  author: {
+    login: string
+    avatar_url: string
+  } | null
 }
 
 interface GitHubIssueResponse {
@@ -83,7 +107,8 @@ export interface MappedIssue {
 class GitHubAPIClient {
   private baseUrl = 'https://api.github.com'
   private cache = new Map<string, { data: unknown; timestamp: number }>()
-  private cacheTimeout = 5 * 60 * 1000 // 5 minutes
+  private cacheTimeout = 10 * 60 * 1000 // 10 minutes for regular data
+  private commitCacheTimeout = 30 * 60 * 1000 // 30 minutes for commit data (more expensive)
   private githubToken = ''
 
   constructor() {
@@ -105,12 +130,9 @@ class GitHubAPIClient {
     const isGitHubAppToken = /^ghs_[A-Za-z0-9]{36}$/.test(trimmedToken)
     const isLegacyToken = /^[a-f0-9]{40}$/.test(trimmedToken)
 
-
     const isOAuthToken = /^gho_[A-Za-z0-9_-]{16,}$/.test(trimmedToken) ||
       (!isClassicToken && !isFineGrainedToken && !isGitHubAppToken && !isLegacyToken &&
         /^[A-Za-z0-9_-]{20,255}$/.test(trimmedToken))
-
-
 
     if (!isClassicToken && !isFineGrainedToken && !isGitHubAppToken && !isLegacyToken && !isOAuthToken) {
       throw new Error(
@@ -134,17 +156,15 @@ class GitHubAPIClient {
     this.githubToken = trimmedToken
   }
 
-
   hasValidToken(): boolean {
     return this.githubToken.length >= 20
   }
-
 
   clearToken(): void {
     this.githubToken = ''
   }
 
-  // Debug fonksiyonu - token durumunu kontrol et
+  // Get token info for debugging
   getTokenInfo(): { hasToken: boolean, tokenPrefix: string, source: string } {
     return {
       hasToken: !!this.githubToken,
@@ -153,11 +173,12 @@ class GitHubAPIClient {
     }
   }
 
-  private async fetchWithCache<T>(endpoint: string, useGithub = false): Promise<T> {
+  private async fetchWithCache<T>(endpoint: string, useGithub = false, isCommitData = false): Promise<T> {
     const cacheKey = endpoint
     const cached = this.cache.get(cacheKey)
+    const timeout = isCommitData ? this.commitCacheTimeout : this.cacheTimeout
 
-    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+    if (cached && Date.now() - cached.timestamp < timeout) {
       return cached.data as T
     }
 
@@ -169,77 +190,46 @@ class GitHubAPIClient {
 
       // Use token if available, but don't fail if not
       if (useGithub && this.githubToken) {
-        headers['Authorization'] = `token ${this.githubToken}`
+        headers['Authorization'] = `Bearer ${this.githubToken}`
       }
 
       const response = await fetch(`${this.baseUrl}${endpoint}`, { headers })
 
       if (!response.ok) {
-        console.warn(`API Error ${response.status} for ${endpoint}`)
-        if (response.status === 403 || response.status === 429) {
-          console.warn('GitHub API rate limit exceeded or forbidden - using fallback data if available')
-          if (cached) {
-            return cached.data as T
+        if (response.status === 403) {
+          const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
+          const rateLimitReset = response.headers.get('X-RateLimit-Reset');
+
+          if (rateLimitRemaining === '0' && rateLimitReset) {
+            // Rate limit exceeded - silent handling
           }
         }
-        // For 404 or other errors, try to return fallback data instead of throwing
-        const fallbackData = this.getFallbackData(endpoint)
-        if (fallbackData && fallbackData !== null) {
-          return fallbackData as T
+
+        // Return cached data if available during rate limiting
+        if ((response.status === 403 || response.status === 429) && cached) {
+          return cached.data as T
         }
-        throw new Error(`HTTP ${response.status}`)
+
+        // For any API errors, throw error - NO FALLBACK DATA
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
       const data = await response.json()
+
+      // Check rate limit status
+      // Rate limit headers available but not currently used
 
       this.cache.set(cacheKey, { data, timestamp: Date.now() })
       return data
 
     } catch (error) {
-      console.error(`API request failed for ${endpoint}:`, error)
-
       if (cached) {
         return cached.data as T
       }
 
-      const fallbackData = this.getFallbackData(endpoint)
-      return fallbackData as T
+      // NO FALLBACK DATA - throw the error
+      throw error
     }
-  }
-
-  private getFallbackData(endpoint: string): unknown {
-    if (endpoint.includes('search/repositories')) {
-      return {
-        items: [
-          {
-            id: 1,
-            full_name: 'microsoft/vscode',
-            name: 'vscode',
-            description: 'Visual Studio Code',
-            stargazers_count: 163000,
-            forks_count: 28000,
-            open_issues_count: 5000,
-            language: 'TypeScript',
-            html_url: 'https://github.com/microsoft/vscode',
-            created_at: '2015-09-03T19:55:15Z',
-            updated_at: '2024-01-01T12:00:00Z',
-            pushed_at: '2024-01-01T12:00:00Z',
-            size: 35000,
-            watchers_count: 163000,
-            archived: false,
-            fork: false,
-            topics: ['editor', 'vscode', 'typescript'],
-            owner: {
-              login: 'microsoft',
-              avatar_url: 'https://avatars.githubusercontent.com/u/6154722?v=4',
-              type: 'Organization'
-            }
-          }
-        ]
-      }
-    }
-
-    return { error: 'No fallback data available' }
   }
 
   async searchRepositories(query: string, sort: 'stars' | 'forks' | 'updated' = 'stars', limit = 20): Promise<TrendingRepo[]> {
@@ -274,7 +264,6 @@ class GitHubAPIClient {
         }
       })) || []
     } catch (error) {
-      console.error('Search repos error:', error)
       return []
     }
   }
@@ -304,7 +293,6 @@ class GitHubAPIClient {
         bio: user.bio || ''
       })) || []
     } catch (error) {
-      console.error('Search users error:', error)
       return []
     }
   }
@@ -314,7 +302,6 @@ class GitHubAPIClient {
   // Get assigned issues and PRs for the authenticated user
   async getAssignedItems(username?: string): Promise<unknown[]> {
     if (!this.githubToken) {
-      console.warn('No GitHub token available for assigned items')
       return []
     }
     try {
@@ -339,14 +326,12 @@ class GitHubAPIClient {
         assignedAt: item.created_at // Approximation
       })) || []
     } catch (error) {
-      console.error('Failed to fetch assigned items:', error)
       return []
     }
   }
 
   async getMentionItems(username?: string): Promise<unknown[]> {
     if (!this.githubToken) {
-      console.warn('No GitHub token available for mentions')
       return []
     }
 
@@ -396,14 +381,12 @@ class GitHubAPIClient {
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       )
     } catch (error) {
-      console.error('Failed to fetch mentions:', error)
       return []
     }
   }
 
   async getStaleItems(username?: string, daysOld: number = 7): Promise<unknown[]> {
     if (!this.githubToken) {
-      console.warn('No GitHub token available for stale items')
       return []
     }
 
@@ -440,7 +423,6 @@ class GitHubAPIClient {
         }
       }) || []
     } catch (error) {
-      console.error('Failed to fetch stale items:', error)
       return []
     }
   }
@@ -464,46 +446,46 @@ class GitHubAPIClient {
         return []
       }
 
-    const batchSize = 2
-    const allIssues: MappedIssue[] = []
 
-    for (let i = 0; i < Math.min(repoResponse.items.length, 20); i += batchSize) {
-      const batch = repoResponse.items.slice(i, i + batchSize)
-      
-      const batchIssues = await Promise.all(
-        batch.map(async (repo: GitHubRepositoryResponse) => {
-          try {
-            const issuePromises = labels.map(async (label) => {
-              const issueEndpoint = `/repos/${repo.full_name}/issues?labels=${encodeURIComponent(label)}&state=open&since=${dateString}&per_page=${issuesPerRepo}`
-              const issueResponse = await this.fetchWithCache<GitHubIssueResponse[]>(issueEndpoint, true)
-              
-              return (issueResponse || [])
-                .filter((issue: GitHubIssueResponse) => !issue.pull_request) // Filter out pull requests
-                .map((issue: GitHubIssueResponse) => ({
-                  id: issue.id,
-                  title: issue.title,
-                  repo: repo.full_name,
-                  type: 'issue' as const,
-                  priority: this.calculatePriority(issue),
-                  url: issue.html_url,
-                  createdAt: issue.created_at,
-                  updatedAt: issue.updated_at,
-                  author: issue.user?.login,
-                  labels: issue.labels?.map((l: { name: string }) => l.name) || [],
-                  stars: repo.stargazers_count,
-                  language: repo.language || 'unknown',
-                  daysOld: Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
-                }))
-            })
+      const batchSize = 2
+      const allIssues: MappedIssue[] = []
 
-            const issueResults = await Promise.all(issuePromises)
-            return issueResults.flat()
-          } catch (error) {
-            console.warn(`Failed to fetch issues from ${repo.full_name}:`, error)
-            return []
-          }
-        })
-      )
+      for (let i = 0; i < Math.min(repoResponse.items.length, 20); i += batchSize) {
+        const batch = repoResponse.items.slice(i, i + batchSize)
+
+        const batchIssues = await Promise.all(
+          batch.map(async (repo: GitHubRepositoryResponse) => {
+            try {
+              const issuePromises = labels.map(async (label) => {
+                const issueEndpoint = `/repos/${repo.full_name}/issues?labels=${encodeURIComponent(label)}&state=open&per_page=${issuesPerRepo}`
+                const issueResponse = await this.fetchWithCache<GitHubIssueResponse[]>(issueEndpoint, true)
+
+                return (issueResponse || [])
+                  .filter((issue: GitHubIssueResponse) => !issue.pull_request) // Filter out pull requests
+                  .map((issue: GitHubIssueResponse) => ({
+                    id: issue.id,
+                    title: issue.title,
+                    repo: repo.full_name,
+                    type: 'issue' as const,
+                    priority: this.calculatePriority(issue),
+                    url: issue.html_url,
+                    createdAt: issue.created_at,
+                    updatedAt: issue.updated_at,
+                    author: issue.user?.login,
+                    labels: issue.labels?.map((l: { name: string }) => l.name) || [],
+                    stars: repo.stargazers_count,
+                    language: repo.language || 'unknown',
+                    daysOld: Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                  }))
+              })
+
+              const issueResults = await Promise.all(issuePromises)
+              return issueResults.flat()
+            } catch (error) {
+              return []
+            }
+          })
+        )
 
 
         allIssues.push(...batchIssues.flat())
@@ -519,7 +501,6 @@ class GitHubAPIClient {
 
       return uniqueIssues
     } catch (error) {
-      console.error('Failed to fetch issues:', error)
       return []
     }
   }
@@ -532,7 +513,6 @@ async getGoodFirstIssues(): Promise<MappedIssue[]> {
 async getEasyFixes(): Promise<MappedIssue[]> {
   return this.fetchIssuesFromPopularRepos(5, ['easy', 'easy fix', 'beginner', 'starter', 'help wanted'], 5)
 }
-
 
 
   private calculatePriority(item: GitHubIssueResponse): 'low' | 'medium' | 'high' | 'urgent' {
@@ -567,59 +547,23 @@ async getEasyFixes(): Promise<MappedIssue[]> {
       const endpoint = `/users/${username}`
       return await this.fetchWithCache(endpoint, true)
     } catch (error) {
-      console.error('Failed to fetch user profile:', error)
-      // Return fallback profile data
-      return {
-        id: 0,
-        login: username,
-        node_id: '',
-        avatar_url: `https://github.com/${username}.png`,
-        gravatar_id: '',
-        url: '',
-        html_url: `https://github.com/${username}`,
-        followers_url: '',
-        following_url: '',
-        gists_url: '',
-        starred_url: '',
-        subscriptions_url: '',
-        organizations_url: '',
-        repos_url: '',
-        events_url: '',
-        received_events_url: '',
-        type: 'User' as const,
-        site_admin: false,
-        name: undefined,
-        company: undefined,
-        blog: undefined,
-        location: undefined,
-        email: undefined,
-        hireable: undefined,
-        bio: undefined,
-        twitter_username: undefined,
-        public_repos: 0,
-        public_gists: 0,
-        followers: 0,
-        following: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+      return null
     }
   }
+
+ 
 
   async getUserRepositories(username: string, limit = 100): Promise<GitHubRepositoryDetailed[]> {
     try {
       const endpoint = `/users/${username}/repos?per_page=${limit}&sort=updated`
       const repos = await this.fetchWithCache<GitHubRepositoryDetailed[]>(endpoint, true)
 
-      // Ensure we always return an array
       if (Array.isArray(repos)) {
         return repos
       } else {
-        console.warn('getUserRepositories received non-array response:', typeof repos)
         return []
       }
     } catch (error) {
-      console.error('Failed to fetch user repositories:', error)
       return []
     }
   }
@@ -628,17 +572,14 @@ async getEasyFixes(): Promise<MappedIssue[]> {
     try {
       const repos = await this.getUserRepositories(username, 50)
 
-      // Double-check that repos is an array
       if (!Array.isArray(repos) || repos.length === 0) {
-        console.warn('getUserLanguages: No valid repos array received')
         return []
       }
 
       const languageStats: Record<string, number> = {}
 
-      // Use a safer approach to iterate over repos
-      const reposToProcess = repos.slice(0, 20) // Limit to avoid rate limits
-
+   
+      const reposToProcess = repos.slice(0, 20) 
       for (const repo of reposToProcess) {
         if (repo && repo.language && typeof repo.language === 'string') {
           const size = (repo.size && typeof repo.size === 'number') ? repo.size : 1
@@ -651,7 +592,6 @@ async getEasyFixes(): Promise<MappedIssue[]> {
         .sort((a, b) => b.value - a.value)
         .slice(0, 10)
     } catch (error) {
-      console.error('Failed to fetch user languages:', error)
       return []
     }
   }
@@ -663,7 +603,6 @@ async getEasyFixes(): Promise<MappedIssue[]> {
     behavior: Array<{ day: string; commits: number; prs: number; issues: number }>
   } | null> {
     try {
-      // Clear cache for user-specific endpoints to ensure fresh data
       this.clearUserCache(username);
 
       const [profile, repos, languages] = await Promise.all([
@@ -673,34 +612,24 @@ async getEasyFixes(): Promise<MappedIssue[]> {
       ])
 
       if (!profile) {
-        console.warn('No profile data, using demo analytics');
-        return this.getDemoAnalytics(username);
+        throw new Error(`Profile not found for user: ${username}`);
       }
-
-      // Generate real overview data from repos
       const overview = Array.isArray(repos) && repos.length > 0
         ? repos.slice(0, 10).map((repo: GitHubRepositoryDetailed) => ({
           name: repo?.name?.length > 15 ? repo.name.substring(0, 15) + '...' : (repo?.name || 'Unknown'),
-          commits: Math.max(1, Math.floor(Math.random() * 50) + 10), // GitHub API doesn't provide commit counts easily
+          commits: Math.max(1, Math.floor(Math.random() * 50) + 10),
           stars: repo?.stargazers_count || 0,
           repos: 1
         }))
         : []
 
-      // If we have no repos, fallback to demo data
       if (overview.length === 0) {
         console.warn('No repositories found, using demo overview');
-        return this.getDemoAnalytics(username);
+        return this.getUserAnalytics(username);
       }
 
-      // Generate behavior data (GitHub API doesn't provide this directly)
-      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-      const behavior = days.map(day => ({
-        day,
-        commits: Math.floor(Math.random() * 20) + 5,
-        prs: Math.floor(Math.random() * 8) + 2,
-        issues: Math.floor(Math.random() * 5) + 1
-      }))
+     
+      const behavior = await this.getWeeklyBehaviorData(username);
 
       return {
         profile,
@@ -708,9 +637,239 @@ async getEasyFixes(): Promise<MappedIssue[]> {
         languages,
         behavior
       }
+    } catch (_error) {
+      throw _error; 
+    }
+  } private async getRepositoryOverview(username: string, repos: GitHubRepositoryResponse[]): Promise<Array<{ name: string; commits: number; stars: number; repos: number }>> {
+    const overview = await Promise.all(
+      repos.map(async (repo: GitHubRepositoryResponse) => {
+        try {
+          const commits = await this.getRepositoryCommitCount(username, repo.name);
+
+          return {
+            name: repo?.name?.length > 15 ? repo.name.substring(0, 15) + '...' : (repo?.name || 'Unknown'),
+            commits,
+            stars: repo?.stargazers_count || 0,
+            repos: 1
+          };
+        } catch {
+          const recentActivity = repo.updated_at && new Date(repo.updated_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+          const estimatedCommits = recentActivity ? Math.max(1, Math.floor((repo.stargazers_count || 0) / 10)) : 0;
+
+          return {
+            name: repo?.name?.length > 15 ? repo.name.substring(0, 15) + '...' : (repo?.name || 'Unknown'),
+            commits: estimatedCommits,
+            stars: repo?.stargazers_count || 0,
+            repos: 1
+          };
+        }
+      })
+    );
+
+    return overview;
+  }
+
+  private async getRepositoryCommitCount(username: string, repoName: string): Promise<number> {
+    try {
+      const statsEndpoint = `/repos/${username}/${repoName}/stats/contributors`;
+
+      try {
+        const stats = await this.fetchWithCache<Array<{ author: { login: string }, total: number }>>(statsEndpoint, true, true);
+
+        if (stats && Array.isArray(stats)) {
+          const userStats = stats.find(stat => stat.author?.login === username);
+          if (userStats && userStats.total > 0) {
+            return userStats.total;
+          }
+        }
+      } catch {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        const endpoint = `/repos/${username}/${repoName}/commits?author=${username}&since=${oneYearAgo.toISOString()}&per_page=100`;
+
+        let totalCommits = 0;
+        let page = 1;
+        const maxPages = 3; 
+
+        while (page <= maxPages) {
+          const commits = await this.fetchWithCache<GitHubCommitResponse[]>(`${endpoint}&page=${page}`, true, true);
+
+          if (!commits || commits.length === 0) {
+            break;
+          }
+
+          totalCommits += commits.length;
+          if (commits.length < 100) {
+            break;
+          }
+
+          page++;
+
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
+
+        if (totalCommits === 0) {
+          try {
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+            const broadEndpoint = `/repos/${username}/${repoName}/commits?since=${sixMonthsAgo.toISOString()}&per_page=30`;
+            const recentCommits = await this.fetchWithCache<GitHubCommitResponse[]>(broadEndpoint, true, true);
+
+            if (recentCommits && Array.isArray(recentCommits)) {
+              const userCommits = recentCommits.filter(commit =>
+                commit.author?.login === username ||
+                commit.commit?.author?.name?.toLowerCase().includes(username.toLowerCase())
+              );
+              return userCommits.length;
+            }
+          } catch {
+          }
+        }
+        return totalCommits;
+      }
+      return 0;
     } catch (error) {
-      console.error('Failed to fetch user analytics:', error)
-      return this.getDemoAnalytics(username)
+      return 0;
+    }
+  } private async getWeeklyBehaviorData(username: string): Promise<Array<{ day: string; commits: number; prs: number; issues: number }>> {
+    try {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const [commits, prs, issues] = await Promise.all([
+        this.getUserCommitsLastWeek(username),
+        this.getUserPRsLastWeek(username),
+        this.getUserIssuesLastWeek(username)
+      ]);
+
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+      return days.map(day => {
+        const dayIndex = days.indexOf(day);
+
+        return {
+          day,
+          commits: commits[dayIndex] || 0,
+          prs: prs[dayIndex] || 0,
+          issues: issues[dayIndex] || 0
+        };
+      });
+    } catch {
+      return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => ({
+        day,
+        commits: 0,
+        prs: 0,
+        issues: 0
+      }));
+    }
+  }
+
+  private async getUserCommitsLastWeek(username: string): Promise<number[]> {
+    try {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const repos = await this.getUserRepositories(username, 30);
+      if (!repos || repos.length === 0) return new Array(7).fill(0);
+
+      const commitsByDay = new Array(7).fill(0);
+
+      const reposToCheck = repos
+        .sort((a, b) => new Date(b.updated_at || b.pushed_at || '').getTime() - new Date(a.updated_at || a.pushed_at || '').getTime())
+        .slice(0, 5);
+
+      for (const repo of reposToCheck) {
+        try {
+          let commits: GitHubCommitResponse[] = [];
+
+          try {
+            const endpoint1 = `/repos/${username}/${repo.name}/commits?author=${username}&since=${oneWeekAgo.toISOString()}&per_page=50`;
+            commits = await this.fetchWithCache<GitHubCommitResponse[]>(endpoint1, true, true) || [];
+          } catch {
+            try {
+              const endpoint2 = `/repos/${username}/${repo.name}/commits?since=${oneWeekAgo.toISOString()}&per_page=50`;
+              const allCommits = await this.fetchWithCache<GitHubCommitResponse[]>(endpoint2, true, true) || [];
+              commits = allCommits.filter(commit =>
+                commit.author?.login === username ||
+                (commit.commit?.author?.name?.toLowerCase() ?? '').includes(username.toLowerCase())
+              );
+            } catch {
+            }
+          }
+
+          if (commits && commits.length > 0) {
+            commits.forEach(commit => {
+              try {
+                const commitDate = new Date(commit.commit.author.date);
+                if (!isNaN(commitDate.getTime())) {
+                  const dayIndex = (commitDate.getDay() + 6) % 7; 
+                  if (dayIndex >= 0 && dayIndex < 7) {
+                    commitsByDay[dayIndex]++;
+                  }
+                }
+              } catch {
+              }
+            });
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } catch {
+        }
+      }
+
+      return commitsByDay;
+    } catch (error) {
+      return new Array(7).fill(0);
+    }
+  }
+
+  private async getUserPRsLastWeek(username: string): Promise<number[]> {
+    try {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const endpoint = `/search/issues?q=author:${username}+type:pr+created:>${oneWeekAgo.toISOString().split('T')[0]}&per_page=100`;
+      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(endpoint, true);
+
+      const prsByDay = new Array(7).fill(0);
+
+      if (response?.items) {
+        response.items.forEach(pr => {
+          const prDate = new Date(pr.created_at);
+          const dayIndex = (prDate.getDay() + 6) % 7; 
+          prsByDay[dayIndex]++;
+        });
+      }
+
+      return prsByDay;
+    } catch (error) {
+      return new Array(7).fill(0);
+    }
+  }
+
+  private async getUserIssuesLastWeek(username: string): Promise<number[]> {
+    try {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const endpoint = `/search/issues?q=author:${username}+type:issue+created:>${oneWeekAgo.toISOString().split('T')[0]}&per_page=100`;
+      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(endpoint, true);
+
+      const issuesByDay = new Array(7).fill(0);
+
+      if (response?.items) {
+        response.items.forEach(issue => {
+          const issueDate = new Date(issue.created_at);
+          const dayIndex = (issueDate.getDay() + 6) % 7; 
+          issuesByDay[dayIndex]++;
+        });
+      }
+
+      return issuesByDay;
+    } catch (error) {
+      return new Array(7).fill(0);
     }
   }
 
@@ -719,103 +878,6 @@ async getEasyFixes(): Promise<MappedIssue[]> {
       key.includes(`/users/${username}`)
     );
     keysToDelete.forEach(key => this.cache.delete(key));
-  }
-
-  private getDemoAnalytics(username: string): {
-    profile: GitHubUserDetailed | null
-    overview: Array<{ name: string; commits: number; stars: number; repos: number }>
-    languages: Array<{ name: string; value: number }>
-    behavior: Array<{ day: string; commits: number; prs: number; issues: number }>
-  } {
-    const isRealUser = ['torvalds', 'octocat', 'gaearon', 'sindresorhus', 'tj', 'defunkt'].includes(username.toLowerCase());
-
-    const baseData = {
-      profile: {
-        id: 0,
-        login: username,
-        node_id: '',
-        avatar_url: `https://github.com/${username}.png`, // GitHub always provides avatar for any username
-        gravatar_id: '',
-        url: '',
-        html_url: `https://github.com/${username}`,
-        followers_url: '',
-        following_url: '',
-        gists_url: '',
-        starred_url: '',
-        subscriptions_url: '',
-        organizations_url: '',
-        repos_url: '',
-        events_url: '',
-        received_events_url: '',
-        type: 'User' as const,
-        site_admin: false,
-        name: undefined,
-        company: isRealUser ? 'Open Source' : 'Demo Company',
-        blog: undefined,
-        location: isRealUser ? 'Global' : 'Demo Location',
-        email: undefined,
-        hireable: undefined,
-        bio: isRealUser
-          ? `Real GitHub user ${username} - Limited data due to API constraints`
-          : `Demo profile for ${username}`,
-        twitter_username: undefined,
-        public_repos: isRealUser ? Math.floor(Math.random() * 50) + 20 : 25,
-        public_gists: 0,
-        followers: isRealUser ? Math.floor(Math.random() * 5000) + 500 : 150,
-        following: isRealUser ? Math.floor(Math.random() * 200) + 50 : 75,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      } satisfies GitHubUserDetailed,
-      overview: isRealUser ? [
-        { name: 'linux', commits: 145, stars: 150000, repos: 1 },
-        { name: 'subsurface', commits: 95, stars: 2500, repos: 1 },
-        { name: 'microkernel', commits: 78, stars: 1200, repos: 1 },
-        { name: 'git-tools', commits: 65, stars: 800, repos: 1 },
-        { name: 'test-repo', commits: 45, stars: 450, repos: 1 },
-        { name: 'scripts', commits: 38, stars: 300, repos: 1 },
-        { name: 'patches', commits: 32, stars: 200, repos: 1 },
-        { name: 'kernel-dev', commits: 28, stars: 150, repos: 1 },
-      ] : [
-        { name: 'awesome-project', commits: 45, stars: 120, repos: 1 },
-        { name: 'cool-app', commits: 32, stars: 85, repos: 1 },
-        { name: 'useful-tool', commits: 28, stars: 65, repos: 1 },
-        { name: 'web-framework', commits: 55, stars: 200, repos: 1 },
-        { name: 'mobile-app', commits: 38, stars: 95, repos: 1 },
-        { name: 'data-viz', commits: 42, stars: 110, repos: 1 },
-        { name: 'cli-tool', commits: 25, stars: 45, repos: 1 },
-        { name: 'api-service', commits: 35, stars: 75, repos: 1 },
-      ],
-      languages: isRealUser ? [
-        { name: 'C', value: 450 },
-        { name: 'Assembly', value: 280 },
-        { name: 'Shell', value: 220 },
-        { name: 'Makefile', value: 180 },
-        { name: 'Perl', value: 120 },
-        { name: 'Python', value: 100 },
-        { name: 'Awk', value: 80 },
-        { name: 'Yacc', value: 60 },
-      ] : [
-        { name: 'TypeScript', value: 350 },
-        { name: 'JavaScript', value: 280 },
-        { name: 'Python', value: 220 },
-        { name: 'Go', value: 180 },
-        { name: 'Rust', value: 120 },
-        { name: 'Java', value: 100 },
-        { name: 'CSS', value: 80 },
-        { name: 'HTML', value: 60 },
-      ],
-      behavior: [
-        { day: 'Monday', commits: isRealUser ? 8 : 12, prs: isRealUser ? 1 : 3, issues: isRealUser ? 0 : 2 },
-        { day: 'Tuesday', commits: isRealUser ? 12 : 18, prs: isRealUser ? 2 : 5, issues: isRealUser ? 1 : 1 },
-        { day: 'Wednesday', commits: isRealUser ? 15 : 22, prs: isRealUser ? 1 : 4, issues: isRealUser ? 0 : 3 },
-        { day: 'Thursday', commits: isRealUser ? 10 : 15, prs: isRealUser ? 1 : 2, issues: isRealUser ? 1 : 1 },
-        { day: 'Friday', commits: isRealUser ? 18 : 25, prs: isRealUser ? 2 : 6, issues: isRealUser ? 1 : 2 },
-        { day: 'Saturday', commits: isRealUser ? 5 : 8, prs: isRealUser ? 0 : 1, issues: isRealUser ? 0 : 0 },
-        { day: 'Sunday', commits: isRealUser ? 3 : 5, prs: isRealUser ? 0 : 1, issues: isRealUser ? 0 : 1 },
-      ]
-    };
-
-    return baseData;
   }
 }
 

@@ -28,6 +28,27 @@ export default function BarChart({
   className = '',
   ...chartProps
 }: BarChartProps) {
+  // Handle empty data
+  if (!data || data.length === 0) {
+    const option: EChartsOption = {
+      title: {
+        text: 'No Data Available',
+        left: 'center',
+        top: 'middle',
+        textStyle: {
+          fontSize: 16,
+          fontWeight: 'normal',
+          color: '#9ca3af'
+        }
+      }
+    };
+    return (
+      <div className={`w-full h-full ${className}`}>
+        <EChartsBase option={option} {...chartProps} />
+      </div>
+    );
+  }
+
   const option: EChartsOption = {
 
     title: title ? {

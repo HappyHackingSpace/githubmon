@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,8 +28,6 @@ import {
 import type { TrendingRepo, TopContributor } from "@/types/oss-insight";
 
 import { useRouter } from "next/navigation";
-
-
 
 export function SearchModal() {
   const router = useRouter();
@@ -150,8 +149,6 @@ export function SearchModal() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSearchModalOpen, setSearchModalOpen]);
 
- 
-
   const hasResults =
     currentResults.repos.length > 0 || currentResults.users.length > 0;
   const handleUserClick = (username: string) => {
@@ -176,6 +173,9 @@ export function SearchModal() {
             <Search className="w-5 h-5" />
             <span>Search on GitHub</span>
           </DialogTitle>
+          <DialogDescription>
+            Search for repositories, users, and organizations on GitHub. Use filters to narrow your results.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Search Input & Filters */}
@@ -207,7 +207,6 @@ export function SearchModal() {
               ))}
             </div>
 
-       
           </div>
         </div>
 
@@ -395,5 +394,4 @@ export function SearchModal() {
     </Dialog>
   );
 }
-
 

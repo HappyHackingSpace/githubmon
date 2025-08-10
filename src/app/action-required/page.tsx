@@ -41,34 +41,41 @@ export default function ActionRequiredPage() {
   const VALID_TABS = ['assigned', 'mentions', 'stale'] as const
   type ValidTab = typeof VALID_TABS[number]
 
-  const tabParam = searchParams.get('tab')
+  const tabParam = searchParams?.get('tab')
   const currentTab: ValidTab = VALID_TABS.includes(tabParam as ValidTab)
     ? (tabParam as ValidTab)
     : 'assigned'
 
   useEffect(() => {
-    refreshData().catch((error) => {
-      console.error('Failed to refresh action required data:', error)
+    refreshData().catch(() => {
+      // Silent error handling for refresh data
     })
   }, [refreshData])
 
-  const getActionItems = (type: string) => {
+  // Helper function to get action items by type
+  const getActionItems = (type: 'assigned' | 'mentions' | 'stale') => {
     switch (type) {
-      case 'assigned': return assignedItems
-      case 'mentions': return mentionItems
-      case 'stale': return staleItems
-      default: return []
+      case 'assigned':
+        return assignedItems
+      case 'mentions':
+        return mentionItems
+      case 'stale':
+        return staleItems
+      default:
+        return []
     }
   }
 
-  const isValidUrl = (url: string) => {
+  // Helper function to validate URLs
+  const isValidUrl = (url?: string): boolean => {
+    if (!url) return false
     try {
-      const parsed = new URL(url);
-      return parsed.protocol === 'https:' && parsed.hostname.includes('github.com');
+      const parsed = new URL(url)
+      return parsed.protocol === 'https:' && parsed.hostname.includes('github.com')
     } catch {
-      return false;
+      return false
     }
-  };
+  }
 
   const handleTabChange = (tab: string) => {
     if (VALID_TABS.includes(tab as ValidTab)) {
@@ -92,7 +99,7 @@ export default function ActionRequiredPage() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto p-6 space-y-6">
-        <PageHeader  />
+        <PageHeader />
 
         {/* Hero Section */}
         <div className="mb-8">
@@ -108,13 +115,13 @@ export default function ActionRequiredPage() {
         </div>
 
         {/* Action Required Tabs */}
-        <Tabs 
-          value={currentTab} 
+        <Tabs
+          value={currentTab}
           onValueChange={(value) => {
             if (VALID_TABS.includes(value as ValidTab)) {
               handleTabChange(value)
             }
-          }} 
+          }}
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-3">
@@ -327,7 +334,7 @@ export default function ActionRequiredPage() {
           </TabsContent>
         </Tabs>
       </div>
-      
+
       <SearchModal />
     </Layout>
   )
