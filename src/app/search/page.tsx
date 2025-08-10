@@ -108,6 +108,44 @@ export default function SearchPage() {
   );
   const [loadingAnalytics, setLoadingAnalytics] = useState<boolean>(false);
 
+  const loadUserAnalytics = useCallback(async () => {
+    if (!userParam) return;
+
+    setLoadingAnalytics(true);
+    try {
+      const analytics = await githubAPIClient.getUserAnalytics(userParam);
+      if (analytics) {
+        // Convert GitHubUserDetailed to the expected profile format
+        const convertedAnalytics: UserAnalytics = {
+          profile: analytics.profile ? {
+            avatar_url: analytics.profile.avatar_url,
+            login: analytics.profile.login,
+            type: analytics.profile.type,
+            bio: analytics.profile.bio,
+            public_repos: analytics.profile.public_repos,
+            followers: analytics.profile.followers,
+            following: analytics.profile.following,
+            location: analytics.profile.location,
+            company: analytics.profile.company,
+            html_url: analytics.profile.html_url
+          } : undefined,
+          overview: analytics.overview,
+          languages: analytics.languages,
+          behavior: analytics.behavior
+        };
+        setUserAnalytics(convertedAnalytics);
+      } else {
+        setUserAnalytics(null);
+      }
+    } catch (error) {
+      console.error("Analytics error:", error);
+      // Fallback to null if API fails
+      setUserAnalytics(null);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  }, [userParam]);
+
   const throttle = useCallback(
     <T extends (...args: unknown[]) => void>(
       func: T,

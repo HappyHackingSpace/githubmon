@@ -50,7 +50,7 @@ export function useQuickWins() {
             ])
         }
         isInitialized.current = true
-    }, [loadFromCache, isQuickWinsCacheExpired, goodIssues.length, easyFixes.length, fetchGoodIssues, fetchEasyFixes])
+    }, [loadFromCache, isQuickWinsCacheExpired, fetchGoodIssues, fetchEasyFixes])
 
     useEffect(() => {
         if (goodIssues.length > 0) {
