@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useState, useEffect } from 'react'
+import { RateLimitWarning } from '@/components/common/RateLimitWarning'
 
 const VALID_TABS = ['good-issues', 'easy-fixes'] as const
 type ValidTab = typeof VALID_TABS[number]
