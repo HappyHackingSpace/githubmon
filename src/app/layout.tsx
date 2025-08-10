@@ -7,6 +7,7 @@ import { OAuthSessionSync } from '@/components/providers/OAuthSessionSync'
 
 import { HydrationBoundary } from "@/components/providers/HydrationBoundary";
 import { NotificationProvider } from "@/components/common/NotificationProvider";
+import { DataInitializer } from "@/components/providers/DataInitializer";
 
 
 const geistSans = Geist({
@@ -39,6 +40,7 @@ export default function RootLayout({
           <ThemeProvider defaultTheme="system" storageKey="githubmon-theme">
             <HydrationBoundary>
               <OAuthSessionSync />
+              <DataInitializer />
               {children}
               <NotificationProvider />
             </HydrationBoundary>

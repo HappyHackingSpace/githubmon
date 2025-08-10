@@ -115,18 +115,17 @@ export default function SearchPage() {
     try {
       const analytics = await githubAPIClient.getUserAnalytics(userParam);
       if (analytics) {
-        // Convert GitHubUserDetailed to the expected profile format
         const convertedAnalytics: UserAnalytics = {
           profile: analytics.profile ? {
             avatar_url: analytics.profile.avatar_url,
             login: analytics.profile.login,
             type: analytics.profile.type,
-            bio: analytics.profile.bio,
+            bio: analytics.profile.bio ?? null,
             public_repos: analytics.profile.public_repos,
             followers: analytics.profile.followers,
             following: analytics.profile.following,
-            location: analytics.profile.location,
-            company: analytics.profile.company,
+            location: analytics.profile.location ?? null,
+            company: analytics.profile.company ?? null,
             html_url: analytics.profile.html_url
           } : undefined,
           overview: analytics.overview,
@@ -174,7 +173,6 @@ export default function SearchPage() {
     []
   );
 
-  // Scroll spy effect - ONLY h2 titles matter
   useEffect(() => {
     const handleScroll = throttle(() => {
       const sectionIds = ['overview', 'behavior', 'star', 'code', 'code-review', 'issue', 'monthly-stats', 'contribution-activities'];
@@ -216,33 +214,10 @@ export default function SearchPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [activeSection, throttle]);
 
-  const loadUserAnalytics = useCallback(async () => {
-    if (!userParam) return;
-    const requestedUser = userParam;
-
-    setLoadingAnalytics(true);
-    try {
-      const analytics = await githubAPIClient.getUserAnalytics(requestedUser);
-      // Ignore if param changed while awaiting
-      if (requestedUser !== userParam) return;
-      setUserAnalytics(analytics);
-    } catch {
-      // Fallback to null if API fails
-      if (requestedUser !== userParam) return;
-      setUserAnalytics(null);
-    } finally {
-      if (requestedUser === userParam) {
-        setLoadingAnalytics(false);
-      }
-    }
-  }, [userParam]);
-
   useEffect(() => {
     if (userParam || repoParam) {
       const query = userParam || repoParam || "";
       const type = userParam ? "users" : "repos";
-
-      // Clear previous state when switching users
       setUserAnalytics(null);
       setSearchResults({
         repos: [],
@@ -256,7 +231,6 @@ export default function SearchPage() {
       performSearch(query, type);
       setHasSearched(true);
 
-      // If searching for a user, load analytics
       if (userParam) {
         loadUserAnalytics();
       }
