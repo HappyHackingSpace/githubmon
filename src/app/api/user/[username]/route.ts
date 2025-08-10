@@ -3,10 +3,10 @@ import { githubAPIClient } from '@/lib/api/github-api-client'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ username: string }> }
+  { params }: { params: { username: string } }
 ) {
   try {
-    const { username } = await params
+    const { username } = params
 
     if (!username) {
       return NextResponse.json(
