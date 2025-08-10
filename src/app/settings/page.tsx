@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { usePreferencesStore } from '@/stores'
 import { useRequireAuth } from '@/hooks/useAuth'
 import { ThemeSelector } from '@/components/theme/ThemeToggle'
-import { GitHubTokenSetup } from '@/components/common/GitHubTokenSetup'
+// import { GitHubTokenSetup } from '@/components/common/GitHubTokenSetup'
 import { cookieUtils } from '@/lib/cookies'
 
 export default function SettingsPage() {
@@ -48,7 +48,7 @@ export default function SettingsPage() {
           {/* GitHub API Token Setup */}
           <section>
             <h3 className="text-lg font-medium mb-4">🔑 GitHub API Token</h3>
-            <GitHubTokenSetup />
+            {/* <GitHubTokenSetup /> */}
           </section>
 
           <Card>
