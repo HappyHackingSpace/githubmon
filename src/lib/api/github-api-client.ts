@@ -436,7 +436,6 @@ class GitHubAPIClient {
  try {
     const oneMonthAgo = new Date()
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
-    const dateString = oneMonthAgo.toISOString().split('T')[0]
     
     const repoEndpoint = `/search/repositories?q=stars:>${minStars}&sort=stars&order=desc&per_page=50`
     const repoResponse = await this.fetchWithCache<GitHubSearchResponse<GitHubRepositoryResponse>>(repoEndpoint, true)
