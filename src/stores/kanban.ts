@@ -93,6 +93,8 @@ syncFromGitHub: async () => {
   if (!orgData?.token) return
   
   try {
+    githubAPIClient.setUserToken(orgData.token)
+    
     const promises = []
     
     if (githubSettings.assignedToMe) {

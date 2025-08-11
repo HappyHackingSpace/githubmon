@@ -25,7 +25,6 @@ export function Sidebar() {
   const [actionRequiredOpen, setActionRequiredOpen] = useState(false)
   const [quickWinsOpen, setQuickWinsOpen] = useState(false)
 
-  // Close accordions when navigating to dashboard
   useEffect(() => {
     if (pathname === '/dashboard') {
       setActionRequiredOpen(false)
@@ -36,21 +35,32 @@ export function Sidebar() {
   const currentTab = searchParams?.get('tab') || 'assigned'
 
   const getBadgeCount = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => {
+    if (!hasHydrated) return 0
+    
     if (type === 'goodFirstIssues') return goodIssues.length
     if (type === 'easyFixes') return easyFixes.length
     return getCountByType(type)
   }
 
-  const getActionRequiredTotal = () => getBadgeCount('assigned') + getBadgeCount('mentions') + getBadgeCount('stale')
-  const getQuickWinsTotal = () => getBadgeCount('goodFirstIssues') + getBadgeCount('easyFixes')
+  const getActionRequiredTotal = () => {
+    if (!hasHydrated) return 0
+    return getBadgeCount('assigned') + getBadgeCount('mentions') + getBadgeCount('stale')
+  }
+  
+  const getQuickWinsTotal = () => {
+    if (!hasHydrated) return 0
+    return getBadgeCount('goodFirstIssues') + getBadgeCount('easyFixes')
+  }
 
   const getBadgeContent = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => {
+    if (!hasHydrated) return 0
+    
     if (type === 'goodFirstIssues' || type === 'easyFixes') {
       if (quickWinsLoading.goodIssues || quickWinsLoading.easyFixes) return '...'
     } else {
       if (loading[type]) return '...'
     }
-    return getBadgeCount(type)
+    return getBadgeCount(type) || 0
   }
 
   const isQuickWinsTab = pathname === '/quick-wins'
@@ -124,11 +134,9 @@ export function Sidebar() {
                     <span>Action Required</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    {getActionRequiredTotal() > 0 && (
-                      <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
-                        {getActionRequiredTotal()}
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
+                      {getActionRequiredTotal()}
+                    </Badge>
                     <ChevronRight className={`w-4 h-4 transition-transform ${actionRequiredOpen ? 'rotate-90' : ''}`} />
                   </div>
                 </CollapsibleTrigger>
@@ -203,11 +211,9 @@ export function Sidebar() {
                     <span>Quick Wins</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    {getQuickWinsTotal() > 0 && (
-                      <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
-                        {getQuickWinsTotal()}
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
+                      {getQuickWinsTotal()}
+                    </Badge>
                     <ChevronRight className={`w-4 h-4 transition-transform ${quickWinsOpen ? 'rotate-90' : ''}`} />
                   </div>
                 </CollapsibleTrigger>
