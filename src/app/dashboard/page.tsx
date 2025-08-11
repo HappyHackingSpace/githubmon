@@ -3,7 +3,7 @@
 import { Layout } from '@/components/layout/Layout'
 import { useRequireAuth } from '@/hooks/useAuth'
 import { PageHeader } from '@/components/layout/PageHeader'
-import TodoDashboard from '@/components/widget/TodoDashboard'
+import { TodoDashboard } from '@/components/widget/TodoDashboard'
 
 export default function DashboardPage() {
   const { isLoading } = useRequireAuth()
