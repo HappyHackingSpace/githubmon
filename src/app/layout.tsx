@@ -5,7 +5,6 @@ import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import { OAuthSessionSync } from '@/components/providers/OAuthSessionSync'
 
-import { HydrationBoundary } from "@/components/providers/HydrationBoundary";
 import { NotificationProvider } from "@/components/common/NotificationProvider";
 import { DataInitializer } from "@/components/providers/DataInitializer";
 
@@ -38,12 +37,12 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ThemeProvider defaultTheme="system" storageKey="githubmon-theme">
-            <HydrationBoundary>
+          
               <OAuthSessionSync />
               <DataInitializer />
               {children}
               <NotificationProvider />
-            </HydrationBoundary>
+           
           </ThemeProvider>
         </AuthProvider>
       </body>

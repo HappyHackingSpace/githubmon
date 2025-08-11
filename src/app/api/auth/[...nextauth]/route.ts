@@ -20,11 +20,49 @@ const authOptions = {
     GitHubProvider({
       clientId: GITHUB_CLIENT_ID!,
       clientSecret: GITHUB_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: "read:user user:email read:org repo"
+        }
+      },
+      profile(profile) {
+        return {
+          id: profile.id.toString(),
+          name: profile.name || profile.login,
+          login: profile.login, 
+          email: profile.email,
+          image: profile.avatar_url,
+        }
+      }
     }),
   ],
   pages: {
     signIn: '/login',
     error: '/login'
+  },
+  callbacks: {
+    async jwt({ token, account, user }: { token: any; account: any; user?: any }) {
+      if (account) {
+        token.accessToken = account.access_token
+      }
+      if (user) {
+        token.login = user.login // GitHub username'i token'a ekle
+      }
+      return token
+    },
+    async session({ session, token }: { session: any; token: any }) {
+      (session as any).accessToken = token.accessToken
+      if (token.login) {
+        session.user.login = token.login // GitHub username'i session'a ekle
+      }
+      return session
+    },
+    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
+      // Always redirect to auth callback after authentication
+      if (url.startsWith('/')) return `${baseUrl}/auth/callback`
+      if (new URL(url).origin === baseUrl) return `${baseUrl}/auth/callback`
+      return `${baseUrl}/auth/callback`
+    }
   }
 }
 

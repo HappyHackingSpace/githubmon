@@ -326,6 +326,7 @@ class GitHubAPIClient {
         assignedAt: item.created_at // Approximation
       })) || []
     } catch (error) {
+      console.error('Error fetching assigned items:', error)
       return []
     }
   }

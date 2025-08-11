@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,6 +9,8 @@ import { useRequireGuest } from '@/hooks/useAuth'
 
 export default function LoginPage() {
   const { isLoading: authLoading, isAuthenticated } = useRequireGuest()
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
 
   // If authenticated, redirect will be handled by middleware
   if (!authLoading && isAuthenticated) {
@@ -43,6 +46,16 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="space-y-6 pb-8">
+            {error && (
+              <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                <p className="text-sm text-destructive">
+                  {error === 'authentication_failed' 
+                    ? 'Authentication failed. Please try again.' 
+                    : 'An error occurred during sign in. Please try again.'}
+                </p>
+              </div>
+            )}
+            
             <div className="text-center space-y-2">
               <h3 className="text-lg font-semibold">Welcome Back</h3>
               <p className="text-sm text-muted-foreground">
@@ -51,7 +64,7 @@ export default function LoginPage() {
             </div>
 
             <Button
-              onClick={() => signIn('github', { callbackUrl: '/dashboard' })}
+              onClick={() => signIn('github')}
               className="w-full h-12 font-semibold text-base"
               size="lg"
             >

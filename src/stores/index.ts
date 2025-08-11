@@ -20,19 +20,20 @@ let isHydrated = false
 
 const hydrateStores = async () => {
   if (hydrationPromise) return hydrationPromise
+  if (isHydrated) return Promise.resolve()
 
-  hydrationPromise = Promise.all([
-    // Auth store now uses cookies, so we manually hydrate it
-    Promise.resolve(useAuthStore.getState().hydrate()),
-    usePreferencesStore.persist.rehydrate(),
-    useSearchStore.persist.rehydrate(),
-    useDataCacheStore.persist.rehydrate()
-  ]).then(() => {
+  hydrationPromise = (async () => {
+    await Promise.all([
+      Promise.resolve(useAuthStore.getState().hydrate()),
+      usePreferencesStore.persist.rehydrate(),
+      useSearchStore.persist.rehydrate(),
+      useDataCacheStore.persist.rehydrate()
+    ])
     isHydrated = true
-  })
+  })()
 
   return hydrationPromise
-}
+} 
 
 export const useStoreHydration = () => {
   const [hasHydrated, setHasHydrated] = useState(isHydrated)
@@ -63,25 +64,7 @@ const defaultPreferences = {
   notifyOnTrends: false
 }
 
-export const useAuth = () => {
-  const hasHydrated = useStoreHydration()
-  const store = useAuthStore()
 
-  if (!hasHydrated) {
-    return {
-      isConnected: false,
-      orgData: null,
-      tokenExpiry: null,
-      setOrgData: () => { },
-      setConnected: () => { },
-      setTokenExpiry: () => { },
-      logout: () => { },
-      isTokenValid: () => false
-    }
-  }
-
-  return store
-}
 
 export const usePreferences = () => {
   const hasHydrated = useStoreHydration()
@@ -163,10 +146,12 @@ export const useApp = () => {
   return store
 }
 
-// Specific selectors
 export const useIsAuthenticated = () => {
-  const { isConnected, orgData, isTokenValid } = useAuth()
-  return isConnected && orgData?.token && isTokenValid?.()
+  const hasHydrated = useStoreHydration()
+  const { isConnected, orgData, isTokenValid } = useAuthStore()
+  
+  if (!hasHydrated) return false
+  return isConnected && orgData?.token && isTokenValid()
 }
 
 export const useTheme = () => {

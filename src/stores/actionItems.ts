@@ -214,13 +214,22 @@ export const useActionItemsStore = create<ActionItemsState>()(
         // Get user token from auth store
         const authState = useAuthStore.getState();
         const userToken = authState.orgData?.token;
-        const username = authState.orgData?.orgName;
+        const username = authState.orgData?.username; // GitHub username kullan
 
         if (!userToken) {
           console.warn('No GitHub token available for action items');
           const types = type ? [type] : ['assigned', 'mentions', 'stale', 'goodFirstIssues', 'easyFixes'] as const;
           for (const t of types) {
             set((state) => ({ errors: { ...state.errors, [t]: 'GitHub token required' } }))
+          }
+          return
+        }
+
+        if (!username) {
+          console.warn('No GitHub username available for action items');
+          const types = type ? [type] : ['assigned', 'mentions', 'stale', 'goodFirstIssues', 'easyFixes'] as const;
+          for (const t of types) {
+            set((state) => ({ errors: { ...state.errors, [t]: 'GitHub username required' } }))
           }
           return
         }

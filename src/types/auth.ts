@@ -1,4 +1,5 @@
 export interface OrgData {
-  orgName: string
+  orgName: string // Display name (can be full name)
+  username: string // GitHub username (login)
   token: string
 }
