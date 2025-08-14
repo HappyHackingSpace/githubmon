@@ -1,21 +1,8 @@
-import { githubAPIClient } from '@/lib/api/github-api-client'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { useSettingsStore } from './settings'
-import { useAuthStore } from './auth'
-
-interface GitHubItem {
-  id: string
-  title: string
-  url: string
-  repo: string
-  type: string
-  pull_request?: boolean
-  priority?: 'low' | 'medium' | 'high' | 'urgent'
-  labels?: string[]
-  createdAt: string
-  updatedAt: string
-}
+import { useActionItemsStore } from './actionItems'
+import type { ActionItem, AssignedItem, MentionItem, StalePR } from './actionItems'
 
 export interface KanbanTask {
   id: string
@@ -25,6 +12,7 @@ export interface KanbanTask {
   priority: 'low' | 'medium' | 'high' | 'urgent'
   githubUrl?: string
   labels: string[]
+  notes?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -41,11 +29,12 @@ interface KanbanState {
   columns: Record<string, KanbanColumn>
   columnOrder: string[]
   
-  syncFromGitHub: () => Promise<void>
+  syncFromGitHub: () => Promise<number>
   addTask: (task: Omit<KanbanTask, 'id' | 'createdAt' | 'updatedAt'>) => void
   updateTask: (id: string, updates: Partial<KanbanTask>) => void
   moveTask: (taskId: string, fromColumnId: string, toColumnId: string, newIndex: number) => void
   deleteTask: (taskId: string) => void
+  clearGitHubTasks: () => void
   addColumn: (title: string, color: string) => void
   updateColumn: (id: string, updates: Partial<KanbanColumn>) => void
   deleteColumn: (id: string) => void
@@ -86,74 +75,146 @@ export const useKanbanStore = create<KanbanState>()(
       columns: defaultColumns,
       columnOrder: ['todo', 'in-progress', 'review', 'done'],
 
-syncFromGitHub: async () => {
-  const { githubSettings } = useSettingsStore.getState()
-  const { orgData } = useAuthStore.getState()
-  
-  if (!orgData?.token) return
-  
-  try {
-    githubAPIClient.setUserToken(orgData.token)
-    
-    const promises = []
-    
-    if (githubSettings.assignedToMe) {
-      promises.push(githubAPIClient.getAssignedItems(orgData.orgName))
-    }
-    
-    if (githubSettings.mentionsMe) {
-      promises.push(githubAPIClient.getMentionItems(orgData.orgName))
-    }
-    
-    const results = await Promise.all(promises)
-    
-    const newTasks = (results.flat() as GitHubItem[]).map((item: GitHubItem) => ({
-      id: `github-${item.id}`,
-      title: item.title,
-      type: item.pull_request ? 'github-pr' as const : 'github-issue' as const,
-      priority: item.priority || 'medium' as const,
-      githubUrl: item.url,
-      labels: item.labels || [],
-      description: `${item.repo} - ${item.type || 'issue'}`,
-      createdAt: new Date(item.createdAt),
-      updatedAt: new Date(item.updatedAt)
-    }))
-    
-    set(state => {
-      const personalTasks = Object.values(state.tasks)
-        .filter(t => t.type === 'personal')
-        .reduce((acc, task) => {
-          acc[task.id] = task
-          return acc
-        }, {} as Record<string, KanbanTask>)
-      
-      const allTasks = { ...personalTasks }
-      newTasks.forEach(task => {
-        allTasks[task.id] = task
-      })
-      
-      const todoColumn = state.columns.todo
-      const githubTaskIds = newTasks.map(t => t.id)
-      const personalTaskIds = todoColumn.taskIds.filter(id => 
-        state.tasks[id]?.type === 'personal'
-      )
-      
-      return {
-        tasks: allTasks,
-        columns: {
-          ...state.columns,
-          todo: {
-            ...todoColumn,
-            taskIds: [...personalTaskIds, ...githubTaskIds] 
-          }
+      syncFromGitHub: async () => {
+        const { githubSettings } = useSettingsStore.getState()
+        const { assignedItems, mentionItems, staleItems } = useActionItemsStore.getState()
+        
+        console.log('🔄 Syncing Action Required data to kanban...')
+        console.log('⚙️ GitHub Settings:', githubSettings)
+        
+        const selectedItems: ActionItem[] = []
+        
+        // Determine which action items to include based on settings
+        if (githubSettings.assignedToMe) {
+          console.log(`📌 Adding assigned items: ${assignedItems.length} items`)
+          selectedItems.push(...assignedItems)
         }
-      }
-    })
-    
-  } catch (error) {
-    console.error('GitHub sync failed:', error)
-  }
-},
+        
+        if (githubSettings.mentionsMe) {
+          console.log(`💬 Adding mention items: ${mentionItems.length} items`)
+          selectedItems.push(...mentionItems)
+        }
+        
+        if (githubSettings.reviewRequestedFromMe) {
+          const reviewRequests = mentionItems.filter(item => 
+            'mentionType' in item && item.mentionType === 'review_request'
+          )
+          console.log(`👀 Adding review request items: ${reviewRequests.length} items`)
+          // Review requests are already in mentionItems, don't add them again
+        }
+        
+        console.log(`📋 Total ${selectedItems.length} action items found`)
+        
+        if (selectedItems.length === 0) {
+          console.log('⚠️ No action items found!')
+          return 0
+        }
+        
+        // Apply repository filter
+        let filteredItems = selectedItems
+        if (githubSettings.repositories.length > 0) {
+          filteredItems = selectedItems.filter(item => 
+            githubSettings.repositories.some(repo => {
+              const itemRepo = item.repo || ''
+              const match = itemRepo.toLowerCase().includes(repo.toLowerCase()) ||
+                           itemRepo.includes(repo)
+              if (match) {
+                console.log(`✅ Repo match: ${itemRepo} contains ${repo}`)
+              }
+              return match
+            })
+          )
+          console.log(`🔍 After repo filter: ${filteredItems.length} items`)
+        } else {
+          console.log('📦 No repository filter, accepting all items')
+        }
+        
+        // Label filter (optional - action items may not have label info)
+        if (githubSettings.labels.length > 0) {
+          // Action items may not have labels field, so skip for now
+          console.log('🏷️ Label filter not applied for Action Required items')
+        }
+        
+        const newTasks: KanbanTask[] = filteredItems.map((item: ActionItem) => ({
+          id: `action-${item.id}`,
+          title: item.title,
+          type: item.type === 'pullRequest' ? 'github-pr' as const : 'github-issue' as const,
+          priority: item.priority || 'medium' as const,
+          githubUrl: item.url,
+          labels: [],
+          description: `${item.repo} - ${item.type}`,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.updatedAt)
+        }))
+        
+        console.log(`✅ ${newTasks.length} tasks to process:`)
+        newTasks.forEach(task => {
+          console.log(`  - ${task.title} (${task.type})`)
+        })
+        
+        set(state => {
+          const personalTasks = Object.values(state.tasks)
+            .filter(t => t.type === 'personal')
+            .reduce((acc, task) => {
+              acc[task.id] = task
+              return acc
+            }, {} as Record<string, KanbanTask>)
+          
+          // GitHub task'larını ID'ye göre güncelle, yeni olanları ekle
+          const existingTasks = { ...state.tasks }
+          const updatedGitHubTasks: Record<string, KanbanTask> = {}
+          
+          newTasks.forEach(task => {
+            updatedGitHubTasks[task.id] = task
+            if (existingTasks[task.id]) {
+              // Mevcut task'ı güncelle ama pozisyonunu koru
+              existingTasks[task.id] = { ...existingTasks[task.id], ...task }
+            } else {
+              // Yeni task ekle
+              existingTasks[task.id] = task
+            }
+          })
+          
+          // Remove deleted GitHub tasks (those starting with action-)
+          const newGitHubTaskIds = new Set(newTasks.map(t => t.id))
+          Object.keys(existingTasks).forEach(taskId => {
+            const task = existingTasks[taskId]
+            if (task.type !== 'personal' && taskId.startsWith('action-') && !newGitHubTaskIds.has(taskId)) {
+              delete existingTasks[taskId]
+            }
+          })
+          
+          // Update task IDs in columns
+          const updatedColumns = { ...state.columns }
+          Object.keys(updatedColumns).forEach(columnId => {
+            updatedColumns[columnId] = {
+              ...updatedColumns[columnId],
+              taskIds: updatedColumns[columnId].taskIds.filter(taskId => existingTasks[taskId])
+            }
+          })
+          
+          // Add new GitHub tasks only to todo column (if they're not elsewhere)
+          const allColumnTaskIds = new Set(
+            Object.values(updatedColumns).flatMap(col => col.taskIds)
+          )
+          
+          const newTasksToAdd = newTasks.filter(task => !allColumnTaskIds.has(task.id))
+          
+          if (newTasksToAdd.length > 0) {
+            updatedColumns.todo = {
+              ...updatedColumns.todo,
+              taskIds: [...updatedColumns.todo.taskIds, ...newTasksToAdd.map(t => t.id)]
+            }
+          }
+          
+          return {
+            tasks: existingTasks,
+            columns: updatedColumns
+          }
+        })
+        
+        return newTasks.length // Return how many tasks were added
+      },
 
       addTask: (taskData) => {
         const id = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
@@ -192,83 +253,120 @@ syncFromGitHub: async () => {
           return {
             columns: {
               ...state.columns,
-              [fromColumnId]: { ...fromColumn, taskIds: fromTaskIds },
-              [toColumnId]: { ...toColumn, taskIds: toTaskIds }
+              [fromColumnId]: {
+                ...fromColumn,
+                taskIds: fromTaskIds
+              },
+              [toColumnId]: {
+                ...toColumn,
+                taskIds: toTaskIds
+              }
             }
           }
         })
       },
 
-        updateTask: (id, updates) => {
-            set((state) => {
-            const task = state.tasks[id]
-            if (!task) return state
-    
-            return {
-                tasks: {
-                ...state.tasks,
-                [id]: { ...task, ...updates, updatedAt: new Date() }
-                }
+      updateTask: (id, updates) => {
+        set((state) => ({
+          tasks: {
+            ...state.tasks,
+            [id]: {
+              ...state.tasks[id],
+              ...updates,
+              updatedAt: new Date()
             }
-            })
-        },
-    
-        deleteTask: (taskId) => {
-            set((state) => {
-            const { [taskId]: _, ...remainingTasks } = state.tasks
-            
-            const updatedColumns = Object.fromEntries(
-                Object.entries(state.columns).map(([colId, column]) => [
-                colId,
-                { ...column, taskIds: column.taskIds.filter(id => id !== taskId) }
-                ])
-            )
-    
-            return {
-                tasks: remainingTasks,
-                columns: updatedColumns
-            }
-            })
-        },
-    
-        addColumn: (title, color) => {
-            const id = `column-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-            set((state) => ({
-            columns: {
-                ...state.columns,
-                [id]: { id, title, color, taskIds: [] }
-            },
-            columnOrder: [...state.columnOrder, id]
-            }))
-        },
-    
-        updateColumn: (id, updates) => {
-            set((state) => ({
-            columns: {
-                ...state.columns,
-                [id]: { ...state.columns[id], ...updates }
-            }
-            }))
-        },
-    
-        deleteColumn: (id) => {
-            set((state) => {
-            const { [id]: _, ...remainingColumns } = state.columns
-            
-            return {
-                columns: remainingColumns,
-                columnOrder: state.columnOrder.filter(colId => colId !== id)
-            }
-            })
-        },
-    
-        reorderColumns: (newOrder) => {
-            set({ columnOrder: newOrder })
-        }
-    }
+          }
+        }))
+      },
 
-),
+      deleteTask: (taskId) => {
+        set((state) => {
+          const newTasks = { ...state.tasks }
+          delete newTasks[taskId]
+          
+          const newColumns = { ...state.columns }
+          Object.keys(newColumns).forEach(columnId => {
+            newColumns[columnId] = {
+              ...newColumns[columnId],
+              taskIds: newColumns[columnId].taskIds.filter(id => id !== taskId)
+            }
+          })
+          
+          return {
+            tasks: newTasks,
+            columns: newColumns
+          }
+        })
+      },
 
+      clearGitHubTasks: () => {
+        set((state) => {
+          const personalTasks = Object.values(state.tasks)
+            .filter(t => t.type === 'personal')
+            .reduce((acc, task) => {
+              acc[task.id] = task
+              return acc
+            }, {} as Record<string, KanbanTask>)
+          
+          const personalTaskIds = Object.keys(personalTasks)
+          const newColumns = { ...state.columns }
+          
+          Object.keys(newColumns).forEach(columnId => {
+            newColumns[columnId] = {
+              ...newColumns[columnId],
+              taskIds: newColumns[columnId].taskIds.filter(taskId => personalTaskIds.includes(taskId))
+            }
+          })
+          
+          return {
+            tasks: personalTasks,
+            columns: newColumns
+          }
+        })
+      },
+
+      addColumn: (title, color) => {
+        const id = `column-${Date.now()}`
+        set((state) => ({
+          columns: {
+            ...state.columns,
+            [id]: {
+              id,
+              title,
+              color,
+              taskIds: []
+            }
+          }
+        }))
+      },
+
+      updateColumn: (id, updates) => {
+        set((state) => ({
+          columns: {
+            ...state.columns,
+            [id]: {
+              ...state.columns[id],
+              ...updates
+            }
+          }
+        }))
+      },
+
+      deleteColumn: (id) => {
+        set((state) => {
+          const newColumns = { ...state.columns }
+          delete newColumns[id]
+          return {
+            columns: newColumns,
+            columnOrder: state.columnOrder.filter(colId => colId !== id)
+          }
+        })
+      },
+
+      reorderColumns: (newOrder) => {
+        set({ columnOrder: newOrder })
+      }
+    }),
     {
       name: 'githubmon-kanban',
       storage: createJSONStorage(() => localStorage)

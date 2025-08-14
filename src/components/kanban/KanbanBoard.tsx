@@ -21,16 +21,21 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Plus, ExternalLink, GripVertical, RefreshCw } from 'lucide-react'
+import { Plus, ExternalLink, GripVertical, RefreshCw, Trash2, Eye, X } from 'lucide-react'
 import { useKanbanStore, KanbanTask } from '@/stores/kanban'
-import { useState } from 'react'
+import { useSettingsStore } from '@/stores/settings'
+import { useState, useEffect } from 'react'
+import { TaskDetailModal } from './TaskDetailModal'
+import { AddTaskModal } from './AddTaskModal'
 
 interface SortableTaskItemProps {
  task: KanbanTask
  isDragging?: boolean
+ onDelete?: (taskId: string) => void
+ onView?: (task: KanbanTask) => void
 }
 
-function SortableTaskItem({ task, isDragging = false }: SortableTaskItemProps) {
+function SortableTaskItem({ task, isDragging = false, onDelete, onView }: SortableTaskItemProps) {
  const {
    attributes,
    listeners,
@@ -64,17 +69,43 @@ function SortableTaskItem({ task, isDragging = false }: SortableTaskItemProps) {
            {task.title}
          </h4>
        </div>
-       {task.githubUrl && (
-         <a 
-           href={task.githubUrl} 
-           target="_blank" 
-           rel="noopener noreferrer"
-           className="text-muted-foreground hover:text-blue-600 flex-shrink-0"
-           onClick={(e) => e.stopPropagation()}
-         >
-           <ExternalLink className="w-3 h-3" />
-         </a>
-       )}
+       <div className="flex items-center gap-1 flex-shrink-0">
+         {onView && (
+           <button
+             onClick={(e) => {
+               e.stopPropagation()
+               onView(task)
+             }}
+             className="text-muted-foreground hover:text-blue-600 p-0.5"
+           >
+             <Eye className="w-3 h-3" />
+           </button>
+         )}
+         {task.githubUrl && (
+           <a 
+             href={task.githubUrl} 
+             target="_blank" 
+             rel="noopener noreferrer"
+             className="text-muted-foreground hover:text-blue-600 p-0.5"
+             onClick={(e) => e.stopPropagation()}
+           >
+             <ExternalLink className="w-3 h-3" />
+           </a>
+         )}
+         {onDelete && (
+           <button
+             onClick={(e) => {
+               e.stopPropagation()
+               if (confirm('Bu task\'ı silmek istediğinizden emin misiniz?')) {
+                 onDelete(task.id)
+               }
+             }}
+             className="text-muted-foreground hover:text-red-600 p-0.5"
+           >
+             <Trash2 className="w-3 h-3" />
+           </button>
+         )}
+       </div>
      </div>
      
      {task.description && (
@@ -119,8 +150,12 @@ function DroppableColumn({ columnId, children }: DroppableColumnProps) {
 }
 
 export function KanbanBoard() {
- const { tasks, columns, columnOrder, moveTask, syncFromGitHub } = useKanbanStore()
+ const { tasks, columns, columnOrder, moveTask, syncFromGitHub, deleteTask, clearGitHubTasks } = useKanbanStore()
+ const { githubSettings } = useSettingsStore()
  const [activeTask, setActiveTask] = useState<KanbanTask | null>(null)
+ const [selectedTask, setSelectedTask] = useState<KanbanTask | null>(null)
+ const [isModalOpen, setIsModalOpen] = useState(false)
+ const [showAddTaskModal, setShowAddTaskModal] = useState(false)
 
  const sensors = useSensors(
    useSensor(PointerSensor, {
@@ -129,6 +164,21 @@ export function KanbanBoard() {
      },
    })
  )
+
+ const handleTaskView = (task: KanbanTask) => {
+   setSelectedTask(task)
+   setIsModalOpen(true)
+ }
+
+ const handleTaskDelete = (taskId: string) => {
+   deleteTask(taskId)
+ }
+
+ const handleClearGitHubTasks = () => {
+   if (confirm('GitHub task\'larını temizlemek istediğinizden emin misiniz? Sadece kişisel task\'lar kalacak.')) {
+     clearGitHubTasks()
+   }
+ }
 
  const handleDragStart = (event: DragStartEvent) => {
    const { active } = event
@@ -188,10 +238,16 @@ export function KanbanBoard() {
    <div className="space-y-4">
      <div className="flex items-center justify-between">
        <h2 className="text-xl font-bold">Development Tasks</h2>
-       <Button onClick={syncFromGitHub} variant="outline" size="sm">
-         <RefreshCw className="w-4 h-4 mr-2" />
-         Sync
-       </Button>
+       <div className="flex items-center gap-2">
+         <Button onClick={handleClearGitHubTasks} variant="outline" size="sm">
+           <X className="w-4 h-4 mr-2" />
+           Temizle
+         </Button>
+         <Button onClick={syncFromGitHub} variant="outline" size="sm">
+           <RefreshCw className="w-4 h-4 mr-2" />
+           Sync
+         </Button>
+       </div>
      </div>
 
      <DndContext
@@ -231,10 +287,15 @@ export function KanbanBoard() {
                          key={task.id} 
                          task={task}
                          isDragging={activeTask?.id === task.id}
+                         onView={handleTaskView}
+                         onDelete={handleTaskDelete}
                        />
                      ))}
                      
-                     <button className="w-full p-2 border-2 border-dashed border-muted rounded hover:border-primary hover:bg-primary/5 transition-colors text-muted-foreground hover:text-primary text-xs">
+                     <button 
+                       className="w-full p-2 border-2 border-dashed border-muted rounded hover:border-primary hover:bg-primary/5 transition-colors text-muted-foreground hover:text-primary text-xs"
+                       onClick={() => setShowAddTaskModal(true)}
+                     >
                        <Plus className="w-3 h-3 mx-auto" />
                      </button>
                    </CardContent>
@@ -276,6 +337,20 @@ export function KanbanBoard() {
          ) : null}
        </DragOverlay>
      </DndContext>
+     
+     <TaskDetailModal
+       task={selectedTask}
+       isOpen={isModalOpen}
+       onClose={() => {
+         setIsModalOpen(false)
+         setSelectedTask(null)
+       }}
+     />
+     
+     <AddTaskModal
+       isOpen={showAddTaskModal}
+       onClose={() => setShowAddTaskModal(false)}
+     />
    </div>
  )
 }
