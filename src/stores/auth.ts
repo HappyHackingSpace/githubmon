@@ -1,4 +1,3 @@
-// stores/auth.ts
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import type { OrgData } from '@/types/auth'
@@ -41,26 +40,29 @@ export const useAuthStore = create<AuthState>()(
     },
 
 logout: async () => {
-  // Clear state first
-  set({
-    isConnected: false,
-    orgData: null,
-    tokenExpiry: null
-  })
-  
-  // Clear cookie
-  cookieUtils.removeAuth()
-  
   try {
-    // Call logout endpoint
-    await fetch('/api/auth/logout', { method: 'POST' })
+    set({
+      isConnected: false,
+      orgData: null,
+      tokenExpiry: null
+    })
+    
+    cookieUtils.removeAuth()
+    
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch (error) {
+      console.warn('Logout endpoint failed:', error)
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.location.replace('/')
+    }
   } catch (error) {
-    console.warn('Logout endpoint failed:', error)
-  }
-  
-  // Redirect to home page
-  if (typeof window !== 'undefined') {
-    window.location.href = '/'
+    console.error('Logout failed:', error)
+    if (typeof window !== 'undefined') {
+      window.location.replace('/')
+    }
   }
 },
 
@@ -106,15 +108,12 @@ checkCookieSync: () => {
     const isExpired = new Date() >= new Date(authData.tokenExpiry)
     
     if (!isExpired) {
-      // Migration: eski orgData yapısı varsa username ekle
       let migratedOrgData = authData.orgData
       if (migratedOrgData && !migratedOrgData.username) {
-        // Eski format: sadece orgName ve token var
         migratedOrgData = {
           ...migratedOrgData,
-          username: migratedOrgData.orgName // fallback olarak orgName kullan
+          username: migratedOrgData.orgName
         }
-        // Güncellenmiş veriyi cookie'ye kaydet
         const updatedAuthData = { ...authData, orgData: migratedOrgData }
         cookieUtils.setAuth(updatedAuthData)
       }
@@ -152,11 +151,12 @@ initCookieSync: () => {
     const { isConnected } = get()
     
     if (!cookieData && isConnected) {
+      console.log('Cookie cleared externally, logging out...')
       get().logout()
     }
   }
   
-  const interval = setInterval(checkCookie, 1000)
+  const interval = setInterval(checkCookie, 500)
   
   return () => clearInterval(interval)
 },

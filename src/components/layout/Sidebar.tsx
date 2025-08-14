@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useSidebarState, useAuthStore, useStoreHydration, useActionItemsStore } from '@/stores'
 import { useQuickWinsStore } from '@/stores/quickWins'
-import { ChevronRight, Clock, LogOut, MessageSquare, Sparkles, Star, Target, Zap, Home, UserCheck, Lightbulb, Wrench } from 'lucide-react'
+import { ChevronRight, Clock, LogOut, MessageSquare, Sparkles, Star, Target, Zap, Home, UserCheck, Lightbulb, Wrench, Loader2 } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
 
@@ -24,6 +24,7 @@ export function Sidebar() {
 
   const [actionRequiredOpen, setActionRequiredOpen] = useState(false)
   const [quickWinsOpen, setQuickWinsOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   useEffect(() => {
     if (pathname === '/dashboard') {
@@ -66,8 +67,16 @@ export function Sidebar() {
   const isQuickWinsTab = pathname === '/quick-wins'
   const isActionRequiredTab = pathname === '/action-required'
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+    
+    setIsLoggingOut(true)
+    try {
+      await logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+      window.location.replace('/')
+    }
   }
 
   return (
@@ -315,10 +324,15 @@ export function Sidebar() {
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="w-full justify-start text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+              disabled={isLoggingOut}
+              className="w-full justify-start text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50 disabled:opacity-50"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
+              {isLoggingOut ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <LogOut className="w-4 h-4 mr-2" />
+              )}
+              {isLoggingOut ? 'Logging out...' : 'Logout'}
             </Button>
           </div>
         )}
