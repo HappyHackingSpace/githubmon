@@ -105,20 +105,13 @@ export default function SettingsPage() {
              GitHub
            </TabsTrigger>
            
-           <TabsTrigger value="kanban" className="flex items-center gap-2">
-             <Columns className="w-4 h-4" />
-             Kanban
-           </TabsTrigger>
            
            <TabsTrigger value="appearance" className="flex items-center gap-2">
              <Palette className="w-4 h-4" />
              Appearance
            </TabsTrigger>
            
-           <TabsTrigger value="data" className="flex items-center gap-2">
-             <Database className="w-4 h-4" />
-             Data
-           </TabsTrigger>
+          
          </TabsList>
 
          <TabsContent value="github" className="space-y-6">
@@ -129,70 +122,7 @@ export default function SettingsPage() {
          
          </TabsContent>
 
-         <TabsContent value="kanban" className="space-y-6">
-           <Card>
-             <CardHeader>
-               <CardTitle className="flex items-center gap-2">
-                 <Columns className="w-5 h-5" />
-                 Kanban Columns
-               </CardTitle>
-             </CardHeader>
-             <CardContent className="space-y-6">
-               <div>
-                 <Label className="text-sm font-medium">Current Columns</Label>
-                 <div className="mt-3 space-y-2">
-                   {columnOrder.map((columnId) => {
-                     const column = columns[columnId]
-                     return (
-                       <div key={columnId} className="flex items-center justify-between p-3 border rounded">
-                         <div className="flex items-center gap-3">
-                           <div 
-                             className="w-4 h-4 rounded"
-                             style={{ backgroundColor: column.color }}
-                           />
-                           <span className="font-medium">{column.title}</span>
-                           <Badge variant="outline">{column.taskIds.length} tasks</Badge>
-                         </div>
-                         <Button 
-                           variant="outline" 
-                           size="sm"
-                           onClick={() => deleteColumn(columnId)}
-                           disabled={['todo', 'in-progress', 'review', 'done'].includes(columnId)}
-                         >
-                           <Trash2 className="w-4 h-4" />
-                         </Button>
-                       </div>
-                     )
-                   })}
-                 </div>
-               </div>
-
-               <Separator />
-
-               <div>
-                 <Label className="text-sm font-medium">Add New Column</Label>
-                 <div className="mt-3 space-y-3">
-                   <Input
-                     placeholder="Column name"
-                     value={newColumnName}
-                     onChange={(e) => setNewColumnName(e.target.value)}
-                   />
-                   <div className="flex items-center gap-3">
-                     <Input
-                       type="color"
-                       value={newColumnColor}
-                       onChange={(e) => setNewColumnColor(e.target.value)}
-                       className="w-16 h-9"
-                     />
-                     <Button onClick={handleAddColumn} disabled={!newColumnName.trim()}>
-                       Add Column
-                     </Button>
-                   </div>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
-         </TabsContent>
+        
 
          <TabsContent value="appearance" className="space-y-6">
            <Card>
@@ -222,52 +152,7 @@ export default function SettingsPage() {
 
         
 
-         <TabsContent value="data" className="space-y-6">
-           <Card>
-             <CardHeader>
-               <CardTitle className="flex items-center gap-2">
-                 <Database className="w-5 h-5" />
-                 Data Management
-               </CardTitle>
-             </CardHeader>
-             <CardContent className="space-y-6">
-               <div>
-                 <Label className="text-sm font-medium">Backup & Restore</Label>
-                 <div className="flex gap-3 mt-3">
-                   <Button onClick={handleExportData} variant="outline">
-                     <Download className="w-4 h-4 mr-2" />
-                     Export Data
-                   </Button>
-                  
-                 </div>
-                 <p className="text-xs text-muted-foreground mt-2">
-                   Export your settings and data for backup or transfer to another device
-                 </p>
-               </div>
-
-               <Separator />
-
-               <div>
-                 <Label className="text-sm font-medium">Clear All Data</Label>
-                 <div className="mt-3 p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-950/20 dark:border-red-900">
-                   <div className="flex items-start gap-3">
-                     <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                     <div className="flex-1">
-                       <p className="text-sm text-red-800 dark:text-red-200 mb-3">
-                         This will permanently delete all your settings, kanban data, 
-                         cached GitHub data, and preferences. This action cannot be undone.
-                       </p>
-                       <Button variant="destructive" onClick={handleClearData}>
-                         <Trash2 className="w-4 h-4 mr-2" />
-                         Clear All Data
-                       </Button>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
-         </TabsContent>
+        
        </Tabs>
      </div>
    </Layout>
