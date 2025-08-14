@@ -51,7 +51,25 @@ interface Issue {
   }
 }
 
+interface ActionRequiredResult {
+  assigned: GitHubActionItem[]
+  mentions: GitHubActionItem[]
+  stale: GitHubActionItem[]
+  rateLimit: RateLimit
+}
 
+interface GitHubActionItem {
+  id: string
+  title: string
+  url: string
+  repo: string
+  type: 'issue' | 'pullRequest'
+  author: string
+  priority: 'urgent' | 'high' | 'medium' | 'low'
+  daysOld: number
+  createdAt: string
+  updatedAt: string
+}
 
 class GitHubGraphQLClient {
   private endpoint = 'https://api.github.com/graphql'
@@ -325,6 +343,220 @@ class GitHubGraphQLClient {
     const result = await this.query<{ rateLimit: RateLimit }>(query)
     return result.data.rateLimit
   }
+
+async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
+  const oneWeekAgo = new Date()
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+  const staleDate = oneWeekAgo.toISOString()
+
+  const query = `
+    query GetActionRequiredItems($username: String!) {
+      user(login: $username) {
+        # Assigned Issues & PRs
+        assignedIssues: issues(states: OPEN, first: 50, filterBy: { assignee: $username }) {
+          nodes {
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+          }
+        }
+        
+        # Assigned Pull Requests 
+        pullRequests(states: OPEN, first: 50) {
+          nodes {
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            assignees(first: 10) {
+              nodes {
+                login
+              }
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+          }
+        }
+      }
+      
+      # Stale PRs
+      stalePRs: search(
+        query: "is:pr is:open author:${username} updated:<${staleDate}"
+        type: ISSUE
+        first: 50
+      ) {
+        nodes {
+          ... on PullRequest {
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+            reviewDecision
+          }
+        }
+      }
+      
+      # Mentions
+      mentions: search(
+        query: "mentions:${username} is:open"
+        type: ISSUE  
+        first: 50
+      ) {
+        nodes {
+          ... on Issue {
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+          }
+          ... on PullRequest {
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+          }
+        }
+      }
+      
+      rateLimit {
+        limit
+        remaining
+        resetAt
+      }
+    }
+  `
+  
+  try {
+    const result = await this.query<any>(query, { 
+      username
+    })
+
+    const data = result.data
+    
+    const assignedIssues = data.user.assignedIssues.nodes.map((item: any) => this.mapToActionItem(item))
+    const assignedPRs = data.user.pullRequests.nodes
+      .filter((pr: any) => pr.assignees.nodes.some((assignee: any) => assignee.login === username))
+      .map((item: any) => this.mapToActionItem(item))
+    const assigned = [...assignedIssues, ...assignedPRs]
+
+    const mentions = data.mentions.nodes.map((item: any) => this.mapToActionItem(item))
+
+    const stale = data.stalePRs.nodes.map((pr: any) => ({
+      ...this.mapToActionItem(pr),
+      reviewStatus: pr.reviewDecision || 'PENDING'
+    }))
+
+    return {
+      assigned,
+      mentions, 
+      stale,
+      rateLimit: data.rateLimit
+    }
+
+  } catch (error) {
+    console.error('Failed to fetch action required items:', error)
+    throw error
+  }
+}
+
+private mapToActionItem(item: any): GitHubActionItem {
+  const daysOld = Math.floor((Date.now() - new Date(item.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+  const labels = item.labels?.nodes?.map((l: any) => l.name) || []
+  
+  return {
+    id: item.id,
+    title: item.title,
+    url: item.url,
+    repo: item.repository.nameWithOwner,
+    type: item.__typename === 'PullRequest' ? 'pullRequest' : 'issue',
+    author: item.author?.login || 'unknown',
+    priority: this.calculateActionPriority(labels, daysOld),
+    daysOld,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt
+  }
+}
+
+
+private calculateActionPriority(labels: string[], daysOld: number): 'urgent' | 'high' | 'medium' | 'low' {
+  const lowerLabels = labels.map(l => l.toLowerCase())
+  
+
+  if (lowerLabels.some(l => l.includes('critical') || l.includes('urgent') || l.includes('p0'))) {
+    return 'urgent'
+  }
+  if (lowerLabels.some(l => l.includes('high') || l.includes('p1') || l.includes('bug'))) {
+    return 'high'
+  }
+  
+
+  if (daysOld > 14) return 'urgent'  
+  if (daysOld > 7) return 'high'     
+  if (daysOld > 3) return 'medium'   
+  
+  return 'low'
+} 
+
+
 }
 
 export const githubGraphQLClient = new GitHubGraphQLClient()

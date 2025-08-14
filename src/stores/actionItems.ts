@@ -1,44 +1,20 @@
-// stores/actionItems.ts
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { githubAPIClient } from '@/lib/api/github-api-client'
+import { githubGraphQLClient } from '@/lib/api/github-graphql-client'
 import { useAuthStore } from './auth'
 
-// Raw item type from API
-interface RawAPIItem {
-  id: number
-  title: string
-  repo: string
-  type: 'issue' | 'pr'
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  url?: string
-  createdAt: string
-  updatedAt: string
-  assignee?: string
-  author?: string
-  labels?: string[]
-  daysOld?: number
-  assignedAt?: string
-  mentionType?: 'mention' | 'review_request' | 'comment'
-  mentionedAt?: string
-  lastActivity?: string
-  daysStale?: number
-  reviewStatus?: 'pending' | 'approved' | 'changes_requested'
-}
-
 export interface ActionItem {
-  id: number
+  id: string
   title: string
   repo: string
-  type: 'issue' | 'pr'
+  type: 'issue' | 'pullRequest'
   priority: 'low' | 'medium' | 'high' | 'urgent'
   url?: string
   createdAt: string
   updatedAt: string
   assignee?: string
-  author?: string
-  labels?: string[]
-  daysOld?: number
+  author: string
+  daysOld: number
 }
 
 export interface AssignedItem extends ActionItem {
@@ -57,7 +33,7 @@ export interface StalePR extends ActionItem {
 }
 
 interface ActionItemsState {
-  // Data
+  // Data - sadece Action Required items
   assignedItems: AssignedItem[]
   mentionItems: MentionItem[]
   staleItems: StalePR[]
@@ -107,7 +83,7 @@ interface ActionItemsState {
   getHighPriorityCount: () => number
 
   // Utility actions
-  markAsRead: (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes', id: number) => void
+  markAsRead: (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes', id: string) => void
   refreshData: (type?: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => Promise<void>
   clearAll: () => void
 }
@@ -115,7 +91,7 @@ interface ActionItemsState {
 export const useActionItemsStore = create<ActionItemsState>()(
   persist(
     (set, get) => ({
-      // Initial state
+      // Initial state - sadece Action Required
       assignedItems: [],
       mentionItems: [],
       staleItems: [],
@@ -147,15 +123,38 @@ export const useActionItemsStore = create<ActionItemsState>()(
       },
 
       // Actions
-      setAssignedItems: (items) => set({ assignedItems: items, lastRefresh: { ...get().lastRefresh, assigned: Date.now() } }),
-      setMentionItems: (items) => set({ mentionItems: items, lastRefresh: { ...get().lastRefresh, mentions: Date.now() } }),
-      setStaleItems: (items) => set({ staleItems: items, lastRefresh: { ...get().lastRefresh, stale: Date.now() } }),
+      setAssignedItems: (items) => set({ 
+        assignedItems: items, 
+        lastRefresh: { ...get().lastRefresh, assigned: Date.now() } 
+      }),
+      
+      setMentionItems: (items) => set({ 
+        mentionItems: items, 
+        lastRefresh: { ...get().lastRefresh, mentions: Date.now() } 
+      }),
+      
+      setStaleItems: (items) => set({ 
+        staleItems: items, 
+        lastRefresh: { ...get().lastRefresh, stale: Date.now() } 
+      }),
 
-      setGoodFirstIssues: (items) => set({ goodFirstIssues: items, lastRefresh: { ...get().lastRefresh, goodFirstIssues: Date.now() } }),
-      setEasyFixes: (items) => set({ easyFixes: items, lastRefresh: { ...get().lastRefresh, easyFixes: Date.now() } }),
+      setGoodFirstIssues: (items) => set({ 
+        goodFirstIssues: items, 
+        lastRefresh: { ...get().lastRefresh, goodFirstIssues: Date.now() } 
+      }),
+      
+      setEasyFixes: (items) => set({ 
+        easyFixes: items, 
+        lastRefresh: { ...get().lastRefresh, easyFixes: Date.now() } 
+      }),
 
-      setLoading: (type, loading) => set((state) => ({ loading: { ...state.loading, [type]: loading } })),
-      setError: (type, error) => set((state) => ({ errors: { ...state.errors, [type]: error } })),
+      setLoading: (type, loading) => set((state) => ({ 
+        loading: { ...state.loading, [type]: loading } 
+      })),
+      
+      setError: (type, error) => set((state) => ({ 
+        errors: { ...state.errors, [type]: error } 
+      })),
 
       // Computed getters
       getTotalCount: () => {
@@ -175,8 +174,8 @@ export const useActionItemsStore = create<ActionItemsState>()(
           case 'assigned': return state.assignedItems.length
           case 'mentions': return state.mentionItems.length
           case 'stale': return state.staleItems.length
-          case 'goodFirstIssues': return state.goodFirstIssues.length;
-          case 'easyFixes': return state.easyFixes.length;
+          case 'goodFirstIssues': return state.goodFirstIssues.length
+          case 'easyFixes': return state.easyFixes.length
           default: return 0
         }
       },
@@ -190,35 +189,30 @@ export const useActionItemsStore = create<ActionItemsState>()(
         ].filter(item => item.priority === 'high' || item.priority === 'urgent').length
       },
 
-      // Utility actions
       markAsRead: (type, id) => {
         set((state) => {
           switch (type) {
             case 'assigned':
-              return { assignedItems: state.assignedItems.filter(item => item.id !== id) };
+              return { assignedItems: state.assignedItems.filter(item => item.id !== id) }
             case 'mentions':
-              return { mentionItems: state.mentionItems.filter(item => item.id !== id) };
+              return { mentionItems: state.mentionItems.filter(item => item.id !== id) }
             case 'stale':
-              return { staleItems: state.staleItems.filter(item => item.id !== id) };
-            case 'goodFirstIssues':
-              return { goodFirstIssues: state.goodFirstIssues.filter(item => item.id !== id) };
-            case 'easyFixes':
-              return { easyFixes: state.easyFixes.filter(item => item.id !== id) };
+              return { staleItems: state.staleItems.filter(item => item.id !== id) }
             default:
-              return state;
+              return state
           }
-        });
+        })
       },
 
+      // ✅ GraphQL ile optimize edilmiş refreshData
       refreshData: async (type) => {
-        // Get user token from auth store
-        const authState = useAuthStore.getState();
-        const userToken = authState.orgData?.token;
-        const username = authState.orgData?.username; // GitHub username kullan
+        const authState = useAuthStore.getState()
+        const userToken = authState.orgData?.token
+        const username = authState.orgData?.username
 
         if (!userToken) {
-          console.warn('No GitHub token available for action items');
-          const types = type ? [type] : ['assigned', 'mentions', 'stale', 'goodFirstIssues', 'easyFixes'] as const;
+          console.warn('No GitHub token available for action items')
+          const types = type ? [type] : ['assigned', 'mentions', 'stale'] as const
           for (const t of types) {
             set((state) => ({ errors: { ...state.errors, [t]: 'GitHub token required' } }))
           }
@@ -226,67 +220,128 @@ export const useActionItemsStore = create<ActionItemsState>()(
         }
 
         if (!username) {
-          console.warn('No GitHub username available for action items');
-          const types = type ? [type] : ['assigned', 'mentions', 'stale', 'goodFirstIssues', 'easyFixes'] as const;
+          console.warn('No GitHub username available for action items')
+          const types = type ? [type] : ['assigned', 'mentions', 'stale'] as const
           for (const t of types) {
             set((state) => ({ errors: { ...state.errors, [t]: 'GitHub username required' } }))
           }
           return
         }
 
-        // Set the user token in the API client
-        githubAPIClient.setUserToken(userToken)
+        // Set GraphQL client token
+        githubGraphQLClient.setToken(userToken)
 
-        const types = type ? [type] : ['assigned', 'mentions', 'stale', 'goodFirstIssues', 'easyFixes'] as const
+        // ✅ Tek specific type istenirse sadece o loading'i set et
+        if (type) {
+          set((state) => ({ 
+            loading: { ...state.loading, [type]: true }, 
+            errors: { ...state.errors, [type]: null } 
+          }))
+        } else {
+          // ✅ Hepsi için loading set et
+          set((state) => ({ 
+            loading: { 
+              assigned: true, 
+              mentions: true, 
+              stale: true, 
+              goodFirstIssues: true, 
+              easyFixes: true 
+            },
+            errors: { 
+              assigned: null, 
+              mentions: null, 
+              stale: null, 
+              goodFirstIssues: null, 
+              easyFixes: null 
+            }
+          }))
+        }
 
-        for (const t of types) {
-          set((state) => ({ loading: { ...state.loading, [t]: true }, errors: { ...state.errors, [t]: null } }))
+        try {
+          // ✅ GraphQL ile tek çağrıda tüm action required items'ı al
+          const actionData = await githubGraphQLClient.getActionRequiredItems(username)
 
-          try {
-            let items: unknown[] = []
-
-            switch (t) {
+          // ✅ Specific type istenirse sadece o veriyi güncelle
+          if (type) {
+            switch (type) {
               case 'assigned':
-                items = await githubAPIClient.getAssignedItems(username)
-                get().setAssignedItems((items as RawAPIItem[]).map(item => ({ ...item, assignedAt: item.assignedAt || item.createdAt })))
+                get().setAssignedItems(actionData.assigned.map(item => ({ 
+                  ...item, 
+                  assignedAt: item.createdAt 
+                })))
                 break
               case 'mentions':
-                items = await githubAPIClient.getMentionItems(username)
-                get().setMentionItems((items as RawAPIItem[]).map(item => ({
-                  ...item,
-                  mentionType: item.mentionType || 'mention',
-                  mentionedAt: item.mentionedAt || item.updatedAt
+                get().setMentionItems(actionData.mentions.map(item => ({ 
+                  ...item, 
+                  mentionType: 'mention' as const, 
+                  mentionedAt: item.createdAt 
                 })))
                 break
               case 'stale':
-                items = await githubAPIClient.getStaleItems(username)
-                get().setStaleItems((items as RawAPIItem[]).map(item => ({
-                  ...item,
-                  lastActivity: item.lastActivity || item.updatedAt,
-                  daysStale: item.daysStale || item.daysOld || 0,
-                  reviewStatus: item.reviewStatus || 'pending'
+                get().setStaleItems(actionData.stale.map(item => ({ 
+                  ...item, 
+                  lastActivity: item.updatedAt, 
+                  daysStale: item.daysOld, 
+                  reviewStatus: 'pending' as const 
                 })))
                 break
-              case 'goodFirstIssues':
-                items = await githubAPIClient.getGoodFirstIssues()
-                get().setGoodFirstIssues(items as ActionItem[])
-                break
-              case 'easyFixes':
-                items = await githubAPIClient.getEasyFixes()
-                get().setEasyFixes(items as ActionItem[])
-                break
             }
+          } else {
+            // ✅ Hepsi için veriyi güncelle
+            get().setAssignedItems(actionData.assigned.map(item => ({ 
+              ...item, 
+              assignedAt: item.createdAt 
+            })))
+            
+            get().setMentionItems(actionData.mentions.map(item => ({ 
+              ...item, 
+              mentionType: 'mention' as const, 
+              mentionedAt: item.createdAt 
+            })))
+            
+            get().setStaleItems(actionData.stale.map(item => ({ 
+              ...item, 
+              lastActivity: item.updatedAt, 
+              daysStale: item.daysOld, 
+              reviewStatus: 'pending' as const 
+            })))
+          }
 
-          } catch (error) {
-            console.error(`Failed to fetch ${t} items:`, error)
+        } catch (error) {
+          console.error('Failed to fetch action items via GraphQL:', error)
+          
+          if (type) {
             set((state) => ({
               errors: {
                 ...state.errors,
-                [t]: error instanceof Error ? error.message : 'Failed to load data'
+                [type]: error instanceof Error ? error.message : 'Failed to load data'
               }
             }))
-          } finally {
-            set((state) => ({ loading: { ...state.loading, [t]: false } }))
+          } else {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to load data'
+            set((state) => ({
+              errors: {
+                assigned: errorMessage,
+                mentions: errorMessage,
+                stale: errorMessage,
+                goodFirstIssues: errorMessage,
+                easyFixes: errorMessage
+              }
+            }))
+          }
+        } finally {
+          if (type) {
+            set((state) => ({ loading: { ...state.loading, [type]: false } }))
+          } else {
+            set((state) => ({ 
+              loading: { 
+                assigned: false, 
+                mentions: false, 
+                stale: false, 
+                goodFirstIssues: false, 
+                easyFixes: false 
+              } 
+            }))
           }
         }
       },
@@ -302,14 +357,14 @@ export const useActionItemsStore = create<ActionItemsState>()(
           mentions: null,
           stale: null,
           goodFirstIssues: null,
-          easyFixes: null
+          easyFixes: null,
         },
         lastRefresh: {
           assigned: null,
           mentions: null,
           stale: null,
           goodFirstIssues: null,
-          easyFixes: null
+          easyFixes: null,
         }
       })
     }),
@@ -329,8 +384,6 @@ export const useActionItemsStore = create<ActionItemsState>()(
         assignedItems: state.assignedItems,
         mentionItems: state.mentionItems,
         staleItems: state.staleItems,
-        goodFirstIssues: state.goodFirstIssues,
-        easyFixes: state.easyFixes,
         lastRefresh: state.lastRefresh
       }),
     }

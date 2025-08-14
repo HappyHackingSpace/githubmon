@@ -173,6 +173,20 @@ class GitHubAPIClient {
     }
   }
 
+  // Test GitHub API connection
+  async testConnection(): Promise<{ success: boolean, user?: string, error?: string }> {
+    if (!this.githubToken) {
+      return { success: false, error: 'No token provided' }
+    }
+    
+    try {
+      const response = await this.fetchWithCache<{ login: string }>('/user', true)
+      return { success: true, user: response.login }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  }
+
   private async fetchWithCache<T>(endpoint: string, useGithub = false, isCommitData = false): Promise<T> {
     const cacheKey = endpoint
     const cached = this.cache.get(cacheKey)
@@ -196,9 +210,17 @@ class GitHubAPIClient {
       const response = await fetch(`${this.baseUrl}${endpoint}`, { headers })
 
       if (!response.ok) {
+        console.error(`❌ GitHub API Error: ${response.status} ${response.statusText}`)
+        console.error(`📍 Endpoint: ${endpoint}`)
+        console.error(`🔑 Token: ${this.githubToken ? 'Present' : 'Missing'}`)
+        
         if (response.status === 403) {
-          const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
-          const rateLimitReset = response.headers.get('X-RateLimit-Reset');
+          const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining')
+          const rateLimitReset = response.headers.get('X-RateLimit-Reset')
+          console.error(`⏰ Rate Limit - Remaining: ${rateLimitRemaining}, Reset: ${rateLimitReset}`)
+          
+          const errorText = await response.text()
+          console.error(`📄 Error Response:`, errorText)
 
           if (rateLimitRemaining === '0' && rateLimitReset) {
             // Rate limit exceeded - silent handling
@@ -382,6 +404,68 @@ class GitHubAPIClient {
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       )
     } catch (error) {
+      return []
+    }
+  }
+
+  async getAuthoredItems(username?: string): Promise<unknown[]> {
+    if (!this.githubToken) {
+      return []
+    }
+    try {
+      const user = username || '@me'
+      const endpoint = `/search/issues?q=author:${user}+state:open&sort=updated&order=desc&per_page=50`
+      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(endpoint, true)
+
+      return response.items?.map((item: GitHubIssueResponse) => ({
+        id: item.id,
+        title: item.title,
+        repo: item.repository_url
+          ? item.repository_url.split('/').slice(-2).join('/')
+          : 'unknown/unknown',
+        type: item.pull_request ? 'pr' : 'issue',
+        priority: this.calculatePriority(item),
+        url: item.html_url,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        assignee: item.assignee?.login,
+        author: item.user?.login,
+        labels: item.labels?.map((l: { name: string }) => l.name) || []
+      })) || []
+    } catch (error) {
+      console.error('Error fetching authored items:', error)
+      return []
+    }
+  }
+
+  async getReviewRequestItems(username?: string): Promise<unknown[]> {
+    if (!this.githubToken) {
+      console.log('❌ No GitHub token for review requests')
+      return []
+    }
+    try {
+      const user = username || '@me'
+      const endpoint = `/search/issues?q=review-requested:${user}+state:open&sort=updated&order=desc&per_page=50`
+      console.log(`🔍 Getting review requests for: ${user}`)
+      const response = await this.fetchWithCache<GitHubSearchResponse<GitHubIssueResponse>>(endpoint, true)
+
+      return response.items?.map((item: GitHubIssueResponse) => ({
+        id: item.id,
+        title: item.title,
+        repo: item.repository_url
+          ? item.repository_url.split('/').slice(-2).join('/')
+          : 'unknown/unknown',
+        type: 'pr',
+        priority: this.calculatePriority(item),
+        url: item.html_url,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        assignee: item.assignee?.login,
+        author: item.user?.login,
+        labels: item.labels?.map((l: { name: string }) => l.name) || []
+      })) || []
+    } catch (error) {
+      console.error('❌ Error fetching review request items:', error)
       return []
     }
   }
