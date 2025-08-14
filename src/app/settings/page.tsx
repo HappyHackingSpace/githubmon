@@ -104,18 +104,17 @@ export default function SettingsPage() {
              <Github className="w-4 h-4" />
              GitHub
            </TabsTrigger>
+           
            <TabsTrigger value="kanban" className="flex items-center gap-2">
              <Columns className="w-4 h-4" />
              Kanban
            </TabsTrigger>
+           
            <TabsTrigger value="appearance" className="flex items-center gap-2">
              <Palette className="w-4 h-4" />
              Appearance
            </TabsTrigger>
-           <TabsTrigger value="notifications" className="flex items-center gap-2">
-             <Bell className="w-4 h-4" />
-             Notifications
-           </TabsTrigger>
+           
            <TabsTrigger value="data" className="flex items-center gap-2">
              <Database className="w-4 h-4" />
              Data
@@ -123,17 +122,11 @@ export default function SettingsPage() {
          </TabsList>
 
          <TabsContent value="github" className="space-y-6">
-           <Card>
-             <CardHeader>
-               <CardTitle className="flex items-center gap-2">
-                 <Github className="w-5 h-5" />
-                 GitHub Integration
-               </CardTitle>
-             </CardHeader>
+           
              <CardContent>
                <GitHubSettingsForm />
              </CardContent>
-           </Card>
+         
          </TabsContent>
 
          <TabsContent value="kanban" className="space-y-6">
@@ -141,37 +134,33 @@ export default function SettingsPage() {
              <CardHeader>
                <CardTitle className="flex items-center gap-2">
                  <Columns className="w-5 h-5" />
-                 Kanban Board Settings
+                 Kanban Columns
                </CardTitle>
              </CardHeader>
              <CardContent className="space-y-6">
                <div>
                  <Label className="text-sm font-medium">Current Columns</Label>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                 <div className="mt-3 space-y-2">
                    {columnOrder.map((columnId) => {
                      const column = columns[columnId]
                      return (
-                       <div key={columnId} className="flex items-center justify-between p-3 border rounded-lg">
+                       <div key={columnId} className="flex items-center justify-between p-3 border rounded">
                          <div className="flex items-center gap-3">
                            <div 
-                             className="w-4 h-4 rounded-full"
+                             className="w-4 h-4 rounded"
                              style={{ backgroundColor: column.color }}
                            />
                            <span className="font-medium">{column.title}</span>
-                           <Badge variant="outline" className="text-xs">
-                             {column.taskIds.length} tasks
-                           </Badge>
+                           <Badge variant="outline">{column.taskIds.length} tasks</Badge>
                          </div>
-                         {!['todo', 'in-progress', 'review', 'done'].includes(columnId) && (
-                           <Button
-                             variant="ghost"
-                             size="sm"
-                             onClick={() => deleteColumn(columnId)}
-                             className="text-red-600 hover:text-red-700"
-                           >
-                             <Trash2 className="w-4 h-4" />
-                           </Button>
-                         )}
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => deleteColumn(columnId)}
+                           disabled={['todo', 'in-progress', 'review', 'done'].includes(columnId)}
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </Button>
                        </div>
                      )
                    })}
@@ -182,22 +171,23 @@ export default function SettingsPage() {
 
                <div>
                  <Label className="text-sm font-medium">Add New Column</Label>
-                 <div className="flex gap-3 mt-3">
+                 <div className="mt-3 space-y-3">
                    <Input
                      placeholder="Column name"
                      value={newColumnName}
                      onChange={(e) => setNewColumnName(e.target.value)}
-                     className="flex-1"
                    />
-                   <input
-                     type="color"
-                     value={newColumnColor}
-                     onChange={(e) => setNewColumnColor(e.target.value)}
-                     className="w-12 h-10 border rounded cursor-pointer"
-                   />
-                   <Button onClick={handleAddColumn} disabled={!newColumnName.trim()}>
-                     Add Column
-                   </Button>
+                   <div className="flex items-center gap-3">
+                     <Input
+                       type="color"
+                       value={newColumnColor}
+                       onChange={(e) => setNewColumnColor(e.target.value)}
+                       className="w-16 h-9"
+                     />
+                     <Button onClick={handleAddColumn} disabled={!newColumnName.trim()}>
+                       Add Column
+                     </Button>
+                   </div>
                  </div>
                </div>
              </CardContent>
@@ -225,73 +215,12 @@ export default function SettingsPage() {
 
                <Separator />
 
-               <div>
-                 <Label className="text-sm font-medium">Search Results Per Page</Label>
-                 <Select 
-                   value={searchResultsPerPage.toString()} 
-                   onValueChange={(value) => setSearchResultsPerPage(parseInt(value))}
-                 >
-                   <SelectTrigger className="w-32 mt-3">
-                     <SelectValue />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="10">10</SelectItem>
-                     <SelectItem value="20">20</SelectItem>
-                     <SelectItem value="50">50</SelectItem>
-                     <SelectItem value="100">100</SelectItem>
-                   </SelectContent>
-                 </Select>
-                 <p className="text-xs text-muted-foreground mt-2">
-                   Number of search results to display per page
-                 </p>
-               </div>
+              
              </CardContent>
            </Card>
          </TabsContent>
 
-         <TabsContent value="notifications" className="space-y-6">
-           <Card>
-             <CardHeader>
-               <CardTitle className="flex items-center gap-2">
-                 <Bell className="w-5 h-5" />
-                 Notification Preferences
-               </CardTitle>
-             </CardHeader>
-             <CardContent className="space-y-6">
-               <div className="space-y-4">
-                 <div className="flex items-center justify-between">
-                   <div>
-                     <Label className="text-sm font-medium">Browser Notifications</Label>
-                     <p className="text-xs text-muted-foreground">
-                       Show desktop notifications for important updates
-                     </p>
-                   </div>
-                   <Switch defaultChecked />
-                 </div>
-
-                 <div className="flex items-center justify-between">
-                   <div>
-                     <Label className="text-sm font-medium">GitHub Sync Notifications</Label>
-                     <p className="text-xs text-muted-foreground">
-                       Notify when new GitHub tasks are synced
-                     </p>
-                   </div>
-                   <Switch defaultChecked />
-                 </div>
-
-                 <div className="flex items-center justify-between">
-                   <div>
-                     <Label className="text-sm font-medium">Error Notifications</Label>
-                     <p className="text-xs text-muted-foreground">
-                       Show notifications for API errors and failures
-                     </p>
-                   </div>
-                   <Switch defaultChecked />
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
-         </TabsContent>
+        
 
          <TabsContent value="data" className="space-y-6">
            <Card>
