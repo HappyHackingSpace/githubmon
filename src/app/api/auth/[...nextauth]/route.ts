@@ -1,6 +1,29 @@
 import NextAuth from "next-auth/next"
 import GitHubProvider from "next-auth/providers/github"
 
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string
+    user: {
+      name?: string | null
+      email?: string | null
+      image?: string | null
+      login?: string
+    }
+  }
+  
+  interface User {
+    login?: string
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    accessToken?: string
+    login?: string
+  }
+}
+
 const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET
 if (process.env.NODE_ENV === 'production' && !NEXTAUTH_SECRET) {
   throw new Error('NEXTAUTH_SECRET is required in production.')
@@ -25,7 +48,13 @@ const authOptions = {
           scope: "read:user user:email read:org repo"
         }
       },
-      profile(profile) {
+      profile(profile: {
+        id: number
+        login: string
+        name?: string | null
+        email?: string | null
+        avatar_url?: string | null
+      }) {
         return {
           id: profile.id.toString(),
           name: profile.name || profile.login,
@@ -41,24 +70,28 @@ const authOptions = {
     error: '/login'
   },
   callbacks: {
-    async jwt({ token, account, user }: { token: any; account: any; user?: any }) {
-      if (account) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async jwt({ token, account, user }: any) {
+      if (account && account.access_token) {
         token.accessToken = account.access_token
       }
-      if (user) {
-        token.login = user.login // GitHub username'i token'a ekle
+      if (user && user.login) {
+        token.login = user.login 
       }
       return token
     },
-    async session({ session, token }: { session: any; token: any }) {
-      (session as any).accessToken = token.accessToken
-      if (token.login) {
-        session.user.login = token.login // GitHub username'i session'a ekle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async session({ session, token }: any) {
+      if (token.accessToken) {
+        session.accessToken = token.accessToken
+      }
+      if (token.login && session.user) {
+        session.user.login = token.login 
       }
       return session
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-      // Always redirect to auth callback after authentication
+     
       if (url.startsWith('/')) return `${baseUrl}/auth/callback`
       if (new URL(url).origin === baseUrl) return `${baseUrl}/auth/callback`
       return `${baseUrl}/auth/callback`
