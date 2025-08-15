@@ -63,23 +63,26 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
     }
   }
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string | undefined | null) => {
+    if (!date) return '-';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '-';
     return new Intl.DateTimeFormat('tr-TR', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    }).format(date)
+    }).format(d);
   }
 
   const getPriorityDisplay = (priority: string) => {
     switch (priority) {
-      case 'urgent': return '🔴 Acil'
-      case 'high': return '🟠 Yüksek'
-      case 'medium': return '🟡 Orta'
-      case 'low': return '🟢 Düşük'
-      default: return '🟡 Orta'
+  case 'urgent': return '🔴 Urgent'
+  case 'high': return '🟠 High'
+  case 'medium': return '🟡 Medium'
+  case 'low': return '🟢 Low'
+  default: return '🟡 Medium'
     }
   }
 
@@ -98,7 +101,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
                   className="text-xl font-semibold"
                 />
               ) : (
-                <h2 className="text-xl font-semibold">{task.title}</h2>
+                <span className="text-xl font-semibold">{editData.title}</span>
               )}
             </DialogTitle>
             <div className="flex items-center gap-2">
@@ -113,13 +116,13 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
               {!isEditing ? (
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                   <Edit className="w-4 h-4 mr-2" />
-                  Düzenle
+                  Edit
                 </Button>
               ) : (
                 <div className="flex gap-1">
                   <Button size="sm" onClick={handleSave}>
                     <Save className="w-4 h-4 mr-1" />
-                    Kaydet
+                    Save
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
                     <X className="w-4 h-4" />
@@ -139,52 +142,52 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">🟢 Düşük</SelectItem>
-                  <SelectItem value="medium">🟡 Orta</SelectItem>
-                  <SelectItem value="high">🟠 Yüksek</SelectItem>
-                  <SelectItem value="urgent">🔴 Acil</SelectItem>
+                  <SelectItem value="low">🟢 Low</SelectItem>
+                  <SelectItem value="medium">🟡 Medium</SelectItem>
+                  <SelectItem value="high">🟠 High</SelectItem>
+                  <SelectItem value="urgent">🔴 Urgent</SelectItem>
                 </SelectContent>
               </Select>
             ) : (
-              <Badge variant="outline">{getPriorityDisplay(task.priority)}</Badge>
+              <Badge variant="outline">{getPriorityDisplay(editData.priority)}</Badge>
             )}
             <Badge variant="secondary">
-              {task.type === 'personal' ? '👤 Kişisel' : task.type === 'github-pr' ? '🔄 PR' : '🐛 Issue'}
+              {task.type === 'personal' ? '👤 Personal' : task.type === 'github-pr' ? '🔄 PR' : '🐛 Issue'}
             </Badge>
           </div>
 
           {/* Description */}
           <div>
-            <Label className="text-sm font-medium">Açıklama</Label>
+            <Label className="text-sm font-medium">Description</Label>
             {isEditing ? (
               <Textarea
                 value={editData.description}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditData({ ...editData, description: e.target.value })}
-                placeholder="Task açıklaması..."
+                placeholder="Task description..."
                 rows={3}
                 className="mt-2"
               />
             ) : (
               <p className="text-sm text-muted-foreground mt-2 min-h-[60px] p-3 bg-muted/30 rounded border">
-                {task.description || 'Açıklama yok'}
+                {editData.description || 'No description'}
               </p>
             )}
           </div>
 
           {/* Notes */}
           <div>
-            <Label className="text-sm font-medium">Notlar</Label>
+            <Label className="text-sm font-medium">Notes</Label>
             {isEditing ? (
               <Textarea
                 value={editData.notes}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditData({ ...editData, notes: e.target.value })}
-                placeholder="Kişisel notlarınız..."
+                placeholder="Your personal notes..."
                 rows={4}
                 className="mt-2"
               />
             ) : (
               <p className="text-sm text-muted-foreground mt-2 min-h-[80px] p-3 bg-muted/30 rounded border">
-                {task.notes || 'Not yok'}
+                {editData.notes || 'No notes'}
               </p>
             )}
           </div>
@@ -194,7 +197,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
           {/* Labels */}
           {task.labels.length > 0 && (
             <div>
-              <Label className="text-sm font-medium">Etiketler</Label>
+              <Label className="text-sm font-medium">Labels</Label>
               <div className="flex flex-wrap gap-1 mt-2">
                 {task.labels.map((label, index) => (
                   <Badge key={index} variant="outline" className="text-xs">
@@ -208,11 +211,11 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
           {/* Dates */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-muted-foreground">Oluşturulma:</span>
+              <span className="text-muted-foreground">Created:</span>
               <p>{formatDate(task.createdAt)}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">Güncelleme:</span>
+              <span className="text-muted-foreground">Updated:</span>
               <p>{formatDate(task.updatedAt)}</p>
             </div>
           </div>
@@ -222,11 +225,11 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
           {/* Delete Button */}
           <div className="flex justify-between items-center">
             <span className="text-xs text-muted-foreground">
-              {task.type === 'personal' ? 'Kişisel Task' : 'GitHub\'dan Senkronize'}
+              {task.type === 'personal' ? 'Personal Task' : 'Synchronized from GitHub'}
             </span>
             <Button variant="destructive" size="sm" onClick={handleDelete}>
               <Trash2 className="w-4 h-4 mr-2" />
-              Sil
+              Delete
             </Button>
           </div>
         </div>

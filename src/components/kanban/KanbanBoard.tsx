@@ -9,6 +9,7 @@ import {
  useSensor,
  useSensors,
  closestCorners,
+ useDroppable,
 } from '@dnd-kit/core'
 import {
  SortableContext,
@@ -23,8 +24,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Plus, ExternalLink, GripVertical, RefreshCw, Trash2, Eye, X } from 'lucide-react'
 import { useKanbanStore, KanbanTask } from '@/stores/kanban'
-import { useSettingsStore } from '@/stores/settings'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { TaskDetailModal } from './TaskDetailModal'
 import { AddTaskModal } from './AddTaskModal'
 
@@ -140,7 +140,7 @@ interface DroppableColumnProps {
 }
 
 function DroppableColumn({ columnId, children }: DroppableColumnProps) {
- const { setNodeRef } = useSortable({ id: columnId })
+ const { setNodeRef } = useDroppable({ id: columnId })
  
  return (
    <div ref={setNodeRef} className="min-h-80">
@@ -151,11 +151,11 @@ function DroppableColumn({ columnId, children }: DroppableColumnProps) {
 
 export function KanbanBoard() {
  const { tasks, columns, columnOrder, moveTask, syncFromGitHub, deleteTask, clearGitHubTasks } = useKanbanStore()
- const { githubSettings } = useSettingsStore()
  const [activeTask, setActiveTask] = useState<KanbanTask | null>(null)
- const [selectedTask, setSelectedTask] = useState<KanbanTask | null>(null)
+ const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
  const [isModalOpen, setIsModalOpen] = useState(false)
  const [showAddTaskModal, setShowAddTaskModal] = useState(false)
+ const [addTaskColumnId, setAddTaskColumnId] = useState<string | null>(null)
 
  const sensors = useSensors(
    useSensor(PointerSensor, {
@@ -166,7 +166,7 @@ export function KanbanBoard() {
  )
 
  const handleTaskView = (task: KanbanTask) => {
-   setSelectedTask(task)
+   setSelectedTaskId(task.id)
    setIsModalOpen(true)
  }
 
@@ -200,36 +200,35 @@ export function KanbanBoard() {
    if (activeId === overId) return
 
    let sourceColumnId: string | null = null
-   let destinationColumnId: string | null = null
-
    Object.entries(columns).forEach(([columnId, column]) => {
      if (column.taskIds.includes(activeId)) {
        sourceColumnId = columnId
      }
    })
 
+   if (!sourceColumnId) return
+
+   let destinationColumnId: string | null = null
+   let destinationIndex = 0
+
    if (columns[overId]) {
      destinationColumnId = overId
+     destinationIndex = 0
    } else {
      Object.entries(columns).forEach(([columnId, column]) => {
        if (column.taskIds.includes(overId)) {
          destinationColumnId = columnId
+         const targetIndex = column.taskIds.indexOf(overId)
+         if (sourceColumnId === destinationColumnId) {
+           destinationIndex = targetIndex
+         } else {
+           destinationIndex = targetIndex
+         }
        }
      })
    }
 
-   if (!sourceColumnId || !destinationColumnId) return
-
-   let destinationIndex = 0
-   if (columns[overId]) {
-     destinationIndex = columns[destinationColumnId].taskIds.length
-   } else {
-     const targetIndex = columns[destinationColumnId].taskIds.indexOf(overId)
-     destinationIndex = sourceColumnId === destinationColumnId && 
-       columns[sourceColumnId].taskIds.indexOf(activeId) < targetIndex 
-       ? targetIndex 
-       : targetIndex + 1
-   }
+   if (!destinationColumnId) return
 
    moveTask(activeId, sourceColumnId, destinationColumnId, destinationIndex)
  }
@@ -277,11 +276,17 @@ export function KanbanBoard() {
                </CardHeader>
                
                <SortableContext 
-                 items={[columnId, ...column.taskIds]}
+                 items={column.taskIds}
                  strategy={verticalListSortingStrategy}
                >
                  <DroppableColumn columnId={columnId}>
                    <CardContent className="space-y-2 min-h-60">
+                     <div 
+                       className="h-2 w-full" 
+                       style={{ 
+                         backgroundColor: 'transparent'
+                       }}
+                     />
                      {columnTasks.map((task) => (
                        <SortableTaskItem 
                          key={task.id} 
@@ -294,7 +299,10 @@ export function KanbanBoard() {
                      
                      <button 
                        className="w-full p-2 border-2 border-dashed border-muted rounded hover:border-primary hover:bg-primary/5 transition-colors text-muted-foreground hover:text-primary text-xs"
-                       onClick={() => setShowAddTaskModal(true)}
+                       onClick={() => {
+                         setAddTaskColumnId(columnId);
+                         setShowAddTaskModal(true);
+                       }}
                      >
                        <Plus className="w-3 h-3 mx-auto" />
                      </button>
@@ -339,17 +347,18 @@ export function KanbanBoard() {
      </DndContext>
      
      <TaskDetailModal
-       task={selectedTask}
+       task={selectedTaskId ? tasks[selectedTaskId] : null}
        isOpen={isModalOpen}
        onClose={() => {
          setIsModalOpen(false)
-         setSelectedTask(null)
+         setSelectedTaskId(null)
        }}
      />
      
      <AddTaskModal
        isOpen={showAddTaskModal}
        onClose={() => setShowAddTaskModal(false)}
+       columnId={addTaskColumnId}
      />
    </div>
  )
