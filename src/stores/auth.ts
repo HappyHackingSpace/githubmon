@@ -67,7 +67,7 @@ logout: async () => {
 },
 
 checkCookieSync: () => {
-  const { isConnected, orgData } = get()
+  const { isConnected } = get()
   const cookieData = cookieUtils.getAuth()
   
   if (!cookieData && isConnected) {

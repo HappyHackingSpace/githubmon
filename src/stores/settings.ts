@@ -19,7 +19,7 @@ interface SettingsState {
 
 const defaultSettings: GitHubSettings = {
   repositories: [],
-  labels: [], // No default labels
+  labels: [], 
   assignedToMe: true,
   mentionsMe: true,
   authoredByMe: false,

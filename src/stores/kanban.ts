@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { useSettingsStore } from './settings'
 import { useActionItemsStore } from './actionItems'
-import type { ActionItem, AssignedItem, MentionItem, StalePR } from './actionItems'
+import type { ActionItem } from './actionItems'
 
 export interface KanbanTask {
   id: string
@@ -30,7 +30,7 @@ interface KanbanState {
   columnOrder: string[]
   
   syncFromGitHub: () => Promise<number>
-  addTask: (task: Omit<KanbanTask, 'id' | 'createdAt' | 'updatedAt'>) => void
+  addTask: (task: Omit<KanbanTask, 'id' | 'createdAt' | 'updatedAt'> & { columnId?: string }) => void
   updateTask: (id: string, updates: Partial<KanbanTask>) => void
   moveTask: (taskId: string, fromColumnId: string, toColumnId: string, newIndex: number) => void
   deleteTask: (taskId: string) => void
@@ -77,40 +77,28 @@ export const useKanbanStore = create<KanbanState>()(
 
       syncFromGitHub: async () => {
         const { githubSettings } = useSettingsStore.getState()
-        const { assignedItems, mentionItems, staleItems } = useActionItemsStore.getState()
+        const { assignedItems, mentionItems } = useActionItemsStore.getState()
         
         console.log('🔄 Syncing Action Required data to kanban...')
         console.log('⚙️ GitHub Settings:', githubSettings)
         
         const selectedItems: ActionItem[] = []
         
-        // Determine which action items to include based on settings
         if (githubSettings.assignedToMe) {
-          console.log(`📌 Adding assigned items: ${assignedItems.length} items`)
           selectedItems.push(...assignedItems)
         }
         
         if (githubSettings.mentionsMe) {
-          console.log(`💬 Adding mention items: ${mentionItems.length} items`)
           selectedItems.push(...mentionItems)
         }
         
-        if (githubSettings.reviewRequestedFromMe) {
-          const reviewRequests = mentionItems.filter(item => 
-            'mentionType' in item && item.mentionType === 'review_request'
-          )
-          console.log(`👀 Adding review request items: ${reviewRequests.length} items`)
-          // Review requests are already in mentionItems, don't add them again
-        }
+       
         
-        console.log(`📋 Total ${selectedItems.length} action items found`)
         
         if (selectedItems.length === 0) {
-          console.log('⚠️ No action items found!')
           return 0
         }
         
-        // Apply repository filter
         let filteredItems = selectedItems
         if (githubSettings.repositories.length > 0) {
           filteredItems = selectedItems.filter(item => 
@@ -118,9 +106,7 @@ export const useKanbanStore = create<KanbanState>()(
               const itemRepo = item.repo || ''
               const match = itemRepo.toLowerCase().includes(repo.toLowerCase()) ||
                            itemRepo.includes(repo)
-              if (match) {
-                console.log(`✅ Repo match: ${itemRepo} contains ${repo}`)
-              }
+             
               return match
             })
           )
@@ -129,9 +115,7 @@ export const useKanbanStore = create<KanbanState>()(
           console.log('📦 No repository filter, accepting all items')
         }
         
-        // Label filter (optional - action items may not have label info)
         if (githubSettings.labels.length > 0) {
-          // Action items may not have labels field, so skip for now
           console.log('🏷️ Label filter not applied for Action Required items')
         }
         
@@ -151,31 +135,20 @@ export const useKanbanStore = create<KanbanState>()(
         newTasks.forEach(task => {
           console.log(`  - ${task.title} (${task.type})`)
         })
-        
+
         set(state => {
-          const personalTasks = Object.values(state.tasks)
-            .filter(t => t.type === 'personal')
-            .reduce((acc, task) => {
-              acc[task.id] = task
-              return acc
-            }, {} as Record<string, KanbanTask>)
-          
-          // GitHub task'larını ID'ye göre güncelle, yeni olanları ekle
           const existingTasks = { ...state.tasks }
           const updatedGitHubTasks: Record<string, KanbanTask> = {}
           
           newTasks.forEach(task => {
             updatedGitHubTasks[task.id] = task
             if (existingTasks[task.id]) {
-              // Mevcut task'ı güncelle ama pozisyonunu koru
               existingTasks[task.id] = { ...existingTasks[task.id], ...task }
             } else {
-              // Yeni task ekle
               existingTasks[task.id] = task
             }
           })
           
-          // Remove deleted GitHub tasks (those starting with action-)
           const newGitHubTaskIds = new Set(newTasks.map(t => t.id))
           Object.keys(existingTasks).forEach(taskId => {
             const task = existingTasks[taskId]
@@ -184,7 +157,6 @@ export const useKanbanStore = create<KanbanState>()(
             }
           })
           
-          // Update task IDs in columns
           const updatedColumns = { ...state.columns }
           Object.keys(updatedColumns).forEach(columnId => {
             updatedColumns[columnId] = {
@@ -193,7 +165,6 @@ export const useKanbanStore = create<KanbanState>()(
             }
           })
           
-          // Add new GitHub tasks only to todo column (if they're not elsewhere)
           const allColumnTaskIds = new Set(
             Object.values(updatedColumns).flatMap(col => col.taskIds)
           )
@@ -213,28 +184,28 @@ export const useKanbanStore = create<KanbanState>()(
           }
         })
         
-        return newTasks.length // Return how many tasks were added
+        return newTasks.length 
       },
 
       addTask: (taskData) => {
-        const id = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        const { columnId, ...rest } = taskData;
+        const id = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const task: KanbanTask = {
-          ...taskData,
+          ...rest,
           id,
           createdAt: new Date(),
           updatedAt: new Date()
-        }
-        
+        };
         set((state) => ({
           tasks: { ...state.tasks, [id]: task },
           columns: {
             ...state.columns,
-            todo: {
-              ...state.columns.todo,
-              taskIds: [...state.columns.todo.taskIds, id]
+            [columnId || 'todo']: {
+              ...state.columns[columnId || 'todo'],
+              taskIds: [...state.columns[columnId || 'todo'].taskIds, id]
             }
           }
-        }))
+        }));
       },
 
       moveTask: (taskId, fromColumnId, toColumnId, newIndex) => {

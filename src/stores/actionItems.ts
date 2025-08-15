@@ -33,7 +33,7 @@ export interface StalePR extends ActionItem {
 }
 
 interface ActionItemsState {
-  // Data - sadece Action Required items
+  // Data 
   assignedItems: AssignedItem[]
   mentionItems: MentionItem[]
   staleItems: StalePR[]
@@ -91,7 +91,7 @@ interface ActionItemsState {
 export const useActionItemsStore = create<ActionItemsState>()(
   persist(
     (set, get) => ({
-      // Initial state - sadece Action Required
+      // Initial state 
       assignedItems: [],
       mentionItems: [],
       staleItems: [],
@@ -156,7 +156,6 @@ export const useActionItemsStore = create<ActionItemsState>()(
         errors: { ...state.errors, [type]: error } 
       })),
 
-      // Computed getters
       getTotalCount: () => {
         const state = get()
         return (
@@ -204,7 +203,6 @@ export const useActionItemsStore = create<ActionItemsState>()(
         })
       },
 
-      // ✅ GraphQL ile optimize edilmiş refreshData
       refreshData: async (type) => {
         const authState = useAuthStore.getState()
         const userToken = authState.orgData?.token
@@ -228,18 +226,15 @@ export const useActionItemsStore = create<ActionItemsState>()(
           return
         }
 
-        // Set GraphQL client token
         githubGraphQLClient.setToken(userToken)
 
-        // ✅ Tek specific type istenirse sadece o loading'i set et
         if (type) {
           set((state) => ({ 
             loading: { ...state.loading, [type]: true }, 
             errors: { ...state.errors, [type]: null } 
           }))
         } else {
-          // ✅ Hepsi için loading set et
-          set((state) => ({ 
+          set(() => ({ 
             loading: { 
               assigned: true, 
               mentions: true, 
@@ -319,7 +314,7 @@ export const useActionItemsStore = create<ActionItemsState>()(
             }))
           } else {
             const errorMessage = error instanceof Error ? error.message : 'Failed to load data'
-            set((state) => ({
+            set(() => ({
               errors: {
                 assigned: errorMessage,
                 mentions: errorMessage,
@@ -333,7 +328,7 @@ export const useActionItemsStore = create<ActionItemsState>()(
           if (type) {
             set((state) => ({ loading: { ...state.loading, [type]: false } }))
           } else {
-            set((state) => ({ 
+            set(() => ({ 
               loading: { 
                 assigned: false, 
                 mentions: false, 
