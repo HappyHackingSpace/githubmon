@@ -51,7 +51,8 @@ export function useQuickWins() {
                 createdAt: issue.created_at,
                 updatedAt: issue.updated_at,
                 author: issue.author.login,
-                labels: issue.labels.map(l => l.name)
+                labels: issue.labels.map(l => l.name),
+                daysOld: Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
             })))
         }
     }, [goodIssues, setGoodFirstIssues])
@@ -68,7 +69,8 @@ export function useQuickWins() {
                 createdAt: issue.created_at,
                 updatedAt: issue.updated_at,
                 author: issue.author.login,
-                labels: issue.labels.map(l => l.name)
+                labels: issue.labels.map(l => l.name),
+                daysOld: Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
             })))
         }
     }, [easyFixes, setEasyFixes])
