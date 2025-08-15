@@ -42,7 +42,7 @@ export function useQuickWins() {
     useEffect(() => {
         if (goodIssues.length > 0) {
             setGoodFirstIssues(goodIssues.map(issue => ({
-                id: issue.id,
+                id: issue.id.toString(),
                 title: issue.title,
                 repo: issue.repository,
                 type: 'issue' as const,
@@ -60,7 +60,7 @@ export function useQuickWins() {
     useEffect(() => {
         if (easyFixes.length > 0) {
             setEasyFixes(easyFixes.map(issue => ({
-                id: issue.id,
+                id: issue.id.toString(),
                 title: issue.title,
                 repo: issue.repository,
                 type: 'issue' as const,

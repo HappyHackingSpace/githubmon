@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,8 +24,10 @@ interface ActionItem {
   daysOld?: number;
 }
 
-export default function ActionRequiredPage() {
-  const { isLoading } = useRequireAuth()
+const VALID_TABS = ['assigned', 'mentions', 'stale'] as const
+type ValidTab = typeof VALID_TABS[number]
+
+function ActionRequiredContent() {
   const {
     assignedItems,
     mentionItems,
@@ -37,9 +39,6 @@ export default function ActionRequiredPage() {
 
   const searchParams = useSearchParams()
   const router = useRouter()
-
-  const VALID_TABS = ['assigned', 'mentions', 'stale'] as const
-  type ValidTab = typeof VALID_TABS[number]
 
   const tabParam = searchParams?.get('tab')
   const currentTab: ValidTab = VALID_TABS.includes(tabParam as ValidTab)
@@ -83,23 +82,9 @@ export default function ActionRequiredPage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading action required items...</p>
-          </div>
-        </div>
-      </Layout>
-    )
-  }
-
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        <PageHeader />
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <PageHeader />
 
         {/* Hero Section */}
         <div className="mb-8">
@@ -333,8 +318,42 @@ export default function ActionRequiredPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+    </div>
+  )
+}
 
+export default function ActionRequiredPage() {
+  const { isLoading } = useRequireAuth()
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading action required items...</p>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
+
+  return (
+    <Layout>
+      <Suspense fallback={
+        <div className="max-w-7xl mx-auto p-6 space-y-6">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-8"></div>
+            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-6"></div>
+            <div className="space-y-4">
+              <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            </div>
+          </div>
+        </div>
+      }>
+        <ActionRequiredContent />
+      </Suspense>
       <SearchModal />
     </Layout>
   )
