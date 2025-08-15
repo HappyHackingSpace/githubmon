@@ -59,7 +59,7 @@ export function GitHubSettingsForm() {
     console.log('Label removed, hasChanges set to true')
   }
 
-  const handleSettingChange = (key: keyof typeof githubSettings, value: any) => {
+  const handleSettingChange = <K extends keyof typeof githubSettings>(key: K, value: typeof githubSettings[K]) => {
     updateGitHubSettings({ [key]: value })
     setHasChanges(true)
   }

@@ -71,6 +71,67 @@ interface GitHubActionItem {
   updatedAt: string
 }
 
+interface ActionRequiredQueryResult {
+  user: {
+    assignedIssues: {
+      nodes: ActionItem[]
+    }
+    pullRequests: {
+      nodes: PullRequest[]
+    }
+  }
+  stalePRs: {
+    nodes: StalePullRequest[]
+  }
+  mentions: {
+    nodes: (ActionItem | PullRequest)[]
+  }
+  rateLimit: RateLimit
+}
+
+interface ActionItem {
+  id: string
+  title: string
+  url: string
+  createdAt: string
+  updatedAt: string
+  repository: {
+    nameWithOwner: string
+  }
+  author: {
+    login: string
+  } | null
+  labels: {
+    nodes: Array<{ name: string }>
+  }
+  __typename?: string
+}
+
+interface PullRequest {
+  id: string
+  title: string
+  url: string
+  createdAt: string
+  updatedAt: string
+  repository: {
+    nameWithOwner: string
+  }
+  author: {
+    login: string
+  } | null
+  assignees: {
+    nodes: Array<{ login: string }>
+  }
+  labels: {
+    nodes: Array<{ name: string }>
+  }
+  __typename?: string
+}
+
+interface StalePullRequest extends Omit<PullRequest, 'assignees'> {
+  reviewDecision: string | null
+}
+
 class GitHubGraphQLClient {
   private endpoint = 'https://api.github.com/graphql'
   private token = ''
@@ -486,21 +547,21 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
   `
   
   try {
-    const result = await this.query<any>(query, { 
+    const result = await this.query<ActionRequiredQueryResult>(query, { 
       username
     })
 
     const data = result.data
     
-    const assignedIssues = data.user.assignedIssues.nodes.map((item: any) => this.mapToActionItem(item))
+    const assignedIssues = data.user.assignedIssues.nodes.map((item: ActionItem) => this.mapToActionItem(item))
     const assignedPRs = data.user.pullRequests.nodes
-      .filter((pr: any) => pr.assignees.nodes.some((assignee: any) => assignee.login === username))
-      .map((item: any) => this.mapToActionItem(item))
+      .filter((pr: PullRequest) => pr.assignees.nodes.some((assignee: { login: string }) => assignee.login === username))
+      .map((item: PullRequest) => this.mapToActionItem(item))
     const assigned = [...assignedIssues, ...assignedPRs]
 
-    const mentions = data.mentions.nodes.map((item: any) => this.mapToActionItem(item))
+    const mentions = data.mentions.nodes.map((item: ActionItem | PullRequest) => this.mapToActionItem(item))
 
-    const stale = data.stalePRs.nodes.map((pr: any) => ({
+    const stale = data.stalePRs.nodes.map((pr: StalePullRequest) => ({
       ...this.mapToActionItem(pr),
       reviewStatus: pr.reviewDecision || 'PENDING'
     }))
@@ -518,9 +579,9 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
   }
 }
 
-private mapToActionItem(item: any): GitHubActionItem {
+private mapToActionItem(item: ActionItem | PullRequest | StalePullRequest): GitHubActionItem {
   const daysOld = Math.floor((Date.now() - new Date(item.createdAt).getTime()) / (1000 * 60 * 60 * 24))
-  const labels = item.labels?.nodes?.map((l: any) => l.name) || []
+  const labels = item.labels?.nodes?.map((l: { name: string }) => l.name) || []
   
   return {
     id: item.id,
