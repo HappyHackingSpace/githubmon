@@ -291,19 +291,20 @@ export const useKanbanStore = create<KanbanState>()(
         }));
       },
 
-      moveTask: (taskId, fromColumnId, toColumnId, newIndex) => {
+     moveTask: (taskId, fromColumnId, toColumnId, newIndex) => {
         set((state) => {
           const fromColumn = state.columns[fromColumnId]
           const toColumn = state.columns[toColumnId]
-          
+          if (!fromColumn || !toColumn) return state
           const fromTaskIds = [...fromColumn.taskIds]
-          const toTaskIds = fromColumnId === toColumnId ? fromTaskIds : [...toColumn.taskIds]
-          
+          const toTaskIds = fromColumnId === toColumnId
+            ? fromTaskIds
+            : [...toColumn.taskIds]
           const taskIndex = fromTaskIds.indexOf(taskId)
+          if (taskIndex < 0) return state
           fromTaskIds.splice(taskIndex, 1)
-          
-          toTaskIds.splice(newIndex, 0, taskId)
-          
+          const insertAt = Math.max(0, Math.min(newIndex, toTaskIds.length))
+          toTaskIds.splice(insertAt, 0, taskId)
           return {
             columns: {
               ...state.columns,
