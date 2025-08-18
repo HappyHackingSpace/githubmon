@@ -57,7 +57,7 @@ export function middleware(request: NextRequest) {
 
  if (!isAuthenticated && isProtectedApiRoute) {
    return NextResponse.json(
-     { error: 'Unauthorized' },
+     { error: 'Unauthorized', message: 'Authentication required to access this resource' },
      { status: 401 }
    )
  }
