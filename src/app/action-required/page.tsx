@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useRequireAuth } from '@/hooks/useAuth'
-import { Target, MessageSquare, Clock, Zap, ExternalLink, RefreshCw } from "lucide-react"
+import { Target, MessageSquare, Clock, Zap, ExternalLink, RefreshCw, LucideIcon } from "lucide-react"
 import { useActionItemsStore } from '@/stores'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SearchModal } from '@/components/search/SearchModal'
@@ -96,7 +96,7 @@ function ActionRequiredContent() {
     emptyDescription,
   }: {
     type: 'assigned' | 'mentions' | 'stale'
-    icon: any
+    icon: LucideIcon
     title: string
     emptyMessage: string
     emptyDescription: string

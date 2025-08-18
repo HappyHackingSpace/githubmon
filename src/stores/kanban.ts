@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { useSettingsStore } from './settings'
 import { useActionItemsStore } from './actionItems'
-import type { ActionItem } from './actionItems'
+import type { ActionItem, AssignedItem, MentionItem, StalePR } from './actionItems'
 
 export interface KanbanTask {
   id: string
@@ -17,24 +17,25 @@ export interface KanbanTask {
   updatedAt: Date
 }
 
-interface GitHubDataContext {
-  assignedItems: any[]
-  mentionItems: any[]
-  staleItems: any[]
-  currentTime: Date
-  userSettings: any
+// Define interfaces for GitHub items with additional properties
+interface GitHubItemWithExtras {
+  id: string
+  title: string
+  type: 'issue' | 'pullRequest'
+  url?: string
+  createdAt: string
+  updatedAt?: string
+  body?: string
+  labels?: Array<{ name: string }>
+  description?: string
 }
 
-interface ContextRule {
-  id: string
-  condition: (context: GitHubDataContext) => boolean
-  columnSuggestion: {
-    id: string
-    title: string
-    color: string
-    priority: number
-  }
-  confidence: number
+interface GitHubDataContext {
+  assignedItems: AssignedItem[]
+  mentionItems: MentionItem[]
+  staleItems: StalePR[]
+  currentTime: Date
+  userSettings: unknown
 }
 
 export interface KanbanColumn {
@@ -107,7 +108,7 @@ const analyzeContext = (context: GitHubDataContext) => {
   
   const isMonday = context.currentTime.getDay() === 1
   const weekendMentions = context.mentionItems.filter(item => {
-    const itemDate = new Date(item.created_at || item.updated_at)
+    const itemDate = new Date(item.createdAt || item.updatedAt)
     const dayOfWeek = itemDate.getDay()
     return dayOfWeek === 0 || dayOfWeek === 6
   })
@@ -147,8 +148,9 @@ const analyzeContext = (context: GitHubDataContext) => {
     ...context.mentionItems
   ].filter(item => {
     const title = item.title?.toLowerCase() || ''
-    const body = (item as any).body?.toLowerCase() || ''
-    const labels = (item as any).labels?.map((l: any) => l.name.toLowerCase()) || []
+    const itemWithExtras = item as unknown as GitHubItemWithExtras
+    const body = itemWithExtras.body?.toLowerCase() || ''
+    const labels = itemWithExtras.labels?.map((l: { name: string }) => l.name.toLowerCase()) || []
     
     return title.includes('urgent') || 
            title.includes('hotfix') || 
@@ -217,15 +219,16 @@ export const useKanbanStore = create<KanbanState>()(
   
   const newTasks: KanbanTask[] = selectedItems.map(item => {
     const isReviewRequest = 'mentionType' in item && item.mentionType === 'review_request'
+    const itemWithExtras = item as unknown as GitHubItemWithExtras
     
     return {
       id: `action-${item.id}`,
       title: item.title,
-      description: (item as any).description?.substring(0, 200),
+      description: itemWithExtras.description?.substring(0, 200),
       type: item.type === 'issue' ? 'github-issue' : 'github-pr',
       priority: isReviewRequest ? 'high' : 'medium',
       githubUrl: item.url,
-      labels: (item as any).labels?.map((l: any) => l.name) || [],
+      labels: itemWithExtras.labels?.map((l: { name: string }) => l.name) || [],
       createdAt: new Date(item.createdAt),
       updatedAt: new Date(item.updatedAt || item.createdAt)
     }
