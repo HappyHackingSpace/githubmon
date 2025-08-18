@@ -253,10 +253,8 @@ export const useActionItemsStore = create<ActionItemsState>()(
         }
 
         try {
-          // ✅ GraphQL ile tek çağrıda tüm action required items'ı al
           const actionData = await githubGraphQLClient.getActionRequiredItems(username)
 
-          // ✅ Specific type istenirse sadece o veriyi güncelle
           if (type) {
             switch (type) {
               case 'assigned':
@@ -268,7 +266,7 @@ export const useActionItemsStore = create<ActionItemsState>()(
               case 'mentions':
                 get().setMentionItems(actionData.mentions.map(item => ({ 
                   ...item, 
-                  mentionType: 'mention' as const, 
+                  mentionType: item.mentionType || 'mention' as const, 
                   mentionedAt: item.createdAt 
                 })))
                 break
@@ -282,7 +280,6 @@ export const useActionItemsStore = create<ActionItemsState>()(
                 break
             }
           } else {
-            // ✅ Hepsi için veriyi güncelle
             get().setAssignedItems(actionData.assigned.map(item => ({ 
               ...item, 
               assignedAt: item.createdAt 
@@ -290,7 +287,7 @@ export const useActionItemsStore = create<ActionItemsState>()(
             
             get().setMentionItems(actionData.mentions.map(item => ({ 
               ...item, 
-              mentionType: 'mention' as const, 
+              mentionType: item.mentionType || 'mention' as const, 
               mentionedAt: item.createdAt 
             })))
             

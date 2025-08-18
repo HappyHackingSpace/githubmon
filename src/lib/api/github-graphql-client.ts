@@ -69,6 +69,7 @@ interface GitHubActionItem {
   daysOld: number
   createdAt: string
   updatedAt: string
+  mentionType?: 'mention' | 'review_request' | 'comment'
 }
 
 interface ActionRequiredQueryResult {
@@ -84,7 +85,10 @@ interface ActionRequiredQueryResult {
     nodes: StalePullRequest[]
   }
   mentions: {
-    nodes: (ActionItem | PullRequest)[]
+    nodes: (ActionItem | PullRequestWithReviews)[]
+  }
+  reviewRequests: {
+    nodes: PullRequestWithReviews[]
   }
   rateLimit: RateLimit
 }
@@ -126,6 +130,16 @@ interface PullRequest {
     nodes: Array<{ name: string }>
   }
   __typename?: string
+}
+
+interface PullRequestWithReviews extends PullRequest {
+  reviewRequests: {
+    nodes: Array<{
+      requestedReviewer: {
+        login: string
+      } | null
+    }>
+  }
 }
 
 interface StalePullRequest extends Omit<PullRequest, 'assignees'> {
@@ -492,7 +506,7 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
         }
       }
       
-      # Mentions
+      # Mentions and Review Requests
       mentions: search(
         query: "mentions:${username} is:open"
         type: ISSUE  
@@ -534,6 +548,52 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
                 name
               }
             }
+            reviewRequests(first: 10) {
+              nodes {
+                requestedReviewer {
+                  ... on User {
+                    login
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      # Review Requests (separate query for better detection)
+      reviewRequests: search(
+        query: "is:pr is:open review-requested:${username}"
+        type: ISSUE
+        first: 50
+      ) {
+        nodes {
+          ... on PullRequest {
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+            reviewRequests(first: 10) {
+              nodes {
+                requestedReviewer {
+                  ... on User {
+                    login
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -559,7 +619,25 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
       .map((item: PullRequest) => this.mapToActionItem(item))
     const assigned = [...assignedIssues, ...assignedPRs]
 
-    const mentions = data.mentions.nodes.map((item: ActionItem | PullRequest) => this.mapToActionItem(item))
+    const reviewRequestIds = new Set<string>()
+    const reviewRequests = data.reviewRequests.nodes
+      .filter((pr: PullRequestWithReviews) => 
+        pr.reviewRequests.nodes.some(req => req.requestedReviewer?.login === username)
+      )
+      .map((item: PullRequestWithReviews) => {
+        reviewRequestIds.add(item.id)
+        return this.mapToActionItem(item, 'review_request')
+      })
+
+    const generalMentions = data.mentions.nodes
+      .filter((item) => !reviewRequestIds.has(item.id))
+      .map((item: ActionItem | PullRequestWithReviews) => {
+       
+        const mentionType = item.__typename === 'PullRequest' ? 'comment' : 'mention'
+        return this.mapToActionItem(item, mentionType)
+      })
+
+    const mentions = [...reviewRequests, ...generalMentions]
 
     const stale = data.stalePRs.nodes.map((pr: StalePullRequest) => ({
       ...this.mapToActionItem(pr),
@@ -579,7 +657,7 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
   }
 }
 
-private mapToActionItem(item: ActionItem | PullRequest | StalePullRequest): GitHubActionItem {
+private mapToActionItem(item: ActionItem | PullRequest | StalePullRequest | PullRequestWithReviews, mentionType?: 'mention' | 'review_request' | 'comment'): GitHubActionItem {
   const daysOld = Math.floor((Date.now() - new Date(item.createdAt).getTime()) / (1000 * 60 * 60 * 24))
   const labels = item.labels?.nodes?.map((l: { name: string }) => l.name) || []
   
@@ -593,7 +671,8 @@ private mapToActionItem(item: ActionItem | PullRequest | StalePullRequest): GitH
     priority: this.calculateActionPriority(labels, daysOld),
     daysOld,
     createdAt: item.createdAt,
-    updatedAt: item.updatedAt
+    updatedAt: item.updatedAt,
+    ...(mentionType && { mentionType })
   }
 }
 
