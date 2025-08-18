@@ -83,7 +83,7 @@ interface ActionItemsState {
   getHighPriorityCount: () => number
 
   // Utility actions
-  markAsRead: (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes', id: string) => void
+  markAsRead: (type: 'assigned' | 'mentions' | 'stale', id: string) => void
   refreshData: (type?: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => Promise<void>
   clearAll: () => void
 }
