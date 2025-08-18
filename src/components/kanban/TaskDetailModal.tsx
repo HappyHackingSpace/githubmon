@@ -55,6 +55,18 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
     }
   }
 
+   const handleCancel = useCallback(() => {
+    if (task) {
+      setEditData({
+        title: task.title,
+        description: task.description || '',
+        priority: task.priority,
+        notes: task.notes || ''
+      })
+    }
+    setIsEditing(false)
+  }, [task])
+
   const handleDelete = () => {
     if (task && confirm('Bu task\'ı silmek istediğinizden emin misiniz?')) {
       deleteTask(task.id)
@@ -105,7 +117,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
                   className="text-xl font-semibold"
                 />
               ) : (
-                <span className="text-xl font-semibold">{editData.title}</span>
+                <span className="text-xl font-semibold">{task.title}</span>
               )}
             </DialogTitle>
             <div className="flex items-center gap-2">
@@ -128,7 +140,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
                     <Save className="w-4 h-4 mr-1" />
                     Save
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
+                 <Button variant="outline" size="sm" onClick={handleCancel}>
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
@@ -153,7 +165,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
                 </SelectContent>
               </Select>
             ) : (
-              <Badge variant="outline">{getPriorityDisplay(editData.priority)}</Badge>
+             <Badge variant="outline">{getPriorityDisplay(task.priority)}</Badge>
             )}
             <Badge variant="secondary">
               {task.type === 'personal' ? '👤 Personal' : task.type === 'github-pr' ? '🔄 PR' : '🐛 Issue'}
@@ -173,8 +185,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
               />
             ) : (
               <p className="text-sm text-muted-foreground mt-2 min-h-[60px] p-3 bg-muted/30 rounded border">
-                {editData.description || 'No description'}
-              </p>
+{task.description || 'No description'}              </p>
             )}
           </div>
 
@@ -191,7 +202,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
               />
             ) : (
               <p className="text-sm text-muted-foreground mt-2 min-h-[80px] p-3 bg-muted/30 rounded border">
-                {editData.notes || 'No notes'}
+                {task.notes || 'No notes'}
               </p>
             )}
           </div>
