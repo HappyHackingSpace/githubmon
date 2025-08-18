@@ -641,10 +641,16 @@ const query = `
 
     const mentions = [...reviewRequests, ...generalMentions]
 
-    const stale = data.stalePRs.nodes.map((pr: StalePullRequest) => ({
-      ...this.mapToActionItem(pr),
-      reviewStatus: pr.reviewDecision || 'PENDING'
-    }))
+    const stale = data.stalePRs.nodes.map((pr: StalePullRequest) => {
+      const daysSinceUpdate = Math.floor(
+        (Date.now() - new Date(pr.updatedAt).getTime()) / (1000 * 60 * 60 * 24)
+      )
+      return {
+        ...this.mapToActionItem(pr),
+        daysOld: daysSinceUpdate,
+        reviewStatus: pr.reviewDecision || 'PENDING',
+      }
+    })
 
     return {
       assigned,
