@@ -668,13 +668,19 @@ const query = `
 private mapToActionItem(item: ActionItem | PullRequest | StalePullRequest | PullRequestWithReviews, mentionType?: 'mention' | 'review_request' | 'comment'): GitHubActionItem {
   const daysOld = Math.floor((Date.now() - new Date(item.createdAt).getTime()) / (1000 * 60 * 60 * 24))
   const labels = item.labels?.nodes?.map((l: { name: string }) => l.name) || []
-  
+
+   const isPR =
+    (item as any).__typename === 'PullRequest' ||
+    'assignees' in (item as any) ||
+    'reviewRequests' in (item as any) ||
+    'reviewDecision' in (item as any)
+
   return {
     id: item.id,
     title: item.title,
     url: item.url,
     repo: item.repository.nameWithOwner,
-    type: item.__typename === 'PullRequest' ? 'pullRequest' : 'issue',
+    type: isPR ? 'pullRequest' : 'issue',
     author: item.author?.login || 'unknown',
     priority: this.calculateActionPriority(labels, daysOld),
     daysOld,
