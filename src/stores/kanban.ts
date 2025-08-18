@@ -187,7 +187,6 @@ export const useKanbanStore = create<KanbanState>()(
   const { githubSettings } = useSettingsStore.getState()
   const { assignedItems, mentionItems, staleItems } = useActionItemsStore.getState()
   
-  console.log('🔄 Syncing Action Required data to kanban...')
   
   const selectedItems: ActionItem[] = []
   
@@ -199,13 +198,16 @@ export const useKanbanStore = create<KanbanState>()(
     selectedItems.push(...mentionItems)
   }
   
-  console.log(`📋 Total ${selectedItems.length} action items found`)
   
-  if (selectedItems.length === 0) {
+const uniqueSelected = Array.from(
+    new Map(selectedItems.map((i) => [i.id, i])).values()
+  )
+  console.log(`📋 Total ${uniqueSelected.length} unique action items found`)
+  if (uniqueSelected.length === 0) {
     console.log('⚠️ No action items found!')
     return 0
   }
-  
+
   const contextData: GitHubDataContext = {
     assignedItems,
     mentionItems,
@@ -217,7 +219,7 @@ export const useKanbanStore = create<KanbanState>()(
   const contextSuggestions = analyzeContext(contextData)
   console.log('🧠 Context suggestions:', contextSuggestions)
   
-  const newTasks: KanbanTask[] = selectedItems.map(item => {
+  const newTasks: KanbanTask[] = uniqueSelected.map((item) => {
     const isReviewRequest = 'mentionType' in item && item.mentionType === 'review_request'
     const itemWithExtras = item as unknown as GitHubItemWithExtras
     
