@@ -430,7 +430,24 @@ export const useKanbanStore = create<KanbanState>()(
     }),
     {
       name: 'githubmon-kanban',
-      storage: createJSONStorage(() => localStorage)
+      storage: createJSONStorage(() => {
+        if (typeof window === 'undefined') {
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+          }
+        }
+        return localStorage
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (!state?.tasks) return
+        for (const id of Object.keys(state.tasks)) {
+          const t = state.tasks[id] as any
+          if (t?.createdAt && typeof t.createdAt === 'string') t.createdAt = new Date(t.createdAt)
+          if (t?.updatedAt && typeof t.updatedAt === 'string') t.updatedAt = new Date(t.updatedAt)
+        }
+      }
     }
   )
 )
