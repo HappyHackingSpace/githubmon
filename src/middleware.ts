@@ -25,10 +25,12 @@ export function middleware(request: NextRequest) {
  }
 
  const protectedRoutes = ['/dashboard', '/settings']
+ const protectedApiRoutes = ['/api/action-required']
  const authRoutes = ['/auth/callback', '/api/auth', '/login']
  const publicRoutes = ['/', '/privacy-policy', '/terms-of-service']
 
  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+ const isProtectedApiRoute = protectedApiRoutes.some(route => pathname.startsWith(route))
  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
  const isPublicRoute = publicRoutes.some(route => pathname === route)
 
@@ -51,6 +53,13 @@ export function middleware(request: NextRequest) {
 
  if (!isAuthenticated && isProtectedRoute) {
    return NextResponse.redirect(new URL('/login', request.url))
+ }
+
+ if (!isAuthenticated && isProtectedApiRoute) {
+   return NextResponse.json(
+     { error: 'Unauthorized' },
+     { status: 401 }
+   )
  }
 
  // Allow auth routes and public routes to pass through
