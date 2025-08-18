@@ -31,7 +31,6 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
     onClose()
   }, [onClose])
 
-  // Task değiştiğinde edit data'sını güncelle
   useEffect(() => {
     if (task) {
       setEditData({
@@ -89,7 +88,12 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
   if (!task) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) handleClose()
+      }}
+    >
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start justify-between">
