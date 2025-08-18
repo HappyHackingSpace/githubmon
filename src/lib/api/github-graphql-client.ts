@@ -424,12 +424,13 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
   const staleDate = oneWeekAgo.toISOString()
 
-  const query = `
+const query = `
     query GetActionRequiredItems($username: String!) {
       user(login: $username) {
         # Assigned Issues & PRs
         assignedIssues: issues(states: OPEN, first: 50, filterBy: { assignee: $username }) {
           nodes {
+            __typename
             id
             title
             url
@@ -448,10 +449,10 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
             }
           }
         }
-        
         # Assigned Pull Requests 
         pullRequests(states: OPEN, first: 50) {
           nodes {
+            __typename
             id
             title
             url
@@ -476,7 +477,6 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
           }
         }
       }
-      
       # Stale PRs
       stalePRs: search(
         query: "is:pr is:open author:${username} updated:<${staleDate}"
@@ -485,6 +485,7 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
       ) {
         nodes {
           ... on PullRequest {
+            __typename
             id
             title
             url
@@ -505,7 +506,6 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
           }
         }
       }
-      
       # Mentions and Review Requests
       mentions: search(
         query: "mentions:${username} is:open"
@@ -514,6 +514,7 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
       ) {
         nodes {
           ... on Issue {
+            __typename
             id
             title
             url
@@ -532,6 +533,7 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
             }
           }
           ... on PullRequest {
+            __typename
             id
             title
             url
@@ -560,7 +562,6 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
           }
         }
       }
-      
       # Review Requests (separate query for better detection)
       reviewRequests: search(
         query: "is:pr is:open review-requested:${username}"
@@ -569,6 +570,7 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
       ) {
         nodes {
           ... on PullRequest {
+            __typename
             id
             title
             url
@@ -597,9 +599,9 @@ async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
           }
         }
       }
-      
       rateLimit {
         limit
+        cost
         remaining
         resetAt
       }
