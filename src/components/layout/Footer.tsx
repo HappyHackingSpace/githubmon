@@ -11,7 +11,7 @@ const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center space-y-4">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 relative">
+            <div className="w-24 h-24 relative">
               <Image
                 src={theme === "dark" ? "/hhs-white.avif" : "/hhs-black.avif"}
                 alt="Logo"
