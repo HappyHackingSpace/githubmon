@@ -365,12 +365,18 @@ export const useKanbanStore = create<KanbanState>()(
     
     const personalTaskIds = Object.keys(personalTasks)
     
-    const resetColumns = { ...defaultColumns }
-    Object.keys(resetColumns).forEach(columnId => {
-      resetColumns[columnId].taskIds = personalTaskIds.filter(taskId => 
-        state.columns[columnId]?.taskIds.includes(taskId) || false
-      )
-    })
+    const resetColumns = Object.fromEntries(
+      Object.entries(defaultColumns).map(([columnId, col]) => [
+        columnId,
+        {
+          ...col,
+          taskIds: personalTaskIds.filter(
+            (taskId) =>
+              state.columns[columnId]?.taskIds.includes(taskId) || false
+          ),
+        },
+      ])
+    ) as Record<string, KanbanColumn>
     
     return {
       tasks: personalTasks,
