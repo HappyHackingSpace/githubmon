@@ -108,6 +108,8 @@ export function Sidebar() {
     } catch (error) {
       console.error('Logout error:', error)
       window.location.replace('/')
+    } finally {
+      setIsLoggingOut(false)
     }
   }
 
