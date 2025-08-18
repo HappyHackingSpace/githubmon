@@ -18,12 +18,13 @@ export const cookieUtils = {
             `${name}=${encodeURIComponent(value)}`,
             `expires=${expires.toUTCString()}`,
             `path=/`,
-            `SameSite=Strict`
+            `SameSite=Strict`,
+            `Max-Age=${days * 24 * 60 * 60}`
         ]
 
-        if (location.protocol === 'https:') {
-            attributes.push('Secure')
-        }
+       if (window.isSecureContext) {
+             attributes.push('Secure')
+         }
 
         document.cookie = attributes.join('; ')
         
