@@ -165,7 +165,7 @@ export function KanbanBoard() {
  const [isModalOpen, setIsModalOpen] = useState(false)
  const [showAddTaskModal, setShowAddTaskModal] = useState(false)
  const [addTaskColumnId, setAddTaskColumnId] = useState<string | null>(null)
- const [isClearing] = useState(false)
+ const [isClearing, setIsClearing] = useState(false)
 
 
  const sensors = useSensors(
@@ -178,20 +178,31 @@ export function KanbanBoard() {
 
  const handleClearGitHubTasks = async () => {
   if (confirm('GitHub tasks will be cleared. Only personal tasks will remain.')) {
-    clearGitHubTasks()
+    setIsClearing(true)
     
-    setTimeout(async () => {
-      if (confirm('🔄 Fresh GitHub data is available. Sync now with context analysis?')) {
-        try {
-          const taskCount = await syncFromGitHub()
-          alert(`✅ Sync complete! ${taskCount} tasks added with smart column organization.`)
-        } catch (error) {
-          console.error('Auto-sync failed:', error)
-          alert('❌ Auto-sync failed. You can manually sync using the Sync button.')
+    try {
+      clearGitHubTasks()
+      
+      setTimeout(async () => {
+        if (confirm('🔄 Fresh GitHub data is available. Sync now with context analysis?')) {
+          try {
+            const taskCount = await syncFromGitHub()
+            alert(`✅ Sync complete! ${taskCount} tasks added with smart column organization.`)
+          } catch (error) {
+            console.error('Auto-sync failed:', error)
+            alert('❌ Auto-sync failed. You can manually sync using the Sync button.')
+          } finally {
+            setIsClearing(false)
+          }
+        } else {
+          setIsClearing(false)
         }
-      }
-    }, 800)
-}
+      }, 800)
+    } catch (error) {
+      console.error('Clear operation failed:', error)
+      setIsClearing(false)
+    }
+  }
  }
 
  const handleTaskView = (task: KanbanTask) => {
