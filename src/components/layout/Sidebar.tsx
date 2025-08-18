@@ -2,13 +2,12 @@
 
 import Link from 'next/link'
 import { useSearchParams, usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { useSidebarState, useAuthStore, useStoreHydration, useActionItemsStore } from '@/stores'
 import { useQuickWinsStore } from '@/stores/quickWins'
-import { ChevronRight, Clock, LogOut, MessageSquare, Sparkles, Star, Target, Zap, Home, UserCheck, Lightbulb, Wrench } from 'lucide-react'
+import { ChevronRight, Clock, LogOut, MessageSquare, Sparkles, Star, Target, Zap, Home, UserCheck, Lightbulb, Wrench, Loader2 } from 'lucide-react'
 import { Badge } from '../ui/badge'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
 
 export function Sidebar() {
   const searchParams = useSearchParams()
@@ -24,40 +23,94 @@ export function Sidebar() {
 
   const [actionRequiredOpen, setActionRequiredOpen] = useState(false)
   const [quickWinsOpen, setQuickWinsOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  // Close accordions when navigating to dashboard
+  // Set accordion state based on current pathname
   useEffect(() => {
-    if (pathname === '/dashboard') {
+    const isActionRequiredPage = pathname === '/action-required'
+    const isQuickWinsPage = pathname === '/quick-wins'
+    
+    // Only open accordions for current page, don't close others
+    if (isActionRequiredPage) {
+      setActionRequiredOpen(true)
+    }
+    if (isQuickWinsPage) {
+      setQuickWinsOpen(true)
+    }
+    
+    // Only close accordions if we're going to dashboard or other pages
+    if (pathname === '/dashboard' || pathname === '/settings' || pathname === '/search') {
       setActionRequiredOpen(false)
       setQuickWinsOpen(false)
     }
   }, [pathname])
 
-  const currentTab = searchParams?.get('tab') || 'assigned'
-
-  const getBadgeCount = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => {
-    if (type === 'goodFirstIssues') return goodIssues.length
-    if (type === 'easyFixes') return easyFixes.length
-    return getCountByType(type)
+  // Accordion toggle handlers
+  const handleActionRequiredToggle = (open: boolean) => {
+    // If we're on action-required page and trying to close, don't allow it
+    if (!open && pathname === '/action-required') {
+      return
+    }
+    setActionRequiredOpen(open)
   }
 
-  const getActionRequiredTotal = () => getBadgeCount('assigned') + getBadgeCount('mentions') + getBadgeCount('stale')
-  const getQuickWinsTotal = () => getBadgeCount('goodFirstIssues') + getBadgeCount('easyFixes')
+  const handleQuickWinsToggle = (open: boolean) => {
+    // If we're on quick-wins page and trying to close, don't allow it
+    if (!open && pathname === '/quick-wins') {
+      return
+    }
+    setQuickWinsOpen(open)
+  }
+
+  const currentTab = searchParams?.get('tab') || 'assigned'
+
+  // Memoize badge count calculations to prevent unnecessary re-calculations
+  const getBadgeCount = useMemo(() => {
+    return (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => {
+      if (!hasHydrated) return 0
+      
+      if (type === 'goodFirstIssues') return goodIssues.length
+      if (type === 'easyFixes') return easyFixes.length
+      return getCountByType(type)
+    }
+  }, [hasHydrated, goodIssues.length, easyFixes.length, getCountByType])
+
+  const getActionRequiredTotal = useMemo(() => {
+    if (!hasHydrated) return 0
+    return getBadgeCount('assigned') + getBadgeCount('mentions') + getBadgeCount('stale')
+  }, [hasHydrated, getBadgeCount])
+  
+  const getQuickWinsTotal = useMemo(() => {
+    if (!hasHydrated) return 0
+    return getBadgeCount('goodFirstIssues') + getBadgeCount('easyFixes')
+  }, [hasHydrated, getBadgeCount])
 
   const getBadgeContent = (type: 'assigned' | 'mentions' | 'stale' | 'goodFirstIssues' | 'easyFixes') => {
+    if (!hasHydrated) return 0
+    
     if (type === 'goodFirstIssues' || type === 'easyFixes') {
       if (quickWinsLoading.goodIssues || quickWinsLoading.easyFixes) return '...'
     } else {
       if (loading[type]) return '...'
     }
-    return getBadgeCount(type)
+    return getBadgeCount(type) || 0
   }
 
   const isQuickWinsTab = pathname === '/quick-wins'
   const isActionRequiredTab = pathname === '/action-required'
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+    
+    setIsLoggingOut(true)
+    try {
+      await logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+      window.location.replace('/')
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   return (
@@ -111,30 +164,32 @@ export function Sidebar() {
               </Link>
 
               {/* Action Required Accordion */}
-              <Collapsible open={actionRequiredOpen} onOpenChange={setActionRequiredOpen}>
-                <CollapsibleTrigger className={`
-                  flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors cursor-pointer
-                  ${isActionRequiredTab
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
-                  }
-                `}>
-                  <div className="flex items-center  gap-1 ">
+              <div>
+                <button 
+                  onClick={() => handleActionRequiredToggle(!actionRequiredOpen)}
+                  className={`
+                    flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors cursor-pointer text-left
+                    ${isActionRequiredTab
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-3">
                     <Zap className="w-5 h-5" />
                     <span>Action Required</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    {getActionRequiredTotal() > 0 && (
-                      <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
-                        {getActionRequiredTotal()}
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
+                      {getActionRequiredTotal}
+                    </Badge>
                     <ChevronRight className={`w-4 h-4 transition-transform ${actionRequiredOpen ? 'rotate-90' : ''}`} />
                   </div>
-                </CollapsibleTrigger>
+                </button>
 
                 {/* Action Required sub-items */}
-                <CollapsibleContent className="pl-8 space-y-1 mt-1">
+                {actionRequiredOpen && (
+                  <div className="pl-8 space-y-1 mt-1">
                   <Link
                     href="/action-required?tab=assigned"
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
@@ -186,34 +241,37 @@ export function Sidebar() {
                       {getBadgeContent('stale')}
                     </Badge>
                   </Link>
-                </CollapsibleContent>
-              </Collapsible>
+                  </div>
+                )}
+              </div>
 
               {/* Quick Wins Accordion */}
-              <Collapsible open={quickWinsOpen} onOpenChange={setQuickWinsOpen}>
-                <CollapsibleTrigger className={`
-                  flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors cursor-pointer
-                  ${isQuickWinsTab
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
-                  }
-                `}>
+              <div>
+                <button 
+                  onClick={() => handleQuickWinsToggle(!quickWinsOpen)}
+                  className={`
+                    flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors cursor-pointer text-left
+                    ${isQuickWinsTab
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                    }
+                  `}
+                >
                   <div className="flex items-center gap-3">
                     <Target className="w-5 h-5" />
                     <span>Quick Wins</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    {getQuickWinsTotal() > 0 && (
-                      <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
-                        {getQuickWinsTotal()}
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20">
+                      {getQuickWinsTotal}
+                    </Badge>
                     <ChevronRight className={`w-4 h-4 transition-transform ${quickWinsOpen ? 'rotate-90' : ''}`} />
                   </div>
-                </CollapsibleTrigger>
+                </button>
 
                 {/* Quick Wins sub-items */}
-                <CollapsibleContent className="pl-8 space-y-1 mt-1">
+                {quickWinsOpen && (
+                  <div className="pl-8 space-y-1 mt-1">
                   <Link
                     href="/quick-wins?tab=good-issues"
                     className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
@@ -244,45 +302,49 @@ export function Sidebar() {
                       {getBadgeContent('easyFixes')}
                     </Badge>
                   </Link>
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* Coming Soon Items - Disabled Collapsibles */}
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
-                    <div className="flex items-center gap-3">
-                      <Star className="w-5 h-5" />
-                      <span>Favorites</span>
-                    </div>
-                    <span className="text-xs">Soon</span>
                   </div>
-                </CollapsibleTrigger>
-              </Collapsible>
+                )}
+              </div>
 
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-5 h-5" />
-                      <span>Recent</span>
-                    </div>
-                    <span className="text-xs">Soon</span>
-                  </div>
-                </CollapsibleTrigger>
-              </Collapsible>
+              {/* Settings Link */}
+              <Link
+                href="/settings"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                  ${pathname.startsWith('/settings')
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                  }`}
+              >
+                <Wrench className="w-5 h-5" />
+                <span>Settings</span>
+                
+              </Link>
 
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
-                    <div className="flex items-center gap-3">
-                      <Sparkles className="w-5 h-5" />
-                      <span>Discovery</span>
-                    </div>
-                    <span className="text-xs">Soon</span>
-                  </div>
-                </CollapsibleTrigger>
-              </Collapsible>
+
+              {/* Coming Soon Items - Disabled */}
+              <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+                <div className="flex items-center gap-3">
+                  <Star className="w-5 h-5" />
+                  <span>Favorites</span>
+                </div>
+                <span className="text-xs">Soon</span>
+              </div>
+
+              <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5" />
+                  <span>Recent</span>
+                </div>
+                <span className="text-xs">Soon</span>
+              </div>
+
+              <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-5 h-5" />
+                  <span>Discovery</span>
+                </div>
+                <span className="text-xs">Soon</span>
+              </div>
             </nav>
           </div>
         </div>
@@ -294,10 +356,15 @@ export function Sidebar() {
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="w-full justify-start text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+              disabled={isLoggingOut}
+              className="w-full justify-start text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50 disabled:opacity-50"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
+              {isLoggingOut ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <LogOut className="w-4 h-4 mr-2" />
+              )}
+              {isLoggingOut ? 'Logging out...' : 'Logout'}
             </Button>
           </div>
         )}

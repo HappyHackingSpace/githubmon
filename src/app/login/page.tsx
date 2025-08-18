@@ -1,30 +1,16 @@
 'use client'
 
+import { Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useRequireGuest } from '@/hooks/useAuth'
 
-export default function LoginPage() {
-  const { isLoading: authLoading, isAuthenticated } = useRequireGuest()
-
-  // If authenticated, redirect will be handled by middleware
-  if (!authLoading && isAuthenticated) {
-    return (
-      <div className="h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
-      </div>
-    )
-  }
-
-  if (authLoading) {
-    return (
-      <div className="h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
-      </div>
-    )
-  }
+function LoginContent() {
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
 
   return (
     <div className="h-screen bg-background flex items-center justify-center p-4">
@@ -43,6 +29,16 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="space-y-6 pb-8">
+            {error && (
+              <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                <p className="text-sm text-destructive">
+                  {error === 'authentication_failed' 
+                    ? 'Authentication failed. Please try again.' 
+                    : 'An error occurred during sign in. Please try again.'}
+                </p>
+              </div>
+            )}
+            
             <div className="text-center space-y-2">
               <h3 className="text-lg font-semibold">Welcome Back</h3>
               <p className="text-sm text-muted-foreground">
@@ -51,7 +47,7 @@ export default function LoginPage() {
             </div>
 
             <Button
-              onClick={() => signIn('github', { callbackUrl: '/dashboard' })}
+              onClick={() => signIn('github')}
               className="w-full h-12 font-semibold text-base"
               size="lg"
             >
@@ -77,5 +73,52 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  const { isLoading: authLoading, isAuthenticated } = useRequireGuest()
+
+  // If authenticated, redirect will be handled by middleware
+  if (!authLoading && isAuthenticated) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
+      </div>
+    )
+  }
+
+  if (authLoading) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
+      </div>
+    )
+  }
+
+  return (
+    <Suspense fallback={
+      <div className="h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card className="shadow-xl">
+            <CardHeader className="text-center pb-6 space-y-2">
+              <div className="mx-auto w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse mb-4"></div>
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-32"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-48"></div>
+            </CardHeader>
+            <CardContent className="space-y-6 pb-8">
+              <div className="text-center space-y-2">
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-24"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-40"></div>
+              </div>
+              <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

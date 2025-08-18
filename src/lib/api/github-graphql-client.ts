@@ -51,7 +51,100 @@ interface Issue {
   }
 }
 
+interface ActionRequiredResult {
+  assigned: GitHubActionItem[]
+  mentions: GitHubActionItem[]
+  stale: GitHubActionItem[]
+  rateLimit: RateLimit
+}
 
+interface GitHubActionItem {
+  id: string
+  title: string
+  url: string
+  repo: string
+  type: 'issue' | 'pullRequest'
+  author: string
+  priority: 'urgent' | 'high' | 'medium' | 'low'
+  daysOld: number
+  createdAt: string
+  updatedAt: string
+  mentionType?: 'mention' | 'review_request' | 'comment'
+}
+
+interface ActionRequiredQueryResult {
+  user: {
+    assignedIssues: {
+      nodes: ActionItem[]
+    }
+    pullRequests: {
+      nodes: PullRequest[]
+    }
+  }
+  stalePRs: {
+    nodes: StalePullRequest[]
+  }
+  mentions: {
+    nodes: (ActionItem | PullRequestWithReviews)[]
+  }
+  reviewRequests: {
+    nodes: PullRequestWithReviews[]
+  }
+  rateLimit: RateLimit
+}
+
+interface ActionItem {
+  id: string
+  title: string
+  url: string
+  createdAt: string
+  updatedAt: string
+  repository: {
+    nameWithOwner: string
+  }
+  author: {
+    login: string
+  } | null
+  labels: {
+    nodes: Array<{ name: string }>
+  }
+  __typename?: string
+}
+
+interface PullRequest {
+  id: string
+  title: string
+  url: string
+  createdAt: string
+  updatedAt: string
+  repository: {
+    nameWithOwner: string
+  }
+  author: {
+    login: string
+  } | null
+  assignees: {
+    nodes: Array<{ login: string }>
+  }
+  labels: {
+    nodes: Array<{ name: string }>
+  }
+  __typename?: string
+}
+
+interface PullRequestWithReviews extends PullRequest {
+  reviewRequests: {
+    nodes: Array<{
+      requestedReviewer: {
+        login: string
+      } | null
+    }>
+  }
+}
+
+interface StalePullRequest extends Omit<PullRequest, 'assignees'> {
+  reviewDecision: string | null
+}
 
 class GitHubGraphQLClient {
   private endpoint = 'https://api.github.com/graphql'
@@ -325,6 +418,305 @@ class GitHubGraphQLClient {
     const result = await this.query<{ rateLimit: RateLimit }>(query)
     return result.data.rateLimit
   }
+
+async getActionRequiredItems(username: string): Promise<ActionRequiredResult> {
+  const oneWeekAgo = new Date()
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+  const staleDate = oneWeekAgo.toISOString()
+
+const query = `
+    query GetActionRequiredItems($username: String!) {
+      user(login: $username) {
+        # Assigned Issues & PRs
+        assignedIssues: issues(states: OPEN, first: 50, filterBy: { assignee: $username }) {
+          nodes {
+            __typename
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+          }
+        }
+        # Assigned Pull Requests 
+        pullRequests(states: OPEN, first: 50) {
+          nodes {
+            __typename
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            assignees(first: 10) {
+              nodes {
+                login
+              }
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+          }
+        }
+      }
+      # Stale PRs
+      stalePRs: search(
+        query: "is:pr is:open author:${username} updated:<${staleDate}"
+        type: ISSUE
+        first: 50
+      ) {
+        nodes {
+          ... on PullRequest {
+            __typename
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+            reviewDecision
+          }
+        }
+      }
+      # Mentions and Review Requests
+      mentions: search(
+        query: "mentions:${username} is:open"
+        type: ISSUE  
+        first: 50
+      ) {
+        nodes {
+          ... on Issue {
+            __typename
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+          }
+          ... on PullRequest {
+            __typename
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+            reviewRequests(first: 10) {
+              nodes {
+                requestedReviewer {
+                  ... on User {
+                    login
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      # Review Requests (separate query for better detection)
+      reviewRequests: search(
+        query: "is:pr is:open review-requested:${username}"
+        type: ISSUE
+        first: 50
+      ) {
+        nodes {
+          ... on PullRequest {
+            __typename
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+            }
+            author {
+              login
+            }
+            labels(first: 10) {
+              nodes {
+                name
+              }
+            }
+            reviewRequests(first: 10) {
+              nodes {
+                requestedReviewer {
+                  ... on User {
+                    login
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      rateLimit {
+        limit
+        cost
+        remaining
+        resetAt
+      }
+    }
+  `
+  
+  try {
+    const result = await this.query<ActionRequiredQueryResult>(query, { 
+      username
+    })
+
+    const data = result.data
+    
+    const assignedIssues = data.user.assignedIssues.nodes.map((item: ActionItem) => this.mapToActionItem(item))
+    const assignedPRs = data.user.pullRequests.nodes
+      .filter((pr: PullRequest) => pr.assignees.nodes.some((assignee: { login: string }) => assignee.login === username))
+      .map((item: PullRequest) => this.mapToActionItem(item))
+    const assigned = [...assignedIssues, ...assignedPRs]
+
+    const reviewRequestIds = new Set<string>()
+    const reviewRequests = data.reviewRequests.nodes
+      .filter((pr: PullRequestWithReviews) => 
+        pr.reviewRequests.nodes.some(req => req.requestedReviewer?.login === username)
+      )
+      .map((item: PullRequestWithReviews) => {
+        reviewRequestIds.add(item.id)
+        return this.mapToActionItem(item, 'review_request')
+      })
+
+    const generalMentions = data.mentions.nodes
+      .filter((item) => !reviewRequestIds.has(item.id))
+      .map((item: ActionItem | PullRequestWithReviews) => {
+       
+        const mentionType = item.__typename === 'PullRequest' ? 'comment' : 'mention'
+        return this.mapToActionItem(item, mentionType)
+      })
+
+    const mentions = [...reviewRequests, ...generalMentions]
+
+    const stale = data.stalePRs.nodes.map((pr: StalePullRequest) => {
+      const daysSinceUpdate = Math.floor(
+        (Date.now() - new Date(pr.updatedAt).getTime()) / (1000 * 60 * 60 * 24)
+      )
+      return {
+        ...this.mapToActionItem(pr),
+        daysOld: daysSinceUpdate,
+        reviewStatus: pr.reviewDecision || 'PENDING',
+      }
+    })
+
+    return {
+      assigned,
+      mentions, 
+      stale,
+      rateLimit: data.rateLimit
+    }
+
+  } catch (error) {
+    console.error('Failed to fetch action required items:', error)
+    throw error
+  }
+}
+
+private isPullRequest(item: ActionItem | PullRequest | StalePullRequest | PullRequestWithReviews): item is PullRequest | StalePullRequest | PullRequestWithReviews {
+  return (
+    item.__typename === 'PullRequest' ||
+    'assignees' in item ||
+    'reviewRequests' in item ||
+    'reviewDecision' in item
+  )
+}
+
+private mapToActionItem(item: ActionItem | PullRequest | StalePullRequest | PullRequestWithReviews, mentionType?: 'mention' | 'review_request' | 'comment'): GitHubActionItem {
+  const daysOld = Math.floor((Date.now() - new Date(item.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+  const labels = item.labels?.nodes?.map((l: { name: string }) => l.name) || []
+
+  // Type guard to check if item is a pull request
+  const isPR = this.isPullRequest(item)
+
+  return {
+    id: item.id,
+    title: item.title,
+    url: item.url,
+    repo: item.repository.nameWithOwner,
+    type: isPR ? 'pullRequest' : 'issue',
+    author: item.author?.login || 'unknown',
+    priority: this.calculateActionPriority(labels, daysOld),
+    daysOld,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    ...(mentionType && { mentionType })
+  }
+}
+
+
+private calculateActionPriority(labels: string[], daysOld: number): 'urgent' | 'high' | 'medium' | 'low' {
+  const lowerLabels = labels.map(l => l.toLowerCase())
+  
+
+  if (lowerLabels.some(l => l.includes('critical') || l.includes('urgent') || l.includes('p0'))) {
+    return 'urgent'
+  }
+  if (lowerLabels.some(l => l.includes('high') || l.includes('p1') || l.includes('bug'))) {
+    return 'high'
+  }
+  
+
+  if (daysOld > 14) return 'urgent'  
+  if (daysOld > 7) return 'high'     
+  if (daysOld > 3) return 'medium'   
+  
+  return 'low'
+} 
+
+
 }
 
 export const githubGraphQLClient = new GitHubGraphQLClient()

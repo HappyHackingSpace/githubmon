@@ -21,27 +21,36 @@ export default function AuthCallback() {
   const router = useRouter()
   const { setOrgData, setConnected, setTokenExpiry } = useAuthStore()
 
-  useEffect(() => {
-    const extendedSession = session as ExtendedSession
-    if (status === 'authenticated' && extendedSession?.accessToken && extendedSession.user) {
-      try {
-        // Set auth data from OAuth session
-        const expiryDate = new Date()
-        expiryDate.setDate(expiryDate.getDate() + 30) // 30 days - more conservative
-        setOrgData({
-          orgName: extendedSession.user.login || extendedSession.user.name || 'Unknown',
-          token: extendedSession.accessToken
-        })
-        setTokenExpiry(expiryDate.toISOString())
-        setConnected(true)
-        router.replace('/dashboard')
-      } catch {
-        router.replace('/')
-      }
-    } else if (status === 'unauthenticated') {
-      router.replace('/')
-    }
-  }, [session, status, router, setOrgData, setConnected, setTokenExpiry])
+useEffect(() => {
+ if (status === 'loading') return
+ 
+ const extendedSession = session as ExtendedSession
+ 
+ if (status === 'authenticated' && extendedSession?.accessToken && extendedSession.user) {
+   const expiryDate = new Date()
+   expiryDate.setDate(expiryDate.getDate() + 30)
+   
+   // GitHub username'i öncelikle login field'ından al
+   const githubUsername = extendedSession.user.login || 'Unknown'
+   const displayName = extendedSession.user.name || extendedSession.user.login || 'Unknown'
+   
+   setOrgData({
+     orgName: displayName,
+     username: githubUsername,
+     token: extendedSession.accessToken
+   })
+   setTokenExpiry(expiryDate.toISOString())
+   setConnected(true)
+   
+   // Wait a moment for state to update, then redirect
+   setTimeout(() => {
+     router.replace('/dashboard')
+   }, 500)
+ } else if (status === 'unauthenticated') {
+   // If not authenticated, redirect to login with error
+   router.replace('/login?error=authentication_failed')
+ }
+}, [session, status, router, setOrgData, setConnected, setTokenExpiry])
 
   return (
     <div className="h-screen bg-background flex items-center justify-center">

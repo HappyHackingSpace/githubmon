@@ -1,4 +1,3 @@
-// stores/auth.ts
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import type { OrgData } from '@/types/auth'
@@ -40,53 +39,57 @@ export const useAuthStore = create<AuthState>()(
       get().persistToCookie()
     },
 
-    logout: async () => {
-      try {
+logout: async () => {
+  try {
+    set({
+      isConnected: false,
+      orgData: null,
+      tokenExpiry: null
+    })
+    
+    cookieUtils.removeAuth()
+    
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch (error) {
+      console.warn('Logout endpoint failed:', error)
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.location.replace('/')
+    }
+  } catch (error) {
+    console.error('Logout failed:', error)
+    if (typeof window !== 'undefined') {
+      window.location.replace('/')
+    }
+  }
+},
 
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          credentials: 'include'
-        })
-      } catch (error) {
-        console.warn('Logout API call failed:', error)
-
-      }
-
-      try {
-        const { signOut } = await import('next-auth/react')
-        await signOut({ redirect: false })
-      } catch (error) {
-        console.warn('NextAuth signOut failed:', error)
-      }
-      
-
-      set({
-        isConnected: false,
-        orgData: null,
-        tokenExpiry: null
-      })
-      
-
-      cookieUtils.removeAuth()
-      
-
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('githubmon-auth')
-        localStorage.removeItem('auth-token')
-        const keysToRemove = []
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i)
-          if (key && (key.includes('auth') || key.includes('token') || key.includes('githubmon'))) {
-            keysToRemove.push(key)
-          }
-        }
-        keysToRemove.forEach(key => localStorage.removeItem(key))
-      }
-      
-      if (typeof window !== 'undefined') {
-        window.location.href = '/'
-      }
-    },
+checkCookieSync: () => {
+  const { isConnected } = get()
+  const cookieData = cookieUtils.getAuth()
+  
+  if (!cookieData && isConnected) {
+    set({
+      isConnected: false,
+      orgData: null,
+      tokenExpiry: null
+    })
+    return false
+  }
+  
+  if (cookieData && !isConnected) {
+    set({
+      isConnected: cookieData.isConnected,
+      orgData: cookieData.orgData,
+      tokenExpiry: cookieData.tokenExpiry
+    })
+    return true
+  }
+  
+  return isConnected
+},
 
     isTokenValid: () => {
       const { tokenExpiry } = get()
@@ -95,25 +98,68 @@ export const useAuthStore = create<AuthState>()(
     },
 
     hydrate: () => {
-      if (typeof window === 'undefined') return
+  if (typeof window === 'undefined') {
+    set({ isHydrated: true })
+    return
+  }
 
-      const authData = cookieUtils.getAuth()
-      if (authData) {
-        set({
-          isConnected: authData.isConnected,
-          orgData: authData.orgData,
-          tokenExpiry: authData.tokenExpiry,
-          isHydrated: true
-        })
-      } else {
-        set({ 
-          isConnected: false,
-          orgData: null,
-          tokenExpiry: null,
-          isHydrated: true 
-        })
+  const authData = cookieUtils.getAuth()
+  if (authData && authData.tokenExpiry) {
+    const isExpired = new Date() >= new Date(authData.tokenExpiry)
+    
+    if (!isExpired) {
+      let migratedOrgData = authData.orgData
+      if (migratedOrgData && !migratedOrgData.username) {
+        migratedOrgData = {
+          ...migratedOrgData,
+          username: migratedOrgData.orgName
+        }
+        const updatedAuthData = { ...authData, orgData: migratedOrgData }
+        cookieUtils.setAuth(updatedAuthData)
       }
-    },
+      
+      set({
+        isConnected: authData.isConnected,
+        orgData: migratedOrgData,
+        tokenExpiry: authData.tokenExpiry,
+        isHydrated: true
+      })
+    } else {
+      cookieUtils.removeAuth()
+      set({ 
+        isConnected: false,
+        orgData: null,
+        tokenExpiry: null,
+        isHydrated: true 
+      })
+    }
+  } else {
+    set({ 
+      isConnected: false,
+      orgData: null,
+      tokenExpiry: null,
+      isHydrated: true 
+    })
+  }
+},
+
+initCookieSync: () => {
+  if (typeof window === 'undefined') return
+  
+  const checkCookie = () => {
+    const cookieData = cookieUtils.getAuth()
+    const { isConnected } = get()
+    
+    if (!cookieData && isConnected) {
+      console.log('Cookie cleared externally, logging out...')
+      get().logout()
+    }
+  }
+  
+  const interval = setInterval(checkCookie, 500)
+  
+  return () => clearInterval(interval)
+},
 
     persistToCookie: () => {
       const { isConnected, orgData, tokenExpiry } = get()

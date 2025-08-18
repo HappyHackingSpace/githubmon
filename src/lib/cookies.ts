@@ -14,7 +14,20 @@ export const cookieUtils = {
         const expires = new Date()
         expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
 
-        document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Strict;Secure=${location.protocol === 'https:'}`
+        const attributes = [
+            `${name}=${encodeURIComponent(value)}`,
+            `expires=${expires.toUTCString()}`,
+            `path=/`,
+            `SameSite=Strict`,
+            `Max-Age=${days * 24 * 60 * 60}`
+        ]
+
+       if (window.isSecureContext) {
+             attributes.push('Secure')
+         }
+
+        document.cookie = attributes.join('; ')
+        
     },
 
     get: (name: string): string | null => {
@@ -38,9 +51,8 @@ export const cookieUtils = {
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`
     },
 
-    // Auth specific functions
     setAuth: (data: AuthCookieData) => {
-        cookieUtils.set('githubmon-auth', JSON.stringify(data), 30) // 30 days
+        cookieUtils.set('githubmon-auth', JSON.stringify(data), 30) 
     },
 
     getAuth: (): AuthCookieData | null => {

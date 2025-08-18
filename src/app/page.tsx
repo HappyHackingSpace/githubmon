@@ -20,7 +20,10 @@ export default function HomePage() {
 
   useEffect(() => {
     if (hasHydrated && isConnected && orgData && isTokenValid()) {
-      router.replace('/dashboard')
+      // Small delay to ensure middleware doesn't conflict
+      setTimeout(() => {
+        router.replace('/dashboard')
+      }, 100)
       return
     }
   }, [hasHydrated, isConnected, orgData, isTokenValid, router])

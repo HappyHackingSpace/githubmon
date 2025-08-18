@@ -2,104 +2,76 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  
-  const authCookie = request.cookies.get('githubmon-auth')?.value
+ const { pathname } = request.nextUrl
+ 
+ const authCookie = request.cookies.get('githubmon-auth')?.value
 
-  let isAuthenticated = false
+ let isAuthenticated = false
 
-  if (authCookie) {
-    try {
-      const authData = JSON.parse(authCookie)
+ if (authCookie) {
+   try {
+     const authData = JSON.parse(authCookie)
+     
+     if (authData.isConnected && 
+         authData.orgData?.token && 
+         authData.tokenExpiry) {
+       
+       const isExpired = new Date() >= new Date(authData.tokenExpiry)
+       isAuthenticated = !isExpired
+     }
+   } catch {
+     isAuthenticated = false
+   }
+ }
 
-      const hasValidData = authData.isConnected &&
-        authData.orgData &&
-        authData.orgData.token &&
-        authData.orgData.orgName
+ const protectedRoutes = ['/dashboard', '/settings']
+ const protectedApiRoutes = ['/api/action-required']
+ const authRoutes = ['/auth/callback', '/api/auth', '/login']
+ const publicRoutes = ['/', '/privacy-policy', '/terms-of-service']
 
-      if (hasValidData) {
-        if (authData.tokenExpiry) {
-          const expiryDate = new Date(authData.tokenExpiry)
-          const now = new Date()
+ const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+ const isProtectedApiRoute = protectedApiRoutes.some(route => pathname.startsWith(route))
+ const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
+ const isPublicRoute = publicRoutes.some(route => pathname === route)
 
-          const bufferTime = 24 * 60 * 60 * 1000 // 1 day in milliseconds
-          const effectiveExpiry = new Date(expiryDate.getTime() - bufferTime)
+ if (pathname === '/api/auth/logout') {
+   const response = NextResponse.next()
+   response.cookies.set('githubmon-auth', '', {
+     expires: new Date(0),
+     path: '/'
+   })
+   return response
+ }
 
-          isAuthenticated = now <= effectiveExpiry
-        } else {
-          isAuthenticated = false
-        }
-      }
-    } catch {
-      const response = NextResponse.next()
-      response.cookies.set('githubmon-auth', '', {
-        expires: new Date(0),
-        path: '/'
-      })
-      isAuthenticated = false
-    }
-  }
+ if (isAuthenticated && pathname === '/') {
+   return NextResponse.redirect(new URL('/dashboard', request.url))
+ }
 
-  const protectedRoutes = ['/dashboard', '/settings']
-  
-  const authRoutes = ['/auth/callback', '/api/auth']
+ if (isAuthenticated && pathname === '/login') {
+   return NextResponse.redirect(new URL('/dashboard', request.url))
+ }
 
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+ if (!isAuthenticated && isProtectedRoute) {
+   return NextResponse.redirect(new URL('/login', request.url))
+ }
 
-  
+ if (!isAuthenticated && isProtectedApiRoute) {
+   return NextResponse.json(
+     { error: 'Unauthorized', message: 'Authentication required to access this resource' },
+     { status: 401 }
+   )
+ }
 
-  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
+ // Allow auth routes and public routes to pass through
+ if (isAuthRoute || isPublicRoute) {
+   return NextResponse.next()
+ }
 
-  if (isAuthenticated && pathname === '/') {
-    const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url))
-    redirectResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
-    redirectResponse.headers.set('Pragma', 'no-cache')
-    redirectResponse.headers.set('Expires', '0')
-    return redirectResponse
-  }
-
-  if (isAuthenticated && pathname === '/login') {
-    const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url))
-    redirectResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
-    redirectResponse.headers.set('Pragma', 'no-cache')
-    redirectResponse.headers.set('Expires', '0')
-    return redirectResponse
-  }
-
-  if (!isAuthenticated && isProtectedRoute) {
-    const rootUrl = new URL('/', request.url)
-
-    const response = NextResponse.redirect(rootUrl)
-    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
-    response.headers.set('Pragma', 'no-cache')
-    response.headers.set('Expires', '0')
-
-    if (authCookie) {
-      response.cookies.set('githubmon-auth', '', {
-        expires: new Date(0),
-        path: '/'
-      })
-    }
-    return response
-  }
-
-  if (isAuthRoute) {
-    return NextResponse.next()
-  }
-
-  return NextResponse.next()
+ return NextResponse.next()
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder files
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+ matcher: [
+   '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+ ],
 }

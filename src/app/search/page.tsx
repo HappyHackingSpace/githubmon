@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -80,14 +80,12 @@ interface UserAnalytics {
   behavior?: Array<UserBehaviorData>;
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const userParam = searchParams?.get("user");
   const repoParam = searchParams?.get("repo");
-  const { isLoading } = useRequireAuth();
   const { setCurrentQuery, setCurrentSearchType, setSearchModalOpen } =
     useSearchStore();
-  const { setOpen } = useSidebarState();
 
   const [searchResults, setSearchResults] = useState<{
     repos: TrendingRepo[];
@@ -279,33 +277,8 @@ export default function SearchPage() {
     window.dispatchEvent(event);
   }, [activeSection]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <Header />
-        <div className="flex flex-1">
-          <SidebarToggle onClick={() => setOpen(true)} />
-          <SidebarSearch />
-          <main className="flex-1 lg:ml-80 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading...</p>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header />
-
-      <div className="flex flex-1">
-        <SidebarToggle onClick={() => setOpen(true)} />
-        <SidebarSearch />
-
-        <main className="flex-1 lg:ml-80 p-6">
+    <main className="flex-1 lg:ml-80 p-6">
           <div className="max-w-5xl mx-auto">
             {/* Show search prompt if no parameters */}
             {!userParam && !repoParam && !hasSearched && (
@@ -1014,9 +987,55 @@ export default function SearchPage() {
               </div>
             )}
           </div>
-        </main>
-      </div>
+    </main>
+  );
+}
 
+export default function SearchPage() {
+  const { isLoading } = useRequireAuth();
+  const { setOpen } = useSidebarState();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <div className="flex flex-1">
+          <SidebarToggle onClick={() => setOpen(true)} />
+          <SidebarSearch />
+          <main className="flex-1 lg:ml-80 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading...</p>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+      <div className="flex flex-1">
+        <SidebarToggle onClick={() => setOpen(true)} />
+        <SidebarSearch />
+        <Suspense fallback={
+          <main className="flex-1 lg:ml-80 p-6">
+            <div className="max-w-5xl mx-auto">
+              <div className="animate-pulse space-y-8">
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+                <div className="space-y-4">
+                  <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </div>
+              </div>
+            </div>
+          </main>
+        }>
+          <SearchContent />
+        </Suspense>
+      </div>
       <SearchModal />
     </div>
   );
