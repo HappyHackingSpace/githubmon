@@ -17,6 +17,26 @@ export interface KanbanTask {
   updatedAt: Date
 }
 
+interface GitHubDataContext {
+  assignedItems: any[]
+  mentionItems: any[]
+  staleItems: any[]
+  currentTime: Date
+  userSettings: any
+}
+
+interface ContextRule {
+  id: string
+  condition: (context: GitHubDataContext) => boolean
+  columnSuggestion: {
+    id: string
+    title: string
+    color: string
+    priority: number
+  }
+  confidence: number
+}
+
 export interface KanbanColumn {
   id: string
   title: string
@@ -28,7 +48,7 @@ interface KanbanState {
   tasks: Record<string, KanbanTask>
   columns: Record<string, KanbanColumn>
   columnOrder: string[]
-  
+
   syncFromGitHub: () => Promise<number>
   addTask: (task: Omit<KanbanTask, 'id' | 'createdAt' | 'updatedAt'> & { columnId?: string }) => void
   updateTask: (id: string, updates: Partial<KanbanTask>) => void
@@ -68,6 +88,92 @@ const defaultColumns: Record<string, KanbanColumn> = {
   }
 }
 
+const analyzeContext = (context: GitHubDataContext) => {
+  const suggestions = []
+  
+  const reviewCount = context.mentionItems.filter(item => 
+    'mentionType' in item && item.mentionType === 'review_request'
+  ).length
+  
+  if (reviewCount >= 3) {
+    suggestions.push({
+      id: 'urgent-reviews',
+      title: 'Code Reviews',
+      color: '#dc2626',
+      priority: 1,
+      confidence: Math.min(reviewCount * 0.2, 1)
+    })
+  }
+  
+  const isMonday = context.currentTime.getDay() === 1
+  const weekendMentions = context.mentionItems.filter(item => {
+    const itemDate = new Date(item.created_at || item.updated_at)
+    const dayOfWeek = itemDate.getDay()
+    return dayOfWeek === 0 || dayOfWeek === 6
+  })
+  
+  if (isMonday && weekendMentions.length >= 2) {
+    suggestions.push({
+      id: 'weekend-catchup',
+      title: 'Weekend Catchup',
+      color: '#7c3aed',
+      priority: 2,
+      confidence: 0.8
+    })
+  }
+  
+  if (context.mentionItems.length >= 5) {
+    suggestions.push({
+      id: 'mentions-focus',
+      title: 'Needs Response',
+      color: '#2563eb',
+      priority: 3,
+      confidence: 0.7
+    })
+  }
+  
+  if (context.staleItems.length >= 3) {
+    suggestions.push({
+      id: 'follow-up',
+      title: 'Follow Up',
+      color: '#ea580c',
+      priority: 4,
+      confidence: 0.6
+    })
+  }
+  
+  const urgentItems = [
+    ...context.assignedItems,
+    ...context.mentionItems
+  ].filter(item => {
+    const title = item.title?.toLowerCase() || ''
+    const body = (item as any).body?.toLowerCase() || ''
+    const labels = (item as any).labels?.map((l: any) => l.name.toLowerCase()) || []
+    
+    return title.includes('urgent') || 
+           title.includes('hotfix') || 
+           title.includes('critical') ||
+           body.includes('urgent') ||
+           labels.some((label: string) => 
+             label.includes('urgent') || 
+             label.includes('critical') || 
+             label.includes('hotfix')
+           )
+  })
+  
+  if (urgentItems.length >= 1) {
+    suggestions.push({
+      id: 'emergency',
+      title: 'Emergency',
+      color: '#dc2626',
+      priority: 0,
+      confidence: 1.0
+    })
+  }
+  
+  return suggestions.sort((a, b) => a.priority - b.priority)
+}
+
 export const useKanbanStore = create<KanbanState>()(
   persist(
     (set) => ({
@@ -76,116 +182,90 @@ export const useKanbanStore = create<KanbanState>()(
       columnOrder: ['todo', 'in-progress', 'review', 'done'],
 
       syncFromGitHub: async () => {
-        const { githubSettings } = useSettingsStore.getState()
-        const { assignedItems, mentionItems } = useActionItemsStore.getState()
-        
-        console.log('🔄 Syncing Action Required data to kanban...')
-        console.log('⚙️ GitHub Settings:', githubSettings)
-        
-        const selectedItems: ActionItem[] = []
-        
-        if (githubSettings.assignedToMe) {
-          selectedItems.push(...assignedItems)
-        }
-        
-        if (githubSettings.mentionsMe) {
-          selectedItems.push(...mentionItems)
-        }
-        
-       
-        
-        
-        if (selectedItems.length === 0) {
-          return 0
-        }
-        
-        let filteredItems = selectedItems
-        if (githubSettings.repositories.length > 0) {
-          filteredItems = selectedItems.filter(item => 
-            githubSettings.repositories.some(repo => {
-              const itemRepo = item.repo || ''
-              const match = itemRepo.toLowerCase().includes(repo.toLowerCase()) ||
-                           itemRepo.includes(repo)
-             
-              return match
-            })
-          )
-          console.log(`🔍 After repo filter: ${filteredItems.length} items`)
-        } else {
-          console.log('📦 No repository filter, accepting all items')
-        }
-        
-        if (githubSettings.labels.length > 0) {
-          console.log('🏷️ Label filter not applied for Action Required items')
-        }
-        
-        const newTasks: KanbanTask[] = filteredItems.map((item: ActionItem) => ({
-          id: `action-${item.id}`,
-          title: item.title,
-          type: item.type === 'pullRequest' ? 'github-pr' as const : 'github-issue' as const,
-          priority: item.priority || 'medium' as const,
-          githubUrl: item.url,
-          labels: [],
-          description: `${item.repo} - ${item.type}`,
-          createdAt: new Date(item.createdAt),
-          updatedAt: new Date(item.updatedAt)
-        }))
-        
-        console.log(`✅ ${newTasks.length} tasks to process:`)
-        newTasks.forEach(task => {
-          console.log(`  - ${task.title} (${task.type})`)
-        })
-
-        set(state => {
-          const existingTasks = { ...state.tasks }
-          const updatedGitHubTasks: Record<string, KanbanTask> = {}
-          
-          newTasks.forEach(task => {
-            updatedGitHubTasks[task.id] = task
-            if (existingTasks[task.id]) {
-              existingTasks[task.id] = { ...existingTasks[task.id], ...task }
-            } else {
-              existingTasks[task.id] = task
-            }
-          })
-          
-          const newGitHubTaskIds = new Set(newTasks.map(t => t.id))
-          Object.keys(existingTasks).forEach(taskId => {
-            const task = existingTasks[taskId]
-            if (task.type !== 'personal' && taskId.startsWith('action-') && !newGitHubTaskIds.has(taskId)) {
-              delete existingTasks[taskId]
-            }
-          })
-          
-          const updatedColumns = { ...state.columns }
-          Object.keys(updatedColumns).forEach(columnId => {
-            updatedColumns[columnId] = {
-              ...updatedColumns[columnId],
-              taskIds: updatedColumns[columnId].taskIds.filter(taskId => existingTasks[taskId])
-            }
-          })
-          
-          const allColumnTaskIds = new Set(
-            Object.values(updatedColumns).flatMap(col => col.taskIds)
-          )
-          
-          const newTasksToAdd = newTasks.filter(task => !allColumnTaskIds.has(task.id))
-          
-          if (newTasksToAdd.length > 0) {
-            updatedColumns.todo = {
-              ...updatedColumns.todo,
-              taskIds: [...updatedColumns.todo.taskIds, ...newTasksToAdd.map(t => t.id)]
-            }
-          }
-          
-          return {
-            tasks: existingTasks,
-            columns: updatedColumns
+  const { githubSettings } = useSettingsStore.getState()
+  const { assignedItems, mentionItems, staleItems } = useActionItemsStore.getState()
+  
+  console.log('🔄 Syncing Action Required data to kanban...')
+  
+  const selectedItems: ActionItem[] = []
+  
+  if (githubSettings.assignedToMe) {
+    selectedItems.push(...assignedItems)
+  }
+  
+  if (githubSettings.mentionsMe) {
+    selectedItems.push(...mentionItems)
+  }
+  
+  console.log(`📋 Total ${selectedItems.length} action items found`)
+  
+  if (selectedItems.length === 0) {
+    console.log('⚠️ No action items found!')
+    return 0
+  }
+  
+  const contextData: GitHubDataContext = {
+    assignedItems,
+    mentionItems,
+    staleItems,
+    currentTime: new Date(),
+    userSettings: githubSettings
+  }
+  
+  const contextSuggestions = analyzeContext(contextData)
+  console.log('🧠 Context suggestions:', contextSuggestions)
+  
+  const newTasks: KanbanTask[] = selectedItems.map(item => {
+    const isReviewRequest = 'mentionType' in item && item.mentionType === 'review_request'
+    
+    return {
+      id: `action-${item.id}`,
+      title: item.title,
+      description: (item as any).description?.substring(0, 200),
+      type: item.type === 'issue' ? 'github-issue' : 'github-pr',
+      priority: isReviewRequest ? 'high' : 'medium',
+      githubUrl: item.url,
+      labels: (item as any).labels?.map((l: any) => l.name) || [],
+      createdAt: new Date(item.createdAt),
+      updatedAt: new Date(item.updatedAt || item.createdAt)
+    }
+  })
+  
+  set((state) => {
+    const existingTasks = { ...state.tasks }
+    const updatedColumns = { ...state.columns }
+    const newColumnOrder = [...state.columnOrder]
+    
+    Object.keys(existingTasks).forEach(taskId => {
+      if (taskId.startsWith('action-')) {
+        delete existingTasks[taskId]
+        Object.keys(updatedColumns).forEach(columnId => {
+          updatedColumns[columnId] = {
+            ...updatedColumns[columnId],
+            taskIds: updatedColumns[columnId].taskIds.filter(id => id !== taskId)
           }
         })
-        
-        return newTasks.length 
-      },
+      }
+    })
+    
+    newTasks.forEach(task => {
+      existingTasks[task.id] = task
+      const targetColumn = contextSuggestions.length > 0 ? 'todo' : 'todo'
+      updatedColumns[targetColumn] = {
+        ...updatedColumns[targetColumn],
+        taskIds: [...updatedColumns[targetColumn].taskIds, task.id]
+      }
+    })
+    
+    return {
+      tasks: existingTasks,
+      columns: updatedColumns,
+      columnOrder: newColumnOrder
+    }
+  })
+  
+  return newTasks.length
+},
 
       addTask: (taskData) => {
         const { columnId, ...rest } = taskData;
@@ -271,30 +351,30 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       clearGitHubTasks: () => {
-        set((state) => {
-          const personalTasks = Object.values(state.tasks)
-            .filter(t => t.type === 'personal')
-            .reduce((acc, task) => {
-              acc[task.id] = task
-              return acc
-            }, {} as Record<string, KanbanTask>)
-          
-          const personalTaskIds = Object.keys(personalTasks)
-          const newColumns = { ...state.columns }
-          
-          Object.keys(newColumns).forEach(columnId => {
-            newColumns[columnId] = {
-              ...newColumns[columnId],
-              taskIds: newColumns[columnId].taskIds.filter(taskId => personalTaskIds.includes(taskId))
-            }
-          })
-          
-          return {
-            tasks: personalTasks,
-            columns: newColumns
-          }
-        })
-      },
+  set((state) => {
+    const personalTasks = Object.values(state.tasks)
+      .filter(t => t.type === 'personal')
+      .reduce((acc, task) => {
+        acc[task.id] = task
+        return acc
+      }, {} as Record<string, KanbanTask>)
+    
+    const personalTaskIds = Object.keys(personalTasks)
+    
+    const resetColumns = { ...defaultColumns }
+    Object.keys(resetColumns).forEach(columnId => {
+      resetColumns[columnId].taskIds = personalTaskIds.filter(taskId => 
+        state.columns[columnId]?.taskIds.includes(taskId) || false
+      )
+    })
+    
+    return {
+      tasks: personalTasks,
+      columns: resetColumns,
+      columnOrder: ['todo', 'in-progress', 'review', 'done']
+    }
+  })
+},
 
       addColumn: (title, color) => {
         const id = `column-${Date.now()}`

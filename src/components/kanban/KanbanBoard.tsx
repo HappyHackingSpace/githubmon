@@ -55,14 +55,20 @@ function SortableTaskItem({ task, isDragging = false, onDelete, onView }: Sortab
    <div
      ref={setNodeRef}
      style={style}
-     className={`p-2 border rounded bg-background ${
-       isDragging || isSortableDragging ? 'shadow-lg' : 'hover:shadow-sm'
+     className={`p-2 border rounded bg-background cursor-pointer transition-all ${
+       isDragging || isSortableDragging ? 'shadow-lg' : 'hover:shadow-md hover:border-primary/30'
      }`}
      {...attributes}
+     onClick={() => onView && onView(task)}
    >
      <div className="flex items-start justify-between mb-1">
        <div className="flex items-start gap-1 flex-1 min-w-0">
-         <div {...listeners} className="cursor-grab active:cursor-grabbing">
+         <div 
+           {...listeners} 
+           className="cursor-grab active:cursor-grabbing"
+           onClick={(e) => e.stopPropagation()}
+           title="Sürükle"
+         >
            <GripVertical className="w-3 h-3 text-muted-foreground" />
          </div>
          <h4 className="text-xs font-medium leading-tight flex-1 truncate">
@@ -76,7 +82,8 @@ function SortableTaskItem({ task, isDragging = false, onDelete, onView }: Sortab
                e.stopPropagation()
                onView(task)
              }}
-             className="text-muted-foreground hover:text-blue-600 p-0.5"
+             className="text-muted-foreground hover:text-blue-600 p-0.5 transition-colors"
+             title="Detayları görüntüle"
            >
              <Eye className="w-3 h-3" />
            </button>
@@ -86,8 +93,9 @@ function SortableTaskItem({ task, isDragging = false, onDelete, onView }: Sortab
              href={task.githubUrl} 
              target="_blank" 
              rel="noopener noreferrer"
-             className="text-muted-foreground hover:text-blue-600 p-0.5"
+             className="text-muted-foreground hover:text-blue-600 p-0.5 transition-colors"
              onClick={(e) => e.stopPropagation()}
+             title="GitHub'da aç"
            >
              <ExternalLink className="w-3 h-3" />
            </a>
@@ -100,7 +108,8 @@ function SortableTaskItem({ task, isDragging = false, onDelete, onView }: Sortab
                  onDelete(task.id)
                }
              }}
-             className="text-muted-foreground hover:text-red-600 p-0.5"
+             className="text-muted-foreground hover:text-red-600 p-0.5 transition-colors"
+             title="Sil"
            >
              <Trash2 className="w-3 h-3" />
            </button>
@@ -156,6 +165,8 @@ export function KanbanBoard() {
  const [isModalOpen, setIsModalOpen] = useState(false)
  const [showAddTaskModal, setShowAddTaskModal] = useState(false)
  const [addTaskColumnId, setAddTaskColumnId] = useState<string | null>(null)
+ const [isClearing, setIsClearing] = useState(false)
+
 
  const sensors = useSensors(
    useSensor(PointerSensor, {
@@ -164,6 +175,24 @@ export function KanbanBoard() {
      },
    })
  )
+
+ const handleClearGitHubTasks = async () => {
+  if (confirm('GitHub tasks will be cleared. Only personal tasks will remain.')) {
+    clearGitHubTasks()
+    
+    setTimeout(async () => {
+      if (confirm('🔄 Fresh GitHub data is available. Sync now with context analysis?')) {
+        try {
+          const taskCount = await syncFromGitHub()
+          alert(`✅ Sync complete! ${taskCount} tasks added with smart column organization.`)
+        } catch (error) {
+          console.error('Auto-sync failed:', error)
+          alert('❌ Auto-sync failed. You can manually sync using the Sync button.')
+        }
+      }
+    }, 800)
+}
+ }
 
  const handleTaskView = (task: KanbanTask) => {
    setSelectedTaskId(task.id)
@@ -174,11 +203,6 @@ export function KanbanBoard() {
    deleteTask(taskId)
  }
 
- const handleClearGitHubTasks = () => {
-   if (confirm('GitHub task\'larını temizlemek istediğinizden emin misiniz? Sadece kişisel task\'lar kalacak.')) {
-     clearGitHubTasks()
-   }
- }
 
  const handleDragStart = (event: DragStartEvent) => {
    const { active } = event
@@ -238,14 +262,15 @@ export function KanbanBoard() {
      <div className="flex items-center justify-between">
        <h2 className="text-xl font-bold">Development Tasks</h2>
        <div className="flex items-center gap-2">
-         <Button onClick={handleClearGitHubTasks} variant="outline" size="sm">
-           <X className="w-4 h-4 mr-2" />
-           Temizle
-         </Button>
-         <Button onClick={syncFromGitHub} variant="outline" size="sm">
-           <RefreshCw className="w-4 h-4 mr-2" />
-           Sync
-         </Button>
+         <Button 
+  onClick={handleClearGitHubTasks} 
+  variant="outline" 
+  size="sm"
+  disabled={isClearing}
+>
+  <X className={`w-4 h-4 mr-2 ${isClearing ? 'animate-spin' : ''}`} />
+  {isClearing ? 'Clearing...' : 'Clear'}
+</Button>
        </div>
      </div>
 
@@ -360,6 +385,6 @@ export function KanbanBoard() {
        onClose={() => setShowAddTaskModal(false)}
        columnId={addTaskColumnId}
      />
-   </div>
+</div>
  )
 }
