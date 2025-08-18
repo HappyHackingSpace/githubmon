@@ -88,10 +88,17 @@ const authOptions = {
       return session
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-     
-      if (url.startsWith('/')) return `${baseUrl}/auth/callback`
-      if (new URL(url).origin === baseUrl) return `${baseUrl}/auth/callback`
-      return `${baseUrl}/auth/callback`
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`
+      }
+      try {
+        if (new URL(url).origin === baseUrl) {
+          return url
+        }
+      } catch {
+        
+      }
+      return baseUrl
     }
   }
 }
