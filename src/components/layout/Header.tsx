@@ -7,28 +7,22 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { useSearchStore } from '@/stores'
 import { Button } from '../ui/button'
 import { Search, User } from 'lucide-react'
+import { AnimatedLogo } from '../ui/animated-logo'
 
 
 export function Header() {
   const {
     setSearchModalOpen,
- 
+
   } = useSearchStore()
 
-
   const router = useRouter()
-
-
-
-
-
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
+        <div className="flex justify-between items-center py-0.5">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-foreground">GitHubMon</h1>
-            <Badge variant="secondary">OSS Analytics</Badge>
+            <AnimatedLogo />
           </div>
           {/* Search Bar */}
           <Button
@@ -36,7 +30,7 @@ export function Header() {
             onClick={() => setSearchModalOpen(true)}
             className="w-64 flex justify-start "
           >
-            <Search className="w-6 h-6 mr-2" />
+            <Search className="w-20 h-20 mr-5" />
             Search GitHub ...
           </Button>
 
