@@ -143,9 +143,16 @@ MIT
 
 ### Development (hot reload)
 ```bash
-# Build and start
-docker compose -f docker-compose.dev.yml up --build
+# Start dev container (no image build needed)
+docker compose -f docker-compose.dev.yml up
 # Then open http://localhost:3000
+```
+- Create `.env.local` in the project root with at least:
+```bash
+NEXTAUTH_SECRET=your_secure_secret
+NEXTAUTH_URL=http://localhost:3000
+GITHUB_CLIENT_ID=your_client_id
+GITHUB_CLIENT_SECRET=your_client_secret
 ```
 - Code changes on your host are reflected inside the container.
 - Uses bind mounts and `npm run dev`.
@@ -166,4 +173,4 @@ NEXTAUTH_SECRET=replace_with_secure_random
 GITHUB_CLIENT_ID=your_client_id
 GITHUB_CLIENT_SECRET=your_client_secret
 ```
-The production image uses Next.js standalone output for a small runtime.  
+Note: a default `NEXTAUTH_SECRET` is set only during the image build to allow Next.js to compile. You must provide real secrets at runtime via `.env` or your deployment platform.  
