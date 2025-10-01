@@ -138,3 +138,32 @@ Contributions are welcome! Please open an issue or submit a pull request.
 ## License
 
 MIT  
+
+## Docker
+
+### Development (hot reload)
+```bash
+# Build and start
+docker compose -f docker-compose.dev.yml up --build
+# Then open http://localhost:3000
+```
+- Code changes on your host are reflected inside the container.
+- Uses bind mounts and `npm run dev`.
+
+### Production
+```bash
+# Build image and start
+docker compose up --build -d
+# Tail logs
+docker compose logs -f
+# Stop
+docker compose down
+```
+Set required environment variables (can be .env file in project root):
+```bash
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=replace_with_secure_random
+GITHUB_CLIENT_ID=your_client_id
+GITHUB_CLIENT_SECRET=your_client_secret
+```
+The production image uses Next.js standalone output for a small runtime.  
