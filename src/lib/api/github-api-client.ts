@@ -238,8 +238,23 @@ class GitHubAPIClient {
 
       const data = await response.json()
 
-      // Check rate limit status
-      // Rate limit headers available but not currently used
+      if (typeof window !== 'undefined') {
+        const updateRateLimit = (window as typeof window & { updateRateLimit?: (headers: Headers) => void }).updateRateLimit
+        if (updateRateLimit) {
+          const headers = new Headers()
+          const remaining = response.headers.get('x-ratelimit-remaining') || response.headers.get('X-RateLimit-Remaining')
+          const limit = response.headers.get('x-ratelimit-limit') || response.headers.get('X-RateLimit-Limit')
+          const reset = response.headers.get('x-ratelimit-reset') || response.headers.get('X-RateLimit-Reset')
+          const used = response.headers.get('x-ratelimit-used') || response.headers.get('X-RateLimit-Used')
+          if (remaining && limit && reset) {
+            headers.set('x-ratelimit-remaining', remaining)
+            headers.set('x-ratelimit-limit', limit)
+            headers.set('x-ratelimit-reset', reset)
+            if (used) headers.set('x-ratelimit-used', used)
+            updateRateLimit(headers)
+          }
+        }
+      }
 
       this.cache.set(cacheKey, { data, timestamp: Date.now() })
       return data

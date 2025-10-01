@@ -47,7 +47,7 @@ function LoginContent() {
             </div>
 
             <Button
-              onClick={() => signIn('github')}
+              onClick={() => signIn('github', { callbackUrl: '/auth/callback' })}
               className="w-full h-12 font-semibold text-base"
               size="lg"
             >

@@ -182,7 +182,9 @@ class GitHubGraphQLClient {
           const headers = new Headers()
           headers.set('x-ratelimit-remaining', data.data.rateLimit.remaining.toString())
           headers.set('x-ratelimit-limit', data.data.rateLimit.limit.toString())
-          headers.set('x-ratelimit-reset', new Date(data.data.rateLimit.resetAt).getTime().toString())
+          // normalize reset to seconds since epoch to match UI multiplier
+          const resetSeconds = Math.floor(new Date(data.data.rateLimit.resetAt).getTime() / 1000)
+          headers.set('x-ratelimit-reset', resetSeconds.toString())
           headers.set('x-ratelimit-used', (data.data.rateLimit.limit - data.data.rateLimit.remaining).toString())
           updateRateLimit(headers)
         }
