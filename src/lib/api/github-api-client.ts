@@ -112,9 +112,9 @@ class GitHubAPIClient {
   private githubToken = ''
 
   constructor() {
-    // Try to get token from environment
-    if (typeof process !== 'undefined' && process.env?.GITHUB_TOKEN) {
-      this.githubToken = process.env.GITHUB_TOKEN;
+    // Only read env token on the server to avoid exposing secrets client-side
+    if (typeof window === 'undefined' && typeof process !== 'undefined' && process.env?.GITHUB_TOKEN) {
+      this.githubToken = process.env.GITHUB_TOKEN
     }
   }
 
@@ -169,7 +169,9 @@ class GitHubAPIClient {
     return {
       hasToken: !!this.githubToken,
       tokenPrefix: this.githubToken ? this.githubToken.substring(0, 10) + '...' : 'NO_TOKEN',
-      source: this.githubToken === process.env.GITHUB_TOKEN ? 'ENV_VAR' : 'USER_SET'
+      source: (typeof window === 'undefined' && typeof process !== 'undefined' && process.env?.GITHUB_TOKEN && this.githubToken === process.env.GITHUB_TOKEN)
+        ? 'ENV_VAR'
+        : (this.githubToken ? 'USER_SET' : 'NONE')
     }
   }
 
