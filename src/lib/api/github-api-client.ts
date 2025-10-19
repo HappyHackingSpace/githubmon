@@ -112,9 +112,9 @@ class GitHubAPIClient {
   private githubToken = ''
 
   constructor() {
-    // Try to get token from environment
-    if (typeof process !== 'undefined' && process.env?.GITHUB_TOKEN) {
-      this.githubToken = process.env.GITHUB_TOKEN;
+    // Only read env token on the server to avoid exposing secrets client-side
+    if (typeof window === 'undefined' && typeof process !== 'undefined' && process.env?.GITHUB_TOKEN) {
+      this.githubToken = process.env.GITHUB_TOKEN
     }
   }
 
@@ -169,7 +169,9 @@ class GitHubAPIClient {
     return {
       hasToken: !!this.githubToken,
       tokenPrefix: this.githubToken ? this.githubToken.substring(0, 10) + '...' : 'NO_TOKEN',
-      source: this.githubToken === process.env.GITHUB_TOKEN ? 'ENV_VAR' : 'USER_SET'
+      source: (typeof window === 'undefined' && typeof process !== 'undefined' && process.env?.GITHUB_TOKEN && this.githubToken === process.env.GITHUB_TOKEN)
+        ? 'ENV_VAR'
+        : (this.githubToken ? 'USER_SET' : 'NONE')
     }
   }
 
@@ -238,8 +240,23 @@ class GitHubAPIClient {
 
       const data = await response.json()
 
-      // Check rate limit status
-      // Rate limit headers available but not currently used
+      if (typeof window !== 'undefined') {
+        const updateRateLimit = (window as typeof window & { updateRateLimit?: (headers: Headers) => void }).updateRateLimit
+        if (updateRateLimit) {
+          const headers = new Headers()
+          const remaining = response.headers.get('x-ratelimit-remaining') || response.headers.get('X-RateLimit-Remaining')
+          const limit = response.headers.get('x-ratelimit-limit') || response.headers.get('X-RateLimit-Limit')
+          const reset = response.headers.get('x-ratelimit-reset') || response.headers.get('X-RateLimit-Reset')
+          const used = response.headers.get('x-ratelimit-used') || response.headers.get('X-RateLimit-Used')
+          if (remaining && limit && reset) {
+            headers.set('x-ratelimit-remaining', remaining)
+            headers.set('x-ratelimit-limit', limit)
+            headers.set('x-ratelimit-reset', reset)
+            if (used) headers.set('x-ratelimit-used', used)
+            updateRateLimit(headers)
+          }
+        }
+      }
 
       this.cache.set(cacheKey, { data, timestamp: Date.now() })
       return data
