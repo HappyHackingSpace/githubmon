@@ -51,19 +51,19 @@ export function ThemeSelector() {
         <SelectItem value="light">
           <div className="flex items-center space-x-2">
             <Sun className="h-4 w-4" />
-            <span>Açık</span>
+            <span>Light</span>
           </div>
         </SelectItem>
         <SelectItem value="dark">
           <div className="flex items-center space-x-2">
             <Moon className="h-4 w-4" />
-            <span>Koyu</span>
+            <span>Dark</span>
           </div>
         </SelectItem>
         <SelectItem value="system">
           <div className="flex items-center space-x-2">
             <Monitor className="h-4 w-4" />
-            <span>Sistem</span>
+            <span>System</span>
           </div>
         </SelectItem>
       </SelectContent>
@@ -83,12 +83,12 @@ export function ThemeToggleMinimal() {
       {actualTheme === 'light' ? (
         <>
           <Moon className="h-4 w-4" />
-          <span>Koyu Mod</span>
+          <span>Dark Mode</span>
         </>
       ) : (
         <>
           <Sun className="h-4 w-4" />
-          <span>Açık Mod</span>
+          <span>Light Mode</span>
         </>
       )}
     </button>
