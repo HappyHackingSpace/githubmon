@@ -26,7 +26,6 @@ export function ThemeProvider({
   const [theme, setTheme] = useState<Theme>(defaultTheme)
   const [actualTheme, setActualTheme] = useState<'dark' | 'light'>('light')
 
-  // İlk yükleme
   useEffect(() => {
     const stored = localStorage.getItem(storageKey) as Theme | null
     if (stored) {
@@ -34,7 +33,6 @@ export function ThemeProvider({
     }
   }, [storageKey])
 
-  // Tema değişince DOM'u güncelle
   useEffect(() => {
     const root = document.documentElement
     root.classList.remove('light', 'dark')
@@ -51,7 +49,6 @@ export function ThemeProvider({
     localStorage.setItem(storageKey, theme)
   }, [theme, storageKey])
 
-  // System tema değişikliklerini dinle
   useEffect(() => {
     if (theme !== 'system') return
 
