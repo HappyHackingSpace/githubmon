@@ -108,17 +108,12 @@ class GitHubAPIClient {
   private githubToken = "";
 
   constructor() {
-<<<<<<< Updated upstream
-    // Try to get token from environment
-    if (typeof process !== 'undefined' && process.env?.GITHUB_TOKEN) {
-=======
     // Only read env token on the server to avoid exposing secrets client-side
     if (
       typeof window === "undefined" &&
       typeof process !== "undefined" &&
       process.env?.GITHUB_TOKEN
     ) {
->>>>>>> Stashed changes
       this.githubToken = process.env.GITHUB_TOKEN;
     }
   }
@@ -189,11 +184,6 @@ class GitHubAPIClient {
   getTokenInfo(): { hasToken: boolean; tokenPrefix: string; source: string } {
     return {
       hasToken: !!this.githubToken,
-<<<<<<< Updated upstream
-      tokenPrefix: this.githubToken ? this.githubToken.substring(0, 10) + '...' : 'NO_TOKEN',
-      source: this.githubToken === process.env.GITHUB_TOKEN ? 'ENV_VAR' : 'USER_SET'
-    }
-=======
       tokenPrefix: this.githubToken
         ? this.githubToken.substring(0, 10) + "..."
         : "NO_TOKEN",
@@ -207,7 +197,6 @@ class GitHubAPIClient {
           ? "USER_SET"
           : "NONE",
     };
->>>>>>> Stashed changes
   }
 
   // Test GitHub API connection
@@ -295,10 +284,7 @@ class GitHubAPIClient {
 
       const data = await response.json();
 
-<<<<<<< Updated upstream
-      // Check rate limit status
-      // Rate limit headers available but not currently used
-=======
+      // Update rate limit display if running in browser
       if (typeof window !== "undefined") {
         const updateRateLimit = (
           window as typeof window & {
@@ -328,7 +314,6 @@ class GitHubAPIClient {
           }
         }
       }
->>>>>>> Stashed changes
 
       this.cache.set(cacheKey, { data, timestamp: Date.now() });
       return data;
@@ -921,6 +906,7 @@ class GitHubAPIClient {
       throw _error;
     }
   }
+  
   private async getRepositoryOverview(
     username: string,
     repos: GitHubRepositoryResponse[]
@@ -1049,6 +1035,7 @@ class GitHubAPIClient {
       return 0;
     }
   }
+  
   private async getWeeklyBehaviorData(
     username: string
   ): Promise<

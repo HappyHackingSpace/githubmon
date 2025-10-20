@@ -85,6 +85,9 @@ const authOptions = {
       if (token.login && session.user) {
         session.user.login = token.login 
       }
+      if (token.accessToken) {
+        session.accessToken = token.accessToken
+      }
       return session
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
