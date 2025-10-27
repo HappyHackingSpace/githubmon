@@ -29,7 +29,8 @@ const Footer = () => {
               theme === "dark" ? "text-gray-400" : "text-gray-600"
             }`}
           >
-            © {new Date().getFullYear()} Happy Hacking Space . All Rights Reserved.
+            © {new Date().getFullYear()} Happy Hacking Space . All Rights
+            Reserved.
           </p>
         </div>
       </div>

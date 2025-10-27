@@ -6,9 +6,11 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
-      - NEXT_TELEMETRY_DISABLED=1
-      - HOSTNAME=0.0.0.0
+       - NODE_ENV=development
+       - NEXT_TELEMETRY_DISABLED=1
+       - HOSTNAME=0.0.0.0
+    env_file:
+      - .env.local
     volumes:
       - ./:/app
       - /app/node_modules

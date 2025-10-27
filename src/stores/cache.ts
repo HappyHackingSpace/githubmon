@@ -1,33 +1,33 @@
 // stores/cache.ts
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
-import { GitHubIssue } from '@/types/quickWins'
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { GitHubIssue } from "@/types/quickWins";
 
 interface CachedQuickWinsData {
-  goodIssues: GitHubIssue[]
-  easyFixes: GitHubIssue[]
-  timestamp: number
+  goodIssues: GitHubIssue[];
+  easyFixes: GitHubIssue[];
+  timestamp: number;
 }
 
 interface DataCacheState {
   // Rate limit info
   rateLimitInfo: {
-    remaining: number
-    limit: number
-    resetTime: number
-    used: number
-  } | null
+    remaining: number;
+    limit: number;
+    resetTime: number;
+    used: number;
+  } | null;
 
   // Quick wins cache
-  quickWinsCache: CachedQuickWinsData | null
+  quickWinsCache: CachedQuickWinsData | null;
 
-  // Cache actions  
-  setRateLimit: (info: DataCacheState['rateLimitInfo']) => void
-  setQuickWinsCache: (data: Omit<CachedQuickWinsData, 'timestamp'>) => void
-  getQuickWinsCache: () => CachedQuickWinsData | null
-  isQuickWinsCacheExpired: () => boolean
-  clearQuickWinsCache: () => void
-  clearAllCache: () => void
+  // Cache actions
+  setRateLimit: (info: DataCacheState["rateLimitInfo"]) => void;
+  setQuickWinsCache: (data: Omit<CachedQuickWinsData, "timestamp">) => void;
+  getQuickWinsCache: () => CachedQuickWinsData | null;
+  isQuickWinsCacheExpired: () => boolean;
+  clearQuickWinsCache: () => void;
+  clearAllCache: () => void;
 }
 
 export const useDataCacheStore = create<DataCacheState>()(
@@ -37,52 +37,53 @@ export const useDataCacheStore = create<DataCacheState>()(
       quickWinsCache: null,
 
       setRateLimit: (rateLimitInfo) => set({ rateLimitInfo }),
-      
-      setQuickWinsCache: (data) => set({ 
-        quickWinsCache: {
-          ...data,
-          timestamp: Date.now()
-        }
-      }),
-      
+
+      setQuickWinsCache: (data) =>
+        set({
+          quickWinsCache: {
+            ...data,
+            timestamp: Date.now(),
+          },
+        }),
+
       getQuickWinsCache: () => {
-        const cache = get().quickWinsCache
+        const cache = get().quickWinsCache;
         if (!cache || get().isQuickWinsCacheExpired()) {
-          return null
+          return null;
         }
-        return cache
+        return cache;
       },
-      
+
       isQuickWinsCacheExpired: () => {
-        const cache = get().quickWinsCache
-        if (!cache) return true
-        
-        const ONE_HOUR_IN_MS = 60 * 60 * 1000 // 1 saat
-        const now = Date.now()
-        return (now - cache.timestamp) > ONE_HOUR_IN_MS
+        const cache = get().quickWinsCache;
+        if (!cache) return true;
+
+        const ONE_HOUR_IN_MS = 60 * 60 * 1000; // 1 saat
+        const now = Date.now();
+        return now - cache.timestamp > ONE_HOUR_IN_MS;
       },
-      
+
       clearQuickWinsCache: () => set({ quickWinsCache: null }),
-      
-      clearAllCache: () => set({ 
-        quickWinsCache: null,
-        rateLimitInfo: null 
-      })
+
+      clearAllCache: () =>
+        set({
+          quickWinsCache: null,
+          rateLimitInfo: null,
+        }),
     }),
     {
-      name: 'githubmon-cache',
+      name: "githubmon-cache",
       storage: createJSONStorage(() => {
-        if (typeof window === 'undefined') {
+        if (typeof window === "undefined") {
           return {
             getItem: () => null,
-            setItem: () => { },
-            removeItem: () => { },
-          }
+            setItem: () => {},
+            removeItem: () => {},
+          };
         }
-        return localStorage
+        return localStorage;
       }),
       skipHydration: true,
     }
   )
-)
-
+);

@@ -1,11 +1,11 @@
-'use client'
+"use client";
 
-import { useRouter } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card'
-import { Github, Shield, BarChart3 } from 'lucide-react'
+import { useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
+import { Github, Shield, BarChart3 } from "lucide-react";
 
 export function CallToActionSection() {
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <section className="text-center py-12">
@@ -19,9 +19,12 @@ export function CallToActionSection() {
             </div>
 
             <div className="flex-1 text-center md:text-left">
-              <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Unlock Advanced Analytics</h3>
+              <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
+                Unlock Advanced Analytics
+              </h3>
               <p className="text-base mb-4 text-gray-600 dark:text-gray-300">
-                Sign in with your GitHub account to access comprehensive organization insights
+                Sign in with your GitHub account to access comprehensive
+                organization insights
               </p>
 
               <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm mb-4">
@@ -42,7 +45,7 @@ export function CallToActionSection() {
 
             <div className="flex-shrink-0">
               <button
-                onClick={() => router.push('/login')}
+                onClick={() => router.push("/login")}
                 className="bg-indigo-600 text-white dark:bg-indigo-500 dark:text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 <Github className="w-5 h-5" />
@@ -53,6 +56,5 @@ export function CallToActionSection() {
         </CardContent>
       </Card>
     </section>
-  )
+  );
 }
-

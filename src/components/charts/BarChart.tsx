@@ -1,8 +1,8 @@
-import React from 'react';
-import EChartsBase, { EChartsBaseProps } from './EChartsBase';
-import type { EChartsOption } from 'echarts';
+import React from "react";
+import EChartsBase, { EChartsBaseProps } from "./EChartsBase";
+import type { EChartsOption } from "echarts";
 
-export interface BarChartProps extends Omit<EChartsBaseProps, 'option'> {
+export interface BarChartProps extends Omit<EChartsBaseProps, "option"> {
   data: Array<Record<string, string | number>>;
   xField: string;
   yFields: string[];
@@ -22,25 +22,25 @@ export default function BarChart({
   xAxisLabel,
   yAxisLabel,
   title,
-  colors = ['#0969da', '#1f883d', '#d1242f', '#8250df'],
+  colors = ["#0969da", "#1f883d", "#d1242f", "#8250df"],
   stack = false,
   horizontal = false,
-  className = '',
+  className = "",
   ...chartProps
 }: BarChartProps) {
   // Handle empty data
   if (!data || data.length === 0) {
     const option: EChartsOption = {
       title: {
-        text: 'No Data Available',
-        left: 'center',
-        top: 'middle',
+        text: "No Data Available",
+        left: "center",
+        top: "middle",
         textStyle: {
           fontSize: 16,
-          fontWeight: 'normal',
-          color: '#9ca3af'
-        }
-      }
+          fontWeight: "normal",
+          color: "#9ca3af",
+        },
+      },
     };
     return (
       <div className={`w-full h-full ${className}`}>
@@ -50,99 +50,104 @@ export default function BarChart({
   }
 
   const option: EChartsOption = {
-
-    title: title ? {
-      text: title,
-      left: 'center',
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold'
-      }
-    } : undefined,
+    title: title
+      ? {
+          text: title,
+          left: "center",
+          textStyle: {
+            fontSize: 16,
+            fontWeight: "bold",
+          },
+        }
+      : undefined,
     tooltip: {
-      trigger: 'axis',
+      trigger: "axis",
       axisPointer: {
-        type: 'shadow'
-      }
+        type: "shadow",
+      },
     },
     legend: {
       data: yFields,
       top: title ? 40 : 10,
-      left: 'center'
+      left: "center",
     },
     grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
+      left: "3%",
+      right: "4%",
+      bottom: "3%",
       top: title ? 80 : 50,
-      containLabel: true
+      containLabel: true,
     },
     xAxis: {
-      type: horizontal ? 'value' : 'category',
-      data: horizontal ? undefined : data.map(item => item[xField]),
+      type: horizontal ? "value" : "category",
+      ...(horizontal ? {} : { data: data.map((item) => item[xField]) }),
       name: xAxisLabel,
-      nameLocation: 'middle',
+      nameLocation: "middle",
       nameGap: 30,
       axisLine: {
         lineStyle: {
-          color: '#484753'
-        }
+          color: "#484753",
+        },
       },
       axisTick: {
         lineStyle: {
-          color: '#484753'
-        }
+          color: "#484753",
+        },
       },
       axisLabel: {
-        color: '#9ca3af',
-        ...(horizontal ? {} : { rotate: data.length > 10 ? 45 : 0 })
+        color: "#9ca3af",
+        ...(horizontal ? {} : { rotate: data.length > 10 ? 45 : 0 }),
       },
-      splitLine: horizontal ? {
-        lineStyle: {
-          color: '#484753',
-          type: 'dashed'
-        }
-      } : undefined
+      splitLine: horizontal
+        ? {
+            lineStyle: {
+              color: "#484753",
+              type: "dashed",
+            },
+          }
+        : undefined,
     },
     yAxis: {
-      type: horizontal ? 'category' : 'value',
-      data: horizontal ? data.map(item => item[xField]) : undefined,
+      type: horizontal ? "category" : "value",
+      ...(horizontal ? { data: data.map((item) => item[xField]) } : {}),
       name: yAxisLabel,
-      nameLocation: 'middle',
+      nameLocation: "middle",
       nameGap: 50,
       axisLine: {
         lineStyle: {
-          color: '#484753'
-        }
+          color: "#484753",
+        },
       },
       axisTick: {
         lineStyle: {
-          color: '#484753'
-        }
+          color: "#484753",
+        },
       },
       axisLabel: {
-        color: '#9ca3af'
+        color: "#9ca3af",
       },
-      splitLine: horizontal ? undefined : {
-        lineStyle: {
-          color: '#484753',
-          type: 'dashed'
-        }
-      }
+      splitLine: horizontal
+        ? undefined
+        : {
+            lineStyle: {
+              color: "#484753",
+              type: "dashed",
+            },
+          },
     },
     series: yFields.map((field, index) => ({
       name: field,
-      type: 'bar',
-      stack: stack ? 'Total' : undefined,
+      type: "bar",
+      stack: stack ? "Total" : undefined,
       emphasis: {
-        focus: 'series'
+        focus: "series",
       },
-      data: data.map(item => item[field]),
+      data: data.map((item) => item[field]),
       itemStyle: {
         color: colors[index % colors.length],
-        borderRadius: horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]
-      }
-    }))
+        borderRadius: horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0],
+      },
+    })),
   };
 
   return (

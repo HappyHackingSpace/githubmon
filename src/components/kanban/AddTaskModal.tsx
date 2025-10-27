@@ -1,33 +1,43 @@
-'use client'
+"use client";
 
-import { useState, useCallback } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useKanbanStore } from '@/stores/kanban'
+import { useState, useCallback } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useKanbanStore } from "@/stores/kanban";
 
 interface AddTaskModalProps {
-  isOpen: boolean
-  onClose: () => void
-  columnId: string | null
+  isOpen: boolean;
+  onClose: () => void;
+  columnId: string | null;
 }
-
-
-
 
 export function AddTaskModal({ isOpen, onClose, columnId }: AddTaskModalProps) {
   const { addTask } = useKanbanStore();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState<
+    "low" | "medium" | "high" | "urgent"
+  >("medium");
 
   const handleClose = useCallback(() => {
-    setTitle('');
-    setDescription('');
-    setPriority('medium');
+    setTitle("");
+    setDescription("");
+    setPriority("medium");
     onClose();
   }, [onClose]);
 
@@ -37,10 +47,10 @@ export function AddTaskModal({ isOpen, onClose, columnId }: AddTaskModalProps) {
     addTask({
       title: title.trim(),
       description: description.trim() || undefined,
-      type: 'personal',
+      type: "personal",
       priority,
       labels: [],
-      columnId
+      columnId,
     });
     handleClose();
   };
@@ -67,14 +77,21 @@ export function AddTaskModal({ isOpen, onClose, columnId }: AddTaskModalProps) {
             <Textarea
               id="description"
               value={description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setDescription(e.target.value)
+              }
               placeholder="Task description..."
               rows={3}
             />
           </div>
           <div>
             <Label>Priority</Label>
-            <Select value={priority} onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') => setPriority(value)}>
+            <Select
+              value={priority}
+              onValueChange={(value: "low" | "medium" | "high" | "urgent") =>
+                setPriority(value)
+              }
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

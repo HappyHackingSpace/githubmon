@@ -1,54 +1,59 @@
-'use client'
+"use client";
 
-import { useDataCacheStore } from '@/stores/cache'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Clock, RefreshCw, Trash2 } from 'lucide-react'
-import { useMemo } from 'react'
+import { useDataCacheStore } from "@/stores/cache";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Clock, RefreshCw, Trash2 } from "lucide-react";
+import { useMemo } from "react";
 
 export function CacheStatus() {
-  const { quickWinsCache, isQuickWinsCacheExpired, clearQuickWinsCache } = useDataCacheStore()
+  const { quickWinsCache, isQuickWinsCacheExpired, clearQuickWinsCache } =
+    useDataCacheStore();
 
   const cacheInfo = useMemo(() => {
     if (!quickWinsCache) {
-      return { status: 'empty', text: 'No cache', variant: 'secondary' as const }
+      return {
+        status: "empty",
+        text: "No cache",
+        variant: "secondary" as const,
+      };
     }
 
-    const isExpired = isQuickWinsCacheExpired()
-    const ageInMs = Date.now() - quickWinsCache.timestamp
-    const ageInHours = Math.floor(ageInMs / (1000 * 60 * 60))
-    const ageInMinutes = Math.floor((ageInMs % (1000 * 60 * 60)) / (1000 * 60))
+    const isExpired = isQuickWinsCacheExpired();
+    const ageInMs = Date.now() - quickWinsCache.timestamp;
+    const ageInHours = Math.floor(ageInMs / (1000 * 60 * 60));
+    const ageInMinutes = Math.floor((ageInMs % (1000 * 60 * 60)) / (1000 * 60));
 
-    let ageText = ''
+    let ageText = "";
     if (ageInHours > 0) {
-      ageText = `${ageInHours}h ${ageInMinutes}m ago`
+      ageText = `${ageInHours}h ${ageInMinutes}m ago`;
     } else {
-      ageText = `${ageInMinutes}m ago`
+      ageText = `${ageInMinutes}m ago`;
     }
 
     if (isExpired) {
-      return { 
-        status: 'expired', 
-        text: `Expired (${ageText})`, 
-        variant: 'destructive' as const 
-      }
+      return {
+        status: "expired",
+        text: `Expired (${ageText})`,
+        variant: "destructive" as const,
+      };
     } else {
-      return { 
-        status: 'fresh', 
-        text: `Fresh (${ageText})`, 
-        variant: 'default' as const 
-      }
+      return {
+        status: "fresh",
+        text: `Fresh (${ageText})`,
+        variant: "default" as const,
+      };
     }
-  }, [quickWinsCache, isQuickWinsCacheExpired])
+  }, [quickWinsCache, isQuickWinsCacheExpired]);
 
   const handleClearCache = () => {
-    clearQuickWinsCache()
-    window.location.reload()
-  }
+    clearQuickWinsCache();
+    window.location.reload();
+  };
 
   return (
     <div className="flex items-center gap-2">
-      {cacheInfo.status === 'expired' ? (
+      {cacheInfo.status === "expired" ? (
         <RefreshCw className="w-4 h-4 text-orange-500" />
       ) : (
         <Clock className="w-4 h-4 text-green-500" />
@@ -68,5 +73,5 @@ export function CacheStatus() {
         </Button>
       )}
     </div>
-  )
+  );
 }

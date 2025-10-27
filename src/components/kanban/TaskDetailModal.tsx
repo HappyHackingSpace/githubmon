@@ -1,47 +1,62 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { ExternalLink, Edit, Save, Trash2, X } from 'lucide-react'
-import { KanbanTask, useKanbanStore } from '@/stores/kanban'
-import { useCallback, useState, useEffect } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { ExternalLink, Edit, Save, Trash2, X } from "lucide-react";
+import { KanbanTask, useKanbanStore } from "@/stores/kanban";
+import { useCallback, useState, useEffect } from "react";
 
 interface TaskDetailModalProps {
-  task: KanbanTask | null
-  isOpen: boolean
-  onClose: () => void
+  task: KanbanTask | null;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps) {
-  const { updateTask, deleteTask } = useKanbanStore()
-  const [isEditing, setIsEditing] = useState(false)
+export function TaskDetailModal({
+  task,
+  isOpen,
+  onClose,
+}: TaskDetailModalProps) {
+  const { updateTask, deleteTask } = useKanbanStore();
+  const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
-    title: '',
-    description: '',
-    priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
-    notes: ''
-  })
-  
+    title: "",
+    description: "",
+    priority: "medium" as "low" | "medium" | "high" | "urgent",
+    notes: "",
+  });
+
   const handleClose = useCallback(() => {
-    setIsEditing(false)
-    onClose()
-  }, [onClose])
+    setIsEditing(false);
+    onClose();
+  }, [onClose]);
 
   useEffect(() => {
     if (task) {
       setEditData({
         title: task.title,
-        description: task.description || '',
+        description: task.description || "",
         priority: task.priority,
-        notes: task.notes || ''
-      })
-      setIsEditing(false)
+        notes: task.notes || "",
+      });
+      setIsEditing(false);
     }
-  }, [task])
+  }, [task]);
 
   const handleSave = () => {
     if (task) {
@@ -49,61 +64,66 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
         title: editData.title,
         description: editData.description || undefined,
         priority: editData.priority,
-        notes: editData.notes || undefined
-      })
-      setIsEditing(false)
+        notes: editData.notes || undefined,
+      });
+      setIsEditing(false);
     }
-  }
+  };
 
-   const handleCancel = useCallback(() => {
+  const handleCancel = useCallback(() => {
     if (task) {
       setEditData({
         title: task.title,
-        description: task.description || '',
+        description: task.description || "",
         priority: task.priority,
-        notes: task.notes || ''
-      })
+        notes: task.notes || "",
+      });
     }
-    setIsEditing(false)
-  }, [task])
+    setIsEditing(false);
+  }, [task]);
 
   const handleDelete = () => {
-    if (task && confirm('Bu task\'ı silmek istediğinizden emin misiniz?')) {
-      deleteTask(task.id)
-      handleClose()
+    if (task && confirm("Bu task'ı silmek istediğinizden emin misiniz?")) {
+      deleteTask(task.id);
+      handleClose();
     }
-  }
+  };
 
   const formatDate = (date: Date | string | undefined | null) => {
-    if (!date) return '-';
-    const d = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(d.getTime())) return '-';
-    return new Intl.DateTimeFormat('tr-TR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    if (!date) return "-";
+    const d = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(d.getTime())) return "-";
+    return new Intl.DateTimeFormat("tr-TR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(d);
-  }
+  };
 
   const getPriorityDisplay = (priority: string) => {
     switch (priority) {
-  case 'urgent': return '🔴 Urgent'
-  case 'high': return '🟠 High'
-  case 'medium': return '🟡 Medium'
-  case 'low': return '🟢 Low'
-  default: return '🟡 Medium'
+      case "urgent":
+        return "🔴 Urgent";
+      case "high":
+        return "🟠 High";
+      case "medium":
+        return "🟡 Medium";
+      case "low":
+        return "🟢 Low";
+      default:
+        return "🟡 Medium";
     }
-  }
+  };
 
-  if (!task) return null
+  if (!task) return null;
 
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open) handleClose()
+        if (!open) handleClose();
       }}
     >
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -113,7 +133,9 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
               {isEditing ? (
                 <Input
                   value={editData.title}
-                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                  onChange={(e) =>
+                    setEditData({ ...editData, title: e.target.value })
+                  }
                   className="text-xl font-semibold"
                 />
               ) : (
@@ -123,14 +145,22 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
             <div className="flex items-center gap-2">
               {task.githubUrl && (
                 <Button variant="outline" size="sm" asChild>
-                  <a href={task.githubUrl} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={task.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     GitHub
                   </a>
                 </Button>
               )}
               {!isEditing ? (
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                >
                   <Edit className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
@@ -140,7 +170,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
                     <Save className="w-4 h-4 mr-1" />
                     Save
                   </Button>
-                 <Button variant="outline" size="sm" onClick={handleCancel}>
+                  <Button variant="outline" size="sm" onClick={handleCancel}>
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
@@ -153,7 +183,12 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
           {/* Priority & Type */}
           <div className="flex items-center gap-2">
             {isEditing ? (
-              <Select value={editData.priority} onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') => setEditData({ ...editData, priority: value })}>
+              <Select
+                value={editData.priority}
+                onValueChange={(value: "low" | "medium" | "high" | "urgent") =>
+                  setEditData({ ...editData, priority: value })
+                }
+              >
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
@@ -165,10 +200,16 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
                 </SelectContent>
               </Select>
             ) : (
-             <Badge variant="outline">{getPriorityDisplay(task.priority)}</Badge>
+              <Badge variant="outline">
+                {getPriorityDisplay(task.priority)}
+              </Badge>
             )}
             <Badge variant="secondary">
-              {task.type === 'personal' ? '👤 Personal' : task.type === 'github-pr' ? '🔄 PR' : '🐛 Issue'}
+              {task.type === "personal"
+                ? "👤 Personal"
+                : task.type === "github-pr"
+                ? "🔄 PR"
+                : "🐛 Issue"}
             </Badge>
           </div>
 
@@ -178,14 +219,17 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
             {isEditing ? (
               <Textarea
                 value={editData.description}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditData({ ...editData, description: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setEditData({ ...editData, description: e.target.value })
+                }
                 placeholder="Task description..."
                 rows={3}
                 className="mt-2"
               />
             ) : (
               <p className="text-sm text-muted-foreground mt-2 min-h-[60px] p-3 bg-muted/30 rounded border">
-{task.description || 'No description'}              </p>
+                {task.description || "No description"}{" "}
+              </p>
             )}
           </div>
 
@@ -195,14 +239,16 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
             {isEditing ? (
               <Textarea
                 value={editData.notes}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditData({ ...editData, notes: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setEditData({ ...editData, notes: e.target.value })
+                }
                 placeholder="Your personal notes..."
                 rows={4}
                 className="mt-2"
               />
             ) : (
               <p className="text-sm text-muted-foreground mt-2 min-h-[80px] p-3 bg-muted/30 rounded border">
-                {task.notes || 'No notes'}
+                {task.notes || "No notes"}
               </p>
             )}
           </div>
@@ -240,7 +286,9 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
           {/* Delete Button */}
           <div className="flex justify-between items-center">
             <span className="text-xs text-muted-foreground">
-              {task.type === 'personal' ? 'Personal Task' : 'Synchronized from GitHub'}
+              {task.type === "personal"
+                ? "Personal Task"
+                : "Synchronized from GitHub"}
             </span>
             <Button variant="destructive" size="sm" onClick={handleDelete}>
               <Trash2 className="w-4 h-4 mr-2" />
@@ -250,5 +298,5 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
