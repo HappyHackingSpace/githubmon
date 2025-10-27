@@ -1,18 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from "next/server";
 
 export async function POST() {
   const response = NextResponse.json(
-    { message: 'Logout successful' },
+    { message: "Logout successful" },
     { status: 200 }
-  )
+  );
 
-  response.cookies.set('githubmon-auth', '', {
+  response.cookies.set("githubmon-auth", "", {
     expires: new Date(0),
-    path: '/',
+    path: "/",
     httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
-  })
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
 
-  return response
+  return response;
 }
