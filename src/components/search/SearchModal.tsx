@@ -58,63 +58,77 @@ export function SearchModal() {
     setCurrentSearchType,
   ]);
 
-  const performSearch = useCallback(async (
-    searchQuery: string,
-    type: "all" | "repos" | "users"
-  ) => {
-    if (!searchQuery.trim()) {
-      setSearchResults({ repos: [], users: [], loading: false, error: null });
-      return;
-    }
-
-    setSearchResults({
-      repos: currentResults.repos,
-      users: currentResults.users,
-      loading: true,
-      error: null,
-    });
-
-    try {
-      let repos: TrendingRepo[] = [];
-      let users: TopContributor[] = [];
-
-      if (type === "all") {
-        repos = await githubAPIClient.searchRepositories(searchQuery, "stars", 5);
-        await new Promise(resolve => setTimeout(resolve, 100));
-        users = await githubAPIClient.searchUsers(searchQuery, "all", 5);
-      } else if (type === "repos") {
-        repos = await githubAPIClient.searchRepositories(searchQuery, "stars", 10);
-      } else if (type === "users") {
-        users = await githubAPIClient.searchUsers(searchQuery, "all", 10);
+  const performSearch = useCallback(
+    async (searchQuery: string, type: "all" | "repos" | "users") => {
+      if (!searchQuery.trim()) {
+        setSearchResults({ repos: [], users: [], loading: false, error: null });
+        return;
       }
-
-      setSearchResults({
-        repos: repos || [],
-        users: users || [],
-        loading: false,
-        error: null,
-      });
-
-      if ((repos && repos.length > 0) || (users && users.length > 0)) {
-        addToHistory(searchQuery, type);
-      }
-    } catch {
-      const errorMessage = "An error occurred during search";
 
       setSearchResults({
         repos: currentResults.repos,
         users: currentResults.users,
-        loading: false,
-        error: errorMessage,
+        loading: true,
+        error: null,
       });
 
-      addNotification({
-        type: "error",
-        title: "Search Error",
-        message: errorMessage,
-      });
-    }
-  }, [currentResults.repos, currentResults.users, setSearchResults, addToHistory, addNotification]);
+      try {
+        let repos: TrendingRepo[] = [];
+        let users: TopContributor[] = [];
+
+        if (type === "all") {
+          repos = await githubAPIClient.searchRepositories(
+            searchQuery,
+            "stars",
+            5
+          );
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          users = await githubAPIClient.searchUsers(searchQuery, "all", 5);
+        } else if (type === "repos") {
+          repos = await githubAPIClient.searchRepositories(
+            searchQuery,
+            "stars",
+            10
+          );
+        } else if (type === "users") {
+          users = await githubAPIClient.searchUsers(searchQuery, "all", 10);
+        }
+
+        setSearchResults({
+          repos: repos || [],
+          users: users || [],
+          loading: false,
+          error: null,
+        });
+
+        if ((repos && repos.length > 0) || (users && users.length > 0)) {
+          addToHistory(searchQuery, type);
+        }
+      } catch {
+        const errorMessage = "An error occurred during search";
+
+        setSearchResults({
+          repos: currentResults.repos,
+          users: currentResults.users,
+          loading: false,
+          error: errorMessage,
+        });
+
+        addNotification({
+          type: "error",
+          title: "Search Error",
+          message: errorMessage,
+        });
+      }
+    },
+    [
+      currentResults.repos,
+      currentResults.users,
+      setSearchResults,
+      addToHistory,
+      addNotification,
+    ]
+  );
 
   const [debouncedSearch] = useState(() => {
     let timeout: NodeJS.Timeout;
@@ -174,7 +188,8 @@ export function SearchModal() {
             <span>Search on GitHub</span>
           </DialogTitle>
           <DialogDescription>
-            Search for repositories, users, and organizations on GitHub. Use filters to narrow your results.
+            Search for repositories, users, and organizations on GitHub. Use
+            filters to narrow your results.
           </DialogDescription>
         </DialogHeader>
 
@@ -201,12 +216,11 @@ export function SearchModal() {
                   {type === "all"
                     ? "All"
                     : type === "repos"
-                      ? "Repositories"
-                      : "Users"}
+                    ? "Repositories"
+                    : "Users"}
                 </Button>
               ))}
             </div>
-
           </div>
         </div>
 
@@ -394,4 +408,3 @@ export function SearchModal() {
     </Dialog>
   );
 }
-

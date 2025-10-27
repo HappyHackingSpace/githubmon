@@ -1,70 +1,72 @@
-'use client'
+"use client";
 
-import { ReactNode } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useAppStore } from '@/stores/app'
+import { ReactNode } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAppStore } from "@/stores/app";
 
 interface LoadingBoundaryProps {
-  children: ReactNode
-  fallback?: ReactNode
-  type?: 'page' | 'section' | 'inline' | 'overlay'
-  message?: string
+  children: ReactNode;
+  fallback?: ReactNode;
+  type?: "page" | "section" | "inline" | "overlay";
+  message?: string;
 }
 
-export function LoadingBoundary({ 
-  children, 
-  fallback, 
-  type = 'section',
-  message 
+export function LoadingBoundary({
+  children,
+  fallback,
+  type = "section",
+  message,
 }: LoadingBoundaryProps) {
-  const { isLoading, loadingMessage } = useAppStore()
+  const { isLoading, loadingMessage } = useAppStore();
 
   if (isLoading) {
     if (fallback) {
-      return <>{fallback}</>
+      return <>{fallback}</>;
     }
 
-    return <LoadingSpinner type={type} message={message || loadingMessage} />
+    return <LoadingSpinner type={type} message={message || loadingMessage} />;
   }
 
-  return <>{children}</>
+  return <>{children}</>;
 }
 
 // Individual loading components
-export function LoadingSpinner({ 
-  type = 'section', 
-  message = 'Loading...',
-  className = ''
+export function LoadingSpinner({
+  type = "section",
+  message = "Loading...",
+  className = "",
 }: {
-  type?: 'page' | 'section' | 'inline' | 'overlay'
-  message?: string
-  className?: string
+  type?: "page" | "section" | "inline" | "overlay";
+  message?: string;
+  className?: string;
 }) {
-  const baseClasses = "flex items-center justify-center"
-  
+  const baseClasses = "flex items-center justify-center";
+
   const typeClasses = {
     page: "min-h-screen bg-background",
     section: "py-12",
     inline: "py-4",
-    overlay: "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-  }
+    overlay: "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm",
+  };
 
   const spinnerSize = {
     page: "h-12 w-12",
-    section: "h-8 w-8", 
+    section: "h-8 w-8",
     inline: "h-6 w-6",
-    overlay: "h-12 w-12"
-  }
+    overlay: "h-12 w-12",
+  };
 
   return (
     <div className={`${baseClasses} ${typeClasses[type]} ${className}`}>
       <div className="text-center">
-        <div className={`animate-spin rounded-full border-b-2 border-primary mx-auto mb-4 ${spinnerSize[type]}`}></div>
+        <div
+          className={`animate-spin rounded-full border-b-2 border-primary mx-auto mb-4 ${spinnerSize[type]}`}
+        ></div>
         <p className="text-muted-foreground text-sm">{message}</p>
       </div>
     </div>
-  )
+  );
 }
 
 // Loading skeletons for different content types
@@ -90,7 +92,7 @@ export function RepositoryCardSkeleton() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function LanguageCardSkeleton() {
@@ -109,14 +111,17 @@ export function LanguageCardSkeleton() {
         <Skeleton className="h-5 w-16 mx-auto mt-2 rounded" />
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function SearchResultSkeleton() {
   return (
     <div className="space-y-4">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex items-center space-x-3 p-4 border rounded-lg">
+        <div
+          key={i}
+          className="flex items-center space-x-3 p-4 border rounded-lg"
+        >
           <Skeleton className="h-7 w-7 rounded-full" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-3/4" />
@@ -126,7 +131,7 @@ export function SearchResultSkeleton() {
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 // Loading states for specific sections
@@ -143,7 +148,7 @@ export function TrendingReposLoading() {
         ))}
       </div>
     </section>
-  )
+  );
 }
 
 export function TopLanguagesLoading() {
@@ -156,7 +161,7 @@ export function TopLanguagesLoading() {
         ))}
       </div>
     </section>
-  )
+  );
 }
 
 // Combined loading states
@@ -194,7 +199,7 @@ export function HomePageLoading() {
         <div className="space-y-12">
           <TrendingReposLoading />
           <TopLanguagesLoading />
-          
+
           {/* CTA skeleton */}
           <Card className="bg-gradient-to-r from-indigo-500 to-purple-600">
             <CardContent className="p-8 text-center">
@@ -206,39 +211,39 @@ export function HomePageLoading() {
         </div>
       </main>
     </div>
-  )
+  );
 }
 
 // Hook for managing loading states
 export function useLoading() {
-  const { isLoading, loadingMessage, setLoading } = useAppStore()
+  const { isLoading, loadingMessage, setLoading } = useAppStore();
 
   const startLoading = (message?: string) => {
-    setLoading(true, message)
-  }
+    setLoading(true, message);
+  };
 
   const stopLoading = () => {
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   const withLoading = async <T,>(
     asyncFn: () => Promise<T>,
     message?: string
   ): Promise<T> => {
-    startLoading(message)
+    startLoading(message);
     try {
-      const result = await asyncFn()
-      return result
+      const result = await asyncFn();
+      return result;
     } finally {
-      stopLoading()
+      stopLoading();
     }
-  }
+  };
 
   return {
     isLoading,
     loadingMessage,
     startLoading,
     stopLoading,
-    withLoading
-  }
+    withLoading,
+  };
 }

@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { Layout } from '@/components/layout/Layout'
-import { useRequireAuth } from '@/hooks/useAuth'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { TodoDashboard } from '@/components/widget/TodoDashboard'
+import { Layout } from "@/components/layout/Layout";
+import { useRequireAuth } from "@/hooks/useAuth";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { TodoDashboard } from "@/components/widget/TodoDashboard";
 
 export default function DashboardPage() {
-  const { isLoading } = useRequireAuth()
+  const { isLoading } = useRequireAuth();
 
   if (isLoading) {
     return (
@@ -18,7 +18,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </Layout>
-    )
+    );
   }
 
   return (
@@ -26,8 +26,8 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <PageHeader />
 
-       <TodoDashboard />
+        <TodoDashboard />
       </div>
     </Layout>
-  )
+  );
 }

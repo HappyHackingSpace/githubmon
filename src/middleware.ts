@@ -1,77 +1,85 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
- const { pathname } = request.nextUrl
- 
- const authCookie = request.cookies.get('githubmon-auth')?.value
+  const { pathname } = request.nextUrl;
 
- let isAuthenticated = false
+  const authCookie = request.cookies.get("githubmon-auth")?.value;
 
- if (authCookie) {
-   try {
-     const authData = JSON.parse(authCookie)
-     
-     if (authData.isConnected && 
-         authData.orgData?.token && 
-         authData.tokenExpiry) {
-       
-       const isExpired = new Date() >= new Date(authData.tokenExpiry)
-       isAuthenticated = !isExpired
-     }
-   } catch {
-     isAuthenticated = false
-   }
- }
+  let isAuthenticated = false;
 
- const protectedRoutes = ['/dashboard', '/settings']
- const protectedApiRoutes = ['/api/action-required']
- const authRoutes = ['/auth/callback', '/api/auth', '/login']
- const publicRoutes = ['/', '/privacy-policy', '/terms-of-service']
+  if (authCookie) {
+    try {
+      const authData = JSON.parse(authCookie);
 
- const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
- const isProtectedApiRoute = protectedApiRoutes.some(route => pathname.startsWith(route))
- const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
- const isPublicRoute = publicRoutes.some(route => pathname === route)
+      if (
+        authData.isConnected &&
+        authData.orgData?.token &&
+        authData.tokenExpiry
+      ) {
+        const isExpired = new Date() >= new Date(authData.tokenExpiry);
+        isAuthenticated = !isExpired;
+      }
+    } catch {
+      isAuthenticated = false;
+    }
+  }
 
- if (pathname === '/api/auth/logout') {
-   const response = NextResponse.next()
-   response.cookies.set('githubmon-auth', '', {
-     expires: new Date(0),
-     path: '/'
-   })
-   return response
- }
+  const protectedRoutes = ["/dashboard", "/settings"];
+  const protectedApiRoutes = ["/api/action-required"];
+  const authRoutes = ["/auth/callback", "/api/auth", "/login"];
+  const publicRoutes = ["/", "/privacy-policy", "/terms-of-service"];
 
- if (isAuthenticated && pathname === '/') {
-   return NextResponse.redirect(new URL('/dashboard', request.url))
- }
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+  const isProtectedApiRoute = protectedApiRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+  const isPublicRoute = publicRoutes.some((route) => pathname === route);
 
- if (isAuthenticated && pathname === '/login') {
-   return NextResponse.redirect(new URL('/dashboard', request.url))
- }
+  if (pathname === "/api/auth/logout") {
+    const response = NextResponse.next();
+    response.cookies.set("githubmon-auth", "", {
+      expires: new Date(0),
+      path: "/",
+    });
+    return response;
+  }
 
- if (!isAuthenticated && isProtectedRoute) {
-   return NextResponse.redirect(new URL('/login', request.url))
- }
+  if (isAuthenticated && pathname === "/") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
- if (!isAuthenticated && isProtectedApiRoute) {
-   return NextResponse.json(
-     { error: 'Unauthorized', message: 'Authentication required to access this resource' },
-     { status: 401 }
-   )
- }
+  if (isAuthenticated && pathname === "/login") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
- // Allow auth routes and public routes to pass through
- if (isAuthRoute || isPublicRoute) {
-   return NextResponse.next()
- }
+  if (!isAuthenticated && isProtectedRoute) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 
- return NextResponse.next()
+  if (!isAuthenticated && isProtectedApiRoute) {
+    return NextResponse.json(
+      {
+        error: "Unauthorized",
+        message: "Authentication required to access this resource",
+      },
+      { status: 401 }
+    );
+  }
+
+  // Allow auth routes and public routes to pass through
+  if (isAuthRoute || isPublicRoute) {
+    return NextResponse.next();
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
- matcher: [
-   '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
- ],
-}
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};

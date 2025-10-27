@@ -1,21 +1,21 @@
-import { Button } from '@/components/ui/button'
-import { useSearchStore } from '@/stores'
-import { Search } from 'lucide-react'
+import { Button } from "@/components/ui/button";
+import { useSearchStore } from "@/stores";
+import { Search } from "lucide-react";
 
 interface SearchButtonProps {
-  variant?: 'default' | 'outline' | 'ghost'
-  size?: 'default' | 'sm' | 'lg' | 'icon'
-  showShortcut?: boolean
-  className?: string
+  variant?: "default" | "outline" | "ghost";
+  size?: "default" | "sm" | "lg" | "icon";
+  showShortcut?: boolean;
+  className?: string;
 }
 
-export function SearchButton({ 
-  variant = 'outline', 
-  size = 'default',
+export function SearchButton({
+  variant = "outline",
+  size = "default",
   showShortcut = true,
-  className = ''
+  className = "",
 }: SearchButtonProps) {
-  const { setSearchModalOpen } = useSearchStore()
+  const { setSearchModalOpen } = useSearchStore();
 
   return (
     <Button
@@ -25,7 +25,7 @@ export function SearchButton({
       className={`group ${className}`}
     >
       <Search className="h-4 w-4" />
-      {size !== 'icon' && (
+      {size !== "icon" && (
         <>
           <span className="ml-2">Ara</span>
           {showShortcut && (
@@ -38,5 +38,5 @@ export function SearchButton({
         </>
       )}
     </Button>
-  )
+  );
 }

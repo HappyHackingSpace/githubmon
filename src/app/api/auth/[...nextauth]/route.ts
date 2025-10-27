@@ -1,40 +1,42 @@
-import NextAuth from "next-auth/next"
-import GitHubProvider from "next-auth/providers/github"
+import NextAuth from "next-auth/next";
+import GitHubProvider from "next-auth/providers/github";
 
 declare module "next-auth" {
   interface Session {
-    accessToken?: string
+    accessToken?: string;
     user: {
-      name?: string | null
-      email?: string | null
-      image?: string | null
-      login?: string
-    }
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      login?: string;
+    };
   }
-  
+
   interface User {
-    login?: string
+    login?: string;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    accessToken?: string
-    login?: string
+    accessToken?: string;
+    login?: string;
   }
 }
 
-const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET
-if (process.env.NODE_ENV === 'production' && !NEXTAUTH_SECRET) {
-  throw new Error('NEXTAUTH_SECRET is required in production.')
+const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET;
+if (process.env.NODE_ENV === "production" && !NEXTAUTH_SECRET) {
+  throw new Error("NEXTAUTH_SECRET is required in production.");
 }
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 if (
-  process.env.NODE_ENV === 'production' &&
+  process.env.NODE_ENV === "production" &&
   (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET)
 ) {
-  throw new Error('GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required in production.')
+  throw new Error(
+    "GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required in production."
+  );
 }
 
 const authOptions = {
@@ -45,45 +47,45 @@ const authOptions = {
       clientSecret: GITHUB_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: "read:user user:email read:org repo"
-        }
+          scope: "read:user user:email read:org repo",
+        },
       },
       profile(profile: {
-        id: number
-        login: string
-        name?: string | null
-        email?: string | null
-        avatar_url?: string | null
+        id: number;
+        login: string;
+        name?: string | null;
+        email?: string | null;
+        avatar_url?: string | null;
       }) {
         return {
           id: profile.id.toString(),
           name: profile.name || profile.login,
-          login: profile.login, 
+          login: profile.login,
           email: profile.email,
           image: profile.avatar_url,
-        }
-      }
+        };
+      },
     }),
   ],
   pages: {
-    signIn: '/login',
-    error: '/login'
+    signIn: "/login",
+    error: "/login",
   },
   callbacks: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async jwt({ token, account, user }: any) {
       if (account && account.access_token) {
-        token.accessToken = account.access_token
+        token.accessToken = account.access_token;
       }
       if (user && user.login) {
-        token.login = user.login 
+        token.login = user.login;
       }
-      return token
+      return token;
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   async session({ session, token }: any) {
+    async session({ session, token }: any) {
       if (token.login && session.user) {
-        session.user.login = token.login 
+        session.user.login = token.login;
       }
       if (token.accessToken) {
         session.accessToken = token.accessToken
@@ -91,21 +93,19 @@ const authOptions = {
       return session
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-      if (url.startsWith('/')) {
-        return `${baseUrl}${url}`
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
       }
       try {
         if (new URL(url).origin === baseUrl) {
-          return url
+          return url;
         }
-      } catch {
-        
-      }
-      return baseUrl
-    }
-  }
-}
+      } catch {}
+      return baseUrl;
+    },
+  },
+};
 
-const handler = NextAuth(authOptions)
+const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST }
+export { handler as GET, handler as POST };

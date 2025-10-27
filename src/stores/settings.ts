@@ -1,45 +1,45 @@
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 interface GitHubSettings {
-  repositories: string[] 
-  labels: string[] 
-  assignedToMe: boolean
-  mentionsMe: boolean
-  authoredByMe: boolean
-  reviewRequestedFromMe: boolean
-  stalePRDays: number 
+  repositories: string[];
+  labels: string[];
+  assignedToMe: boolean;
+  mentionsMe: boolean;
+  authoredByMe: boolean;
+  reviewRequestedFromMe: boolean;
+  stalePRDays: number;
 }
 
 interface SettingsState {
-  githubSettings: GitHubSettings
-  updateGitHubSettings: (settings: Partial<GitHubSettings>) => void
-  resetSettings: () => void
+  githubSettings: GitHubSettings;
+  updateGitHubSettings: (settings: Partial<GitHubSettings>) => void;
+  resetSettings: () => void;
 }
 
 const defaultSettings: GitHubSettings = {
   repositories: [],
-  labels: [], 
+  labels: [],
   assignedToMe: true,
   mentionsMe: true,
   authoredByMe: false,
   reviewRequestedFromMe: true,
-  stalePRDays: 7
-}
+  stalePRDays: 7,
+};
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       githubSettings: defaultSettings,
-      updateGitHubSettings: (settings) => 
+      updateGitHubSettings: (settings) =>
         set((state) => ({
-          githubSettings: { ...state.githubSettings, ...settings }
+          githubSettings: { ...state.githubSettings, ...settings },
         })),
-      resetSettings: () => set({ githubSettings: defaultSettings })
+      resetSettings: () => set({ githubSettings: defaultSettings }),
     }),
     {
-      name: 'githubmon-settings',
-      storage: createJSONStorage(() => localStorage)
+      name: "githubmon-settings",
+      storage: createJSONStorage(() => localStorage),
     }
   )
-)
+);

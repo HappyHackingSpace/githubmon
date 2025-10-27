@@ -1,21 +1,17 @@
-'use client'
+"use client";
 
-import { useRouter } from 'next/navigation'
-import { RateLimitWarning } from '@/components/common/RateLimitWarning'
-import { ThemeToggle } from '@/components/theme/ThemeToggle'
-import { useSearchStore } from '@/stores'
-import { Button } from '../ui/button'
-import { Search, User } from 'lucide-react'
-import { AnimatedLogo } from '../ui/animated-logo'
-
+import { useRouter } from "next/navigation";
+import { RateLimitWarning } from "@/components/common/RateLimitWarning";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { useSearchStore } from "@/stores";
+import { Button } from "../ui/button";
+import { Search, User } from "lucide-react";
+import { AnimatedLogo } from "../ui/animated-logo";
 
 export function Header() {
-  const {
-    setSearchModalOpen,
+  const { setSearchModalOpen } = useSearchStore();
 
-  } = useSearchStore()
-
-  const router = useRouter()
+  const router = useRouter();
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,13 +33,12 @@ export function Header() {
           <div className="flex items-center space-x-3">
             <RateLimitWarning />
 
-
             {/* Auth buttons - only show when hydrated */}
 
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push('/login')}
+              onClick={() => router.push("/login")}
               className="flex items-center space-x-1"
             >
               <User className="w-4 h-4" />
@@ -54,5 +49,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }
