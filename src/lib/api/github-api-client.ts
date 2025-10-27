@@ -108,6 +108,7 @@ class GitHubAPIClient {
   private githubToken = "";
 
   constructor() {
+
     // Only read env token on the server to avoid exposing secrets client-side
     if (
       typeof window === "undefined" &&
@@ -184,6 +185,7 @@ class GitHubAPIClient {
   getTokenInfo(): { hasToken: boolean; tokenPrefix: string; source: string } {
     return {
       hasToken: !!this.githubToken,
+
       tokenPrefix: this.githubToken
         ? this.githubToken.substring(0, 10) + "..."
         : "NO_TOKEN",
@@ -284,6 +286,7 @@ class GitHubAPIClient {
 
       const data = await response.json();
 
+
       // Update rate limit display if running in browser
       if (typeof window !== "undefined") {
         const updateRateLimit = (
@@ -314,6 +317,7 @@ class GitHubAPIClient {
           }
         }
       }
+
 
       this.cache.set(cacheKey, { data, timestamp: Date.now() });
       return data;
