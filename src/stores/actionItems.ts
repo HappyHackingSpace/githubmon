@@ -13,7 +13,11 @@ export interface ActionItem {
   createdAt: string;
   updatedAt: string;
   assignee?: string;
-  author: string;
+  author: {
+    login: string;
+    avatarUrl: string;
+  };
+  labels: Array<{ name: string; color?: string }>;
   daysOld: number;
   comments?: number;
   stars?: number;
