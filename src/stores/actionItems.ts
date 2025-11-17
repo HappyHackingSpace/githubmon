@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { githubGraphQLClient } from "@/lib/api/github-graphql-client";
+import { githubAPIClient } from "@/lib/api/github-api-client";
 import { useAuthStore } from "./auth";
 
 export interface ActionItem {
@@ -97,7 +98,7 @@ interface ActionItemsState {
   getHighPriorityCount: () => number;
 
   // Utility actions
-  markAsRead: (type: "assigned" | "mentions" | "stale", id: string) => void;
+  markAsRead: (type: "assigned" | "mentions" | "stale", id: string) => Promise<void>;
   refreshData: (
     type?: "assigned" | "mentions" | "stale" | "goodFirstIssues" | "easyFixes"
   ) => Promise<void>;
@@ -219,29 +220,145 @@ export const useActionItemsStore = create<ActionItemsState>()(
         ).length;
       },
 
-      markAsRead: (type, id) => {
-        set((state) => {
-          switch (type) {
-            case "assigned":
-              return {
-                assignedItems: state.assignedItems.filter(
-                  (item) => item.id !== id
-                ),
-              };
-            case "mentions":
-              return {
-                mentionItems: state.mentionItems.filter(
-                  (item) => item.id !== id
-                ),
-              };
-            case "stale":
-              return {
-                staleItems: state.staleItems.filter((item) => item.id !== id),
-              };
-            default:
-              return state;
+      markAsRead: async (type, id) => {
+        const authState = useAuthStore.getState();
+        const userToken = authState.orgData?.token;
+
+        if (!userToken) {
+          console.warn("No GitHub token available for marking as read");
+          return;
+        }
+
+        const state = get();
+        let item: ActionItem | AssignedItem | MentionItem | StalePR | undefined;
+
+        switch (type) {
+          case "assigned":
+            item = state.assignedItems.find((i) => i.id === id);
+            break;
+          case "mentions":
+            item = state.mentionItems.find((i) => i.id === id);
+            break;
+          case "stale":
+            item = state.staleItems.find((i) => i.id === id);
+            break;
+        }
+
+        if (!item || !item.url) {
+          console.warn("Item not found or missing URL");
+          set((state) => {
+            switch (type) {
+              case "assigned":
+                return {
+                  assignedItems: state.assignedItems.filter(
+                    (item) => item.id !== id
+                  ),
+                };
+              case "mentions":
+                return {
+                  mentionItems: state.mentionItems.filter(
+                    (item) => item.id !== id
+                  ),
+                };
+              case "stale":
+                return {
+                  staleItems: state.staleItems.filter((item) => item.id !== id),
+                };
+              default:
+                return state;
+            }
+          });
+          return;
+        }
+
+        const urlMatch = item.url.match(
+          /github\.com\/([^/]+)\/([^/]+)\/(issues|pull)\/(\d+)/
+        );
+
+        if (!urlMatch) {
+          console.warn("Could not parse GitHub URL:", item.url);
+          set((state) => {
+            switch (type) {
+              case "assigned":
+                return {
+                  assignedItems: state.assignedItems.filter(
+                    (item) => item.id !== id
+                  ),
+                };
+              case "mentions":
+                return {
+                  mentionItems: state.mentionItems.filter(
+                    (item) => item.id !== id
+                  ),
+                };
+              case "stale":
+                return {
+                  staleItems: state.staleItems.filter((item) => item.id !== id),
+                };
+              default:
+                return state;
+            }
+          });
+          return;
+        }
+
+        const owner = urlMatch[1];
+        const repo = urlMatch[2];
+        const number = parseInt(urlMatch[4], 10);
+
+        githubAPIClient.setUserToken(userToken);
+
+        try {
+          let result;
+
+          if (item.type === "issue") {
+            result = await githubAPIClient.closeIssue(owner, repo, number);
+          } else if (item.type === "pullRequest") {
+            result = await githubAPIClient.closePullRequest(
+              owner,
+              repo,
+              number
+            );
+          } else {
+            result = { success: false, error: "Unknown item type" };
           }
-        });
+
+          if (result.success) {
+            set((state) => {
+              switch (type) {
+                case "assigned":
+                  return {
+                    assignedItems: state.assignedItems.filter(
+                      (item) => item.id !== id
+                    ),
+                  };
+                case "mentions":
+                  return {
+                    mentionItems: state.mentionItems.filter(
+                      (item) => item.id !== id
+                    ),
+                  };
+                case "stale":
+                  return {
+                    staleItems: state.staleItems.filter(
+                      (item) => item.id !== id
+                    ),
+                  };
+                default:
+                  return state;
+              }
+            });
+          } else {
+            console.error("Failed to close on GitHub:", result.error);
+            throw new Error(result.error || "Failed to close on GitHub");
+          }
+        } catch (error) {
+          console.error(
+            "Error syncing with GitHub:",
+            error instanceof Error ? error.message : "Unknown error"
+          );
+          throw error;
+        }
       },
 
       refreshData: async (type) => {
