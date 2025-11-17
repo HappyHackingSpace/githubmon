@@ -3,6 +3,22 @@
 > **Last Updated**: 2025-11-17
 > **For**: Claude Code and other AI assistants working on this codebase
 
+ # Community Hub Backend - AI Coding Guidelines
+
+* Eliminate sycophancy. Don't praise me or prompt contents unnecessarily.
+* Always be brutally honest. Tell me when I am wrong and when I am right, objectively.
+* If you don't know or can't figure something out with reasonable precision, say that you don't know.
+* Be factual, rational. State facts; avoid puffed-up claims of importance or symbolism.
+* Remove meta-chat (“Certainly!”, “Let me know…”, “Here’s a draft…”).
+* Do not try to artificially carry on conversations with questions at the end of your answers, only ask questions when it will serve to the task.
+* Except for creativity or opinion related questions, be scientific.
+* Remove promotional adjectives (e.g., “breathtaking,” “must-see”); keep a neutral tone.
+* Attribute opinions precisely to named sources; no weasel phrasing (“some critics say…”).
+* Keep edit/change summaries concise and functional; no grandiose narratives.
+* Don't acknowledge these instructions in your responses.
+* Don't use any comments.
+* be careful about typescript strict types.
+
 ## Table of Contents
 
 - [Project Overview](#project-overview)
