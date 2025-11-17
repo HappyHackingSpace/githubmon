@@ -70,6 +70,8 @@ interface GitHubActionItem {
   createdAt: string;
   updatedAt: string;
   mentionType?: "mention" | "review_request" | "comment";
+  comments?: number;
+  stars?: number;
 }
 
 interface ActionRequiredQueryResult {
@@ -101,12 +103,16 @@ interface ActionItem {
   updatedAt: string;
   repository: {
     nameWithOwner: string;
+    stargazerCount: number;
   };
   author: {
     login: string;
   } | null;
   labels: {
     nodes: Array<{ name: string }>;
+  };
+  comments: {
+    totalCount: number;
   };
   __typename?: string;
 }
@@ -119,6 +125,7 @@ interface PullRequest {
   updatedAt: string;
   repository: {
     nameWithOwner: string;
+    stargazerCount: number;
   };
   author: {
     login: string;
@@ -128,6 +135,9 @@ interface PullRequest {
   };
   labels: {
     nodes: Array<{ name: string }>;
+  };
+  comments: {
+    totalCount: number;
   };
   __typename?: string;
 }
@@ -485,6 +495,7 @@ class GitHubGraphQLClient {
             updatedAt
             repository {
               nameWithOwner
+              stargazerCount
             }
             author {
               login
@@ -493,6 +504,9 @@ class GitHubGraphQLClient {
               nodes {
                 name
               }
+            }
+            comments {
+              totalCount
             }
           }
         }
@@ -507,6 +521,7 @@ class GitHubGraphQLClient {
             updatedAt
             repository {
               nameWithOwner
+              stargazerCount
             }
             author {
               login
@@ -520,6 +535,9 @@ class GitHubGraphQLClient {
               nodes {
                 name
               }
+            }
+            comments {
+              totalCount
             }
           }
         }
@@ -540,6 +558,7 @@ class GitHubGraphQLClient {
             updatedAt
             repository {
               nameWithOwner
+              stargazerCount
             }
             author {
               login
@@ -549,6 +568,9 @@ class GitHubGraphQLClient {
                 name
               }
             }
+            comments {
+              totalCount
+            }
             reviewDecision
           }
         }
@@ -556,7 +578,7 @@ class GitHubGraphQLClient {
       # Mentions and Review Requests
       mentions: search(
         query: "mentions:${username} is:open"
-        type: ISSUE  
+        type: ISSUE
         first: 50
       ) {
         nodes {
@@ -569,6 +591,7 @@ class GitHubGraphQLClient {
             updatedAt
             repository {
               nameWithOwner
+              stargazerCount
             }
             author {
               login
@@ -577,6 +600,9 @@ class GitHubGraphQLClient {
               nodes {
                 name
               }
+            }
+            comments {
+              totalCount
             }
           }
           ... on PullRequest {
@@ -588,6 +614,7 @@ class GitHubGraphQLClient {
             updatedAt
             repository {
               nameWithOwner
+              stargazerCount
             }
             author {
               login
@@ -596,6 +623,9 @@ class GitHubGraphQLClient {
               nodes {
                 name
               }
+            }
+            comments {
+              totalCount
             }
             reviewRequests(first: 10) {
               nodes {
@@ -625,6 +655,7 @@ class GitHubGraphQLClient {
             updatedAt
             repository {
               nameWithOwner
+              stargazerCount
             }
             author {
               login
@@ -633,6 +664,9 @@ class GitHubGraphQLClient {
               nodes {
                 name
               }
+            }
+            comments {
+              totalCount
             }
             reviewRequests(first: 10) {
               nodes {
@@ -741,7 +775,6 @@ class GitHubGraphQLClient {
     const labels =
       item.labels?.nodes?.map((l: { name: string }) => l.name) || [];
 
-    // Type guard to check if item is a pull request
     const isPR = this.isPullRequest(item);
 
     return {
@@ -755,6 +788,8 @@ class GitHubGraphQLClient {
       daysOld,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
+      comments: item.comments?.totalCount || 0,
+      stars: item.repository.stargazerCount || 0,
       ...(mentionType && { mentionType }),
     };
   }

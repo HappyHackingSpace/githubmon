@@ -7,6 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useRequireAuth } from "@/hooks/useAuth";
 import {
   Target,
@@ -15,6 +23,7 @@ import {
   Zap,
   ExternalLink,
   RefreshCw,
+  Star,
   LucideIcon,
 } from "lucide-react";
 import { useActionItemsStore } from "@/stores";
@@ -30,6 +39,8 @@ interface ActionItem {
   author?: string;
   priority: "urgent" | "high" | "medium" | "low";
   daysOld?: number;
+  comments?: number;
+  stars?: number;
 }
 
 const VALID_TABS = ["assigned", "mentions", "stale"] as const;
@@ -127,22 +138,42 @@ function ActionRequiredContent() {
 
     if (isLoading) {
       return (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between p-3 border rounded-lg animate-pulse"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-gray-300 rounded-full" />
-                <div>
-                  <div className="w-48 h-4 bg-gray-300 rounded mb-1" />
-                  <div className="w-24 h-3 bg-gray-200 rounded" />
-                </div>
-              </div>
-              <div className="w-16 h-6 bg-gray-300 rounded" />
-            </div>
-          ))}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[40%]">Title / Repository</TableHead>
+                <TableHead className="w-[15%]">Priority</TableHead>
+                <TableHead className="w-[15%]">Activity</TableHead>
+                <TableHead className="w-[15%]">Repo Popularity</TableHead>
+                <TableHead className="w-[15%]">Type</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[1, 2, 3].map((i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <div className="animate-pulse">
+                      <div className="w-48 h-4 bg-gray-300 dark:bg-gray-600 rounded mb-1" />
+                      <div className="w-24 h-3 bg-gray-200 dark:bg-gray-700 rounded" />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-16 h-6 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-12 h-4 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-12 h-4 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-16 h-6 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       );
     }
@@ -180,70 +211,83 @@ function ActionRequiredContent() {
     }
 
     return (
-      <div className="space-y-3">
-        {items.map((item: ActionItem) => (
-          <div
-            key={item.id}
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 group transition-colors"
-          >
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div
-                className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                  item.priority === "urgent"
-                    ? "bg-red-600"
-                    : item.priority === "high"
-                    ? "bg-red-500"
-                    : item.priority === "medium"
-                    ? "bg-yellow-500"
-                    : "bg-gray-400"
-                }`}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-medium truncate">{item.title}</h4>
-                  {item.url && (
-                    <a
-                      href={isValidUrl(item.url) ? item.url : "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) =>
-                        !isValidUrl(item.url ?? "") && e.preventDefault()
-                      }
-                    >
-                      <ExternalLink className="w-3 h-3 text-gray-500 hover:text-blue-500" />
-                    </a>
-                  )}
-                </div>
-                <p className="text-sm text-gray-500 truncate">
-                  {item.repo} • {item.type}
-                  {item.author && ` • ${item.author}`}
-                  {type === "stale" &&
-                    item.daysOld &&
-                    ` • ${item.daysOld} days old`}
-                </p>
-              </div>
-            </div>
-            <Badge
-              variant={
-                type === "stale"
-                  ? "outline"
-                  : item.priority === "urgent"
-                  ? "destructive"
-                  : item.priority === "high"
-                  ? "destructive"
-                  : item.priority === "medium"
-                  ? "default"
-                  : "secondary"
-              }
-              className={`ml-2 flex-shrink-0 ${
-                type === "stale" ? "text-orange-600" : ""
-              }`}
-            >
-              {type === "stale" ? `${item.daysOld}d old` : item.priority}
-            </Badge>
-          </div>
-        ))}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[40%]">Title / Repository</TableHead>
+              <TableHead className="w-[15%]">Priority</TableHead>
+              <TableHead className="w-[15%]">Activity</TableHead>
+              <TableHead className="w-[15%]">Repo Popularity</TableHead>
+              <TableHead className="w-[15%]">Type</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item: ActionItem) => (
+              <TableRow key={item.id}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={isValidUrl(item.url) ? item.url : "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium hover:text-blue-600 dark:hover:text-blue-400 truncate"
+                          onClick={(e) =>
+                            !isValidUrl(item.url ?? "") && e.preventDefault()
+                          }
+                        >
+                          {item.title}
+                        </a>
+                        {item.url && (
+                          <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                        {item.repo}
+                        {item.author && ` • ${item.author}`}
+                      </p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      item.priority === "urgent"
+                        ? "destructive"
+                        : item.priority === "high"
+                        ? "destructive"
+                        : item.priority === "medium"
+                        ? "default"
+                        : "secondary"
+                    }
+                    className="capitalize"
+                  >
+                    {item.priority}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>{item.comments || 0}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                    <Star className="w-4 h-4 text-yellow-500" />
+                    <span>{item.stars || 0}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="capitalize">
+                    {item.type === "pullRequest" ? "PR" : "Issue"}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     );
   };
