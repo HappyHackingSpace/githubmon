@@ -5,7 +5,6 @@ import { usePreferencesStore } from "@/stores/preferences";
 import { useFavoritesStore } from "@/stores/favorites";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDown, ChevronRight, Star, GitPullRequest, User, TrendingUp, TrendingDown, Code, Filter, SortAsc, ExternalLink, Copy, GitBranch } from "lucide-react";
 import Link from "next/link";
@@ -41,7 +40,7 @@ export function FavoritesList() {
   };
 
   const filteredAndSortedRepos = useMemo(() => {
-    let filtered = pinnedRepos.filter((repoName) => {
+    const filtered = pinnedRepos.filter((repoName) => {
       if (repoFilter === "all") return true;
       const metadata = repoMetadata[repoName];
       return metadata?.categoryId === repoFilter;
@@ -69,7 +68,7 @@ export function FavoritesList() {
   }, [pinnedRepos, repoFilter, repoSort, repoMetrics, repoMetadata]);
 
   const filteredAndSortedUsers = useMemo(() => {
-    let filtered = favoriteUsers.filter((username) => {
+    const filtered = favoriteUsers.filter((username) => {
       if (userFilter === "all") return true;
       const metadata = userMetadata[username];
       return metadata?.categoryId === userFilter;
