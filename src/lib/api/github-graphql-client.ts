@@ -810,7 +810,7 @@ class GitHubGraphQLClient {
         avatarUrl: item.author?.avatarUrl || "",
       },
       labels,
-      priority: this.calculateActionPriority(labelNames, daysOld),
+      priority: this.calculateActionPriority(labelNames, daysOld, mentionType),
       daysOld,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
@@ -822,8 +822,13 @@ class GitHubGraphQLClient {
 
   private calculateActionPriority(
     labels: string[],
-    daysOld: number
+    daysOld: number,
+    mentionType?: "mention" | "review_request" | "comment"
   ): "urgent" | "high" | "medium" | "low" {
+    if (mentionType === "review_request") {
+      return "urgent";
+    }
+
     const lowerLabels = labels.map((l) => l.toLowerCase());
 
     if (
