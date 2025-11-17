@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -45,6 +45,7 @@ import {
 
 import { createColumns } from "./columns";
 import type { GitHubIssue } from "@/types/quickWins";
+import { useKanbanStore } from "@/stores/kanban";
 
 interface QuickWinsTableProps {
   data: GitHubIssue[];
@@ -70,7 +71,21 @@ export function QuickWinsTable({
 
   const [languageFilter, setLanguageFilter] = useState<string>("all");
 
-  const columns = useMemo(() => createColumns(), []);
+  const addTask = useKanbanStore((state) => state.addTask);
+
+  const handleAddToKanban = useCallback((issue: GitHubIssue) => {
+    addTask({
+      title: issue.title,
+      description: `From ${issue.repository}`,
+      type: "github-issue",
+      priority: issue.priority,
+      githubUrl: issue.url,
+      labels: issue.labels.map((label) => label.name),
+      columnId: "todo",
+    });
+  }, [addTask]);
+
+  const columns = useMemo(() => createColumns({ onAddToKanban: handleAddToKanban }), [handleAddToKanban]);
 
   const filteredData = useMemo(() => {
     let filtered = data;

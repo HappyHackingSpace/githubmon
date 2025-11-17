@@ -148,6 +148,8 @@ interface PullRequest {
   comments: {
     totalCount: number;
   };
+  additions?: number;
+  deletions?: number;
   __typename?: string;
 }
 
@@ -163,6 +165,8 @@ interface PullRequestWithReviews extends PullRequest {
 
 interface StalePullRequest extends Omit<PullRequest, "assignees"> {
   reviewDecision: string | null;
+  additions?: number;
+  deletions?: number;
 }
 
 class GitHubGraphQLClient {
@@ -521,7 +525,7 @@ class GitHubGraphQLClient {
             }
           }
         }
-        # Assigned Pull Requests 
+        # Assigned Pull Requests
         pullRequests(states: OPEN, first: 50) {
           nodes {
             __typename
@@ -552,6 +556,8 @@ class GitHubGraphQLClient {
             comments {
               totalCount
             }
+            additions
+            deletions
           }
         }
       }
@@ -587,6 +593,8 @@ class GitHubGraphQLClient {
               totalCount
             }
             reviewDecision
+            additions
+            deletions
           }
         }
       }
@@ -622,6 +630,8 @@ class GitHubGraphQLClient {
               totalCount
             }
             reviewDecision
+            additions
+            deletions
           }
         }
       }
@@ -690,6 +700,8 @@ class GitHubGraphQLClient {
                 }
               }
             }
+            additions
+            deletions
           }
         }
       }
@@ -733,6 +745,8 @@ class GitHubGraphQLClient {
                 }
               }
             }
+            additions
+            deletions
           }
         }
       }
@@ -857,6 +871,11 @@ class GitHubGraphQLClient {
     const labelNames = labels.map((l) => l.name);
 
     const isPR = this.isPullRequest(item);
+    const commentCount = item.comments?.totalCount || 0;
+
+    const prSize = isPR && "additions" in item && "deletions" in item
+      ? { additions: item.additions, deletions: item.deletions }
+      : undefined;
 
     return {
       id: item.id,
@@ -869,11 +888,17 @@ class GitHubGraphQLClient {
         avatarUrl: item.author?.avatarUrl || "",
       },
       labels,
-      priority: this.calculateActionPriority(labelNames, daysOld, mentionType),
+      priority: this.calculateActionPriority(
+        labelNames,
+        daysOld,
+        mentionType,
+        commentCount,
+        prSize
+      ),
       daysOld,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
-      comments: item.comments?.totalCount || 0,
+      comments: commentCount,
       stars: item.repository.stargazerCount || 0,
       ...(mentionType && { mentionType }),
     };
@@ -882,10 +907,36 @@ class GitHubGraphQLClient {
   private calculateActionPriority(
     labels: string[],
     daysOld: number,
-    mentionType?: "mention" | "review_request" | "comment"
+    mentionType?: "mention" | "review_request" | "comment",
+    commentCount = 0,
+    prSize?: { additions?: number; deletions?: number }
   ): "urgent" | "high" | "medium" | "low" {
-    if (mentionType === "review_request") {
-      return "urgent";
+    let score = 0;
+
+    const statusScores = {
+      review_request: 50,
+      mention: 30,
+      comment: 25,
+    };
+    if (mentionType && statusScores[mentionType]) {
+      score += statusScores[mentionType];
+    } else {
+      score += 20;
+    }
+
+    score += Math.min(commentCount * 2, 30);
+
+    if (prSize && (prSize.additions || prSize.deletions)) {
+      const totalChanges = (prSize.additions || 0) + (prSize.deletions || 0);
+      if (totalChanges > 1000) {
+        score += 20;
+      } else if (totalChanges > 500) {
+        score += 15;
+      } else if (totalChanges > 100) {
+        score += 10;
+      } else {
+        score += 5;
+      }
     }
 
     const lowerLabels = labels.map((l) => l.toLowerCase());
@@ -896,20 +947,33 @@ class GitHubGraphQLClient {
           l.includes("critical") || l.includes("urgent") || l.includes("p0")
       )
     ) {
-      return "urgent";
-    }
-    if (
+      score += 40;
+    } else if (
       lowerLabels.some(
         (l) => l.includes("high") || l.includes("p1") || l.includes("bug")
       )
     ) {
-      return "high";
+      score += 25;
+    } else if (
+      lowerLabels.some(
+        (l) =>
+          l.includes("low") || l.includes("p3") || l.includes("enhancement")
+      )
+    ) {
+      score -= 10;
     }
 
-    if (daysOld > 14) return "urgent";
-    if (daysOld > 7) return "high";
-    if (daysOld > 3) return "medium";
+    if (daysOld > 14) {
+      score *= 1.5;
+    } else if (daysOld > 7) {
+      score *= 1.3;
+    } else if (daysOld > 3) {
+      score *= 1.1;
+    }
 
+    if (score >= 100) return "urgent";
+    if (score >= 70) return "high";
+    if (score >= 40) return "medium";
     return "low";
   }
 }
