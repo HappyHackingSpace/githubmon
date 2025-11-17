@@ -72,6 +72,7 @@ interface KanbanState {
     columnId?: string
   ) => string;
   isActionItemAdded: (itemId: string) => boolean;
+  removeActionItemFromKanban: (itemId: string) => void;
   updateTask: (id: string, updates: Partial<KanbanTask>) => void;
   moveTask: (
     taskId: string,
@@ -369,6 +370,46 @@ export const useKanbanStore = create<KanbanState>()(
 
       isActionItemAdded: (itemId: string) => {
         return get().addedActionItemIds.has(itemId);
+      },
+
+      removeActionItemFromKanban: (itemId: string) => {
+        set((state) => {
+          const tasksToRemove = Object.entries(state.tasks)
+            .filter(([, task]) => {
+              const isPersonalTask = task.type === "personal";
+              const matchesId = task.id.startsWith("personal-");
+              return isPersonalTask && matchesId;
+            })
+            .filter(([, task]) => {
+              const urlMatch = task.githubUrl?.includes(itemId);
+              return urlMatch;
+            })
+            .map(([id]) => id);
+
+          const newTasks = { ...state.tasks };
+          tasksToRemove.forEach((taskId) => {
+            delete newTasks[taskId];
+          });
+
+          const newColumns = { ...state.columns };
+          Object.keys(newColumns).forEach((columnId) => {
+            newColumns[columnId] = {
+              ...newColumns[columnId],
+              taskIds: newColumns[columnId].taskIds.filter(
+                (id) => !tasksToRemove.includes(id)
+              ),
+            };
+          });
+
+          const newAddedIds = new Set(state.addedActionItemIds);
+          newAddedIds.delete(itemId);
+
+          return {
+            tasks: newTasks,
+            columns: newColumns,
+            addedActionItemIds: newAddedIds,
+          };
+        });
       },
 
       moveTask: (taskId, fromColumnId, toColumnId, newIndex) => {
