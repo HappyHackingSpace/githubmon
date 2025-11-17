@@ -74,7 +74,6 @@ function ActionRequiredContent() {
     loading,
     errors,
     refreshData,
-    markAsRead,
   } = useActionItemsStore();
 
   const searchParams = useSearchParams();
@@ -160,9 +159,6 @@ function ActionRequiredContent() {
     }
   };
 
-  const handleItemClosed = (itemId: string, type: "assigned" | "mentions" | "stale") => {
-    markAsRead(type, itemId);
-  };
 
   const ActionItemsList = ({
     type,
@@ -376,7 +372,7 @@ function ActionRequiredContent() {
                 <TableCell>
                   <QuickActionsMenu
                     item={item as StoreActionItem}
-                    onItemClosed={(itemId) => handleItemClosed(itemId, type)}
+                    itemType={type}
                   />
                 </TableCell>
               </TableRow>
