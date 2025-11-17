@@ -15,6 +15,8 @@ export interface ActionItem {
   assignee?: string;
   author: string;
   daysOld: number;
+  comments?: number;
+  stars?: number;
 }
 
 export interface AssignedItem extends ActionItem {
