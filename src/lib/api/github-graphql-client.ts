@@ -90,6 +90,9 @@ interface ActionRequiredQueryResult {
   stalePRs: {
     nodes: StalePullRequest[];
   };
+  staleReviewRequests: {
+    nodes: StalePullRequest[];
+  };
   mentions: {
     nodes: (ActionItem | PullRequestWithReviews)[];
   };
@@ -552,9 +555,44 @@ class GitHubGraphQLClient {
           }
         }
       }
-      # Stale PRs
+      # Stale PRs (authored by user)
       stalePRs: search(
         query: "is:pr is:open author:${username} updated:<${staleDate}"
+        type: ISSUE
+        first: 50
+      ) {
+        nodes {
+          ... on PullRequest {
+            __typename
+            id
+            title
+            url
+            createdAt
+            updatedAt
+            repository {
+              nameWithOwner
+              stargazerCount
+            }
+            author {
+              login
+              avatarUrl
+            }
+            labels(first: 10) {
+              nodes {
+                name
+                color
+              }
+            }
+            comments {
+              totalCount
+            }
+            reviewDecision
+          }
+        }
+      }
+      # Stale Review Requests (user is requested to review)
+      staleReviewRequests: search(
+        query: "is:pr is:open review-requested:${username} updated:<${staleDate}"
         type: ISSUE
         first: 50
       ) {
@@ -748,7 +786,7 @@ class GitHubGraphQLClient {
 
       const mentions = [...reviewRequests, ...generalMentions];
 
-      const stale = data.stalePRs.nodes.map((pr: StalePullRequest) => {
+      const staleAuthoredPRs = data.stalePRs.nodes.map((pr: StalePullRequest) => {
         const daysSinceUpdate = Math.floor(
           (Date.now() - new Date(pr.updatedAt).getTime()) /
             (1000 * 60 * 60 * 24)
@@ -758,6 +796,27 @@ class GitHubGraphQLClient {
           daysOld: daysSinceUpdate,
           reviewStatus: pr.reviewDecision || "PENDING",
         };
+      });
+
+      const staleReviewRequestedPRs = data.staleReviewRequests.nodes.map((pr: StalePullRequest) => {
+        const daysSinceUpdate = Math.floor(
+          (Date.now() - new Date(pr.updatedAt).getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
+        return {
+          ...this.mapToActionItem(pr),
+          daysOld: daysSinceUpdate,
+          reviewStatus: pr.reviewDecision || "PENDING",
+        };
+      });
+
+      const staleIds = new Set<string>();
+      const stale = [...staleAuthoredPRs, ...staleReviewRequestedPRs].filter((pr) => {
+        if (staleIds.has(pr.id)) {
+          return false;
+        }
+        staleIds.add(pr.id);
+        return true;
       });
 
       return {
