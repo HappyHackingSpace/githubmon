@@ -4,22 +4,6 @@ import { useDataCacheStore } from "@/stores/cache";
 import { useActionItemsStore } from "@/stores";
 import { githubAPIClient } from "@/lib/api/github-api-client";
 
-interface QuickWinsCount {
-  goodIssuesCount: number;
-  easyFixesCount: number;
-  count: number;
-  isLoading: boolean;
-}
-
-export function useQuickWinsCount(): QuickWinsCount {
-  return {
-    goodIssuesCount: 12,
-    easyFixesCount: 8,
-    count: 20,
-    isLoading: false,
-  };
-}
-
 export function useQuickWins() {
   const {
     goodIssues,
@@ -115,6 +99,12 @@ export function useQuickWins() {
     // Individual loading states for compatibility
     loadingGoodIssues: loading.goodIssues,
     loadingEasyFixes: loading.easyFixes,
+
+    // Count values based on real data
+    goodIssuesCount: goodIssues.length,
+    easyFixesCount: easyFixes.length,
+    count: totalIssues,
+    isLoading: loading.goodIssues || loading.easyFixes,
 
     // Individual error states
     goodIssuesError: error.goodIssues,

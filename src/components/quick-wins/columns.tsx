@@ -2,7 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ExternalLink, Calendar, ListPlus, X } from "lucide-react";
+import { ExternalLink, Calendar, ListPlus, X, MessageCircle, Star, AlertCircle } from "lucide-react";
 import type { GitHubIssue } from "@/types/quickWins";
 
 interface CreateColumnsOptions {
@@ -99,6 +99,87 @@ export const createColumns = (options?: CreateColumnsOptions): ColumnDef<GitHubI
         </Badge>
       ) : (
         <span className="text-gray-400 text-sm"> -</span>
+      );
+    },
+  },
+  {
+    accessorKey: "priority",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="h-auto p-0 font-semibold"
+      >
+        <AlertCircle className="w-4 h-4 mr-1" />
+        Priority
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const priority = row.original.priority;
+      const priorityConfig = {
+        low: { color: "bg-green-100 text-green-700 border-green-300", label: "Low" },
+        medium: { color: "bg-yellow-100 text-yellow-700 border-yellow-300", label: "Medium" },
+        high: { color: "bg-red-100 text-red-700 border-red-300", label: "High" },
+      };
+      const config = priorityConfig[priority];
+      return (
+        <Badge className={`${config.color} text-xs px-2 py-1`}>
+          {config.label}
+        </Badge>
+      );
+    },
+    sortingFn: (rowA, rowB) => {
+      const priorityOrder = { high: 3, medium: 2, low: 1 };
+      return priorityOrder[rowA.original.priority] - priorityOrder[rowB.original.priority];
+    },
+  },
+  {
+    accessorKey: "comments",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="h-auto p-0 font-semibold"
+      >
+        <MessageCircle className="w-4 h-4 mr-1" />
+        Activity
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const comments = row.original.comments;
+      return (
+        <div className="flex items-center gap-1 text-sm text-gray-600">
+          <MessageCircle className="w-4 h-4 text-gray-400" />
+          <span>{comments}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "stars",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="h-auto p-0 font-semibold"
+      >
+        <Star className="w-4 h-4 mr-1" />
+        Repo Stars
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const stars = row.original.stars;
+      const formatStars = (num: number) => {
+        if (num >= 1000) {
+          return `${(num / 1000).toFixed(1)}k`;
+        }
+        return num.toString();
+      };
+      return (
+        <div className="flex items-center gap-1 text-sm text-gray-600">
+          <Star className="w-4 h-4 text-yellow-500" />
+          <span>{formatStars(stars)}</span>
+        </div>
       );
     },
   },
