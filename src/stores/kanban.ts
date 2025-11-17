@@ -342,11 +342,11 @@ export const useKanbanStore = create<KanbanState>()(
         const task: KanbanTask = {
           id,
           title: item.title,
-          description: `From: ${item.repo}${item.author ? ` (by ${item.author})` : ""}`,
+          description: `From: ${item.repo}${item.author ? ` (by ${item.author.login})` : ""}`,
           type: "personal",
           priority: item.priority,
           githubUrl: item.url,
-          labels: [],
+          labels: item.labels?.map((l) => l.name) || [],
           notes,
           createdAt: new Date(),
           updatedAt: new Date(),

@@ -46,8 +46,11 @@ export function useQuickWins() {
           url: issue.url,
           createdAt: issue.created_at,
           updatedAt: issue.updated_at,
-          author: issue.author.login,
-          labels: issue.labels.map((l) => l.name),
+          author: {
+            login: issue.author.login,
+            avatarUrl: issue.author.avatar_url,
+          },
+          labels: issue.labels.map((l) => ({ name: l.name, color: l.color })),
           daysOld: Math.floor(
             (Date.now() - new Date(issue.created_at).getTime()) /
               (1000 * 60 * 60 * 24)
@@ -69,8 +72,11 @@ export function useQuickWins() {
           url: issue.url,
           createdAt: issue.created_at,
           updatedAt: issue.updated_at,
-          author: issue.author.login,
-          labels: issue.labels.map((l) => l.name),
+          author: {
+            login: issue.author.login,
+            avatarUrl: issue.author.avatar_url,
+          },
+          labels: issue.labels.map((l) => ({ name: l.name, color: l.color })),
           daysOld: Math.floor(
             (Date.now() - new Date(issue.created_at).getTime()) /
               (1000 * 60 * 60 * 24)
