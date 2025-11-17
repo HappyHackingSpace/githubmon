@@ -64,7 +64,11 @@ interface GitHubActionItem {
   url: string;
   repo: string;
   type: "issue" | "pullRequest";
-  author: string;
+  author: {
+    login: string;
+    avatarUrl: string;
+  };
+  labels: Array<{ name: string; color?: string }>;
   priority: "urgent" | "high" | "medium" | "low";
   daysOld: number;
   createdAt: string;
@@ -107,9 +111,10 @@ interface ActionItem {
   };
   author: {
     login: string;
+    avatarUrl: string;
   } | null;
   labels: {
-    nodes: Array<{ name: string }>;
+    nodes: Array<{ name: string; color?: string }>;
   };
   comments: {
     totalCount: number;
@@ -129,12 +134,13 @@ interface PullRequest {
   };
   author: {
     login: string;
+    avatarUrl: string;
   } | null;
   assignees: {
     nodes: Array<{ login: string }>;
   };
   labels: {
-    nodes: Array<{ name: string }>;
+    nodes: Array<{ name: string; color?: string }>;
   };
   comments: {
     totalCount: number;
@@ -499,10 +505,12 @@ class GitHubGraphQLClient {
             }
             author {
               login
+              avatarUrl
             }
             labels(first: 10) {
               nodes {
                 name
+                color
               }
             }
             comments {
@@ -525,6 +533,7 @@ class GitHubGraphQLClient {
             }
             author {
               login
+              avatarUrl
             }
             assignees(first: 10) {
               nodes {
@@ -534,6 +543,7 @@ class GitHubGraphQLClient {
             labels(first: 10) {
               nodes {
                 name
+                color
               }
             }
             comments {
@@ -562,10 +572,12 @@ class GitHubGraphQLClient {
             }
             author {
               login
+              avatarUrl
             }
             labels(first: 10) {
               nodes {
                 name
+                color
               }
             }
             comments {
@@ -595,10 +607,12 @@ class GitHubGraphQLClient {
             }
             author {
               login
+              avatarUrl
             }
             labels(first: 10) {
               nodes {
                 name
+                color
               }
             }
             comments {
@@ -618,10 +632,12 @@ class GitHubGraphQLClient {
             }
             author {
               login
+              avatarUrl
             }
             labels(first: 10) {
               nodes {
                 name
+                color
               }
             }
             comments {
@@ -659,10 +675,12 @@ class GitHubGraphQLClient {
             }
             author {
               login
+              avatarUrl
             }
             labels(first: 10) {
               nodes {
                 name
+                color
               }
             }
             comments {
@@ -773,7 +791,11 @@ class GitHubGraphQLClient {
       (Date.now() - new Date(item.createdAt).getTime()) / (1000 * 60 * 60 * 24)
     );
     const labels =
-      item.labels?.nodes?.map((l: { name: string }) => l.name) || [];
+      item.labels?.nodes?.map((l: { name: string; color?: string }) => ({
+        name: l.name,
+        color: l.color,
+      })) || [];
+    const labelNames = labels.map((l) => l.name);
 
     const isPR = this.isPullRequest(item);
 
@@ -783,8 +805,12 @@ class GitHubGraphQLClient {
       url: item.url,
       repo: item.repository.nameWithOwner,
       type: isPR ? "pullRequest" : "issue",
-      author: item.author?.login || "unknown",
-      priority: this.calculateActionPriority(labels, daysOld),
+      author: {
+        login: item.author?.login || "unknown",
+        avatarUrl: item.author?.avatarUrl || "",
+      },
+      labels,
+      priority: this.calculateActionPriority(labelNames, daysOld, mentionType),
       daysOld,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
@@ -796,8 +822,13 @@ class GitHubGraphQLClient {
 
   private calculateActionPriority(
     labels: string[],
-    daysOld: number
+    daysOld: number,
+    mentionType?: "mention" | "review_request" | "comment"
   ): "urgent" | "high" | "medium" | "low" {
+    if (mentionType === "review_request") {
+      return "urgent";
+    }
+
     const lowerLabels = labels.map((l) => l.toLowerCase());
 
     if (

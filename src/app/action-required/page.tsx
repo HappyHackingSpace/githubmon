@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -23,7 +24,6 @@ import {
   Zap,
   ExternalLink,
   RefreshCw,
-  Star,
   LucideIcon,
 } from "lucide-react";
 import { useActionItemsStore } from "@/stores";
@@ -38,15 +38,33 @@ interface ActionItem {
   url?: string;
   repo: string;
   type: string;
-  author?: string;
+  author: {
+    login: string;
+    avatarUrl: string;
+  };
+  labels: Array<{ name: string; color?: string }>;
   priority: "urgent" | "high" | "medium" | "low";
   daysOld?: number;
+  updatedAt: string;
   comments?: number;
   stars?: number;
 }
 
 const VALID_TABS = ["assigned", "mentions", "stale"] as const;
 type ValidTab = (typeof VALID_TABS)[number];
+
+function formatTimeAgo(dateString: string): string {
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return "just now";
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 604800)}w ago`;
+  return `${Math.floor(diffInSeconds / 2592000)}mo ago`;
+}
 
 function ActionRequiredContent() {
   const {
@@ -144,12 +162,13 @@ function ActionRequiredContent() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[35%]">Title / Repository</TableHead>
-                <TableHead className="w-[12%]">Priority</TableHead>
-                <TableHead className="w-[12%]">Activity</TableHead>
-                <TableHead className="w-[13%]">Repo Popularity</TableHead>
-                <TableHead className="w-[13%]">Type</TableHead>
-                <TableHead className="w-[15%]">Actions</TableHead>
+                <TableHead className="w-[30%]">Title / Repository</TableHead>
+                <TableHead className="w-[10%]">Author</TableHead>
+                <TableHead className="w-[18%]">Labels</TableHead>
+                <TableHead className="w-[10%]">Priority</TableHead>
+                <TableHead className="w-[8%]">Activity</TableHead>
+                <TableHead className="w-[10%]">Updated</TableHead>
+                <TableHead className="w-[14%]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -162,16 +181,22 @@ function ActionRequiredContent() {
                     </div>
                   </TableCell>
                   <TableCell>
+                    <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <div className="w-16 h-6 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
+                      <div className="w-16 h-6 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <div className="w-16 h-6 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
                   </TableCell>
                   <TableCell>
                     <div className="w-12 h-4 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
                   </TableCell>
                   <TableCell>
-                    <div className="w-12 h-4 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="w-16 h-6 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
+                    <div className="w-16 h-4 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
                   </TableCell>
                   <TableCell>
                     <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
@@ -221,12 +246,13 @@ function ActionRequiredContent() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[35%]">Title / Repository</TableHead>
-              <TableHead className="w-[12%]">Priority</TableHead>
-              <TableHead className="w-[12%]">Activity</TableHead>
-              <TableHead className="w-[13%]">Repo Popularity</TableHead>
-              <TableHead className="w-[13%]">Type</TableHead>
-              <TableHead className="w-[15%]">Actions</TableHead>
+              <TableHead className="w-[30%]">Title / Repository</TableHead>
+              <TableHead className="w-[10%]">Author</TableHead>
+              <TableHead className="w-[18%]">Labels</TableHead>
+              <TableHead className="w-[10%]">Priority</TableHead>
+              <TableHead className="w-[8%]">Activity</TableHead>
+              <TableHead className="w-[10%]">Updated</TableHead>
+              <TableHead className="w-[14%]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -253,9 +279,45 @@ function ActionRequiredContent() {
                       </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                         {item.repo}
-                        {item.author && ` • ${item.author}`}
                       </p>
                     </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={item.author.avatarUrl} alt={item.author.login} />
+                      <AvatarFallback>
+                        {item.author.login.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {item.labels.slice(0, 3).map((label, idx) => (
+                      <Badge
+                        key={idx}
+                        variant="outline"
+                        className="text-xs"
+                        style={
+                          label.color
+                            ? {
+                                borderColor: `#${label.color}`,
+                                backgroundColor: `#${label.color}20`,
+                                color: `#${label.color}`,
+                              }
+                            : undefined
+                        }
+                      >
+                        {label.name}
+                      </Badge>
+                    ))}
+                    {item.labels.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{item.labels.length - 3}
+                      </Badge>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -281,15 +343,9 @@ function ActionRequiredContent() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                    <Star className="w-4 h-4 text-yellow-500" />
-                    <span>{item.stars || 0}</span>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {formatTimeAgo(item.updatedAt)}
                   </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="capitalize">
-                    {item.type === "pullRequest" ? "PR" : "Issue"}
-                  </Badge>
                 </TableCell>
                 <TableCell>
                   <AddToKanbanButton item={item as StoreActionItem} />
