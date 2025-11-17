@@ -3,6 +3,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { useRequireAuth } from "@/hooks/useAuth";
 import { FavoritesList } from "@/components/widget/FavoritesList";
+import { ActivityFeed } from "@/components/widget/ActivityFeed";
 import { Button } from "@/components/ui/button";
 import { Settings, Star } from "lucide-react";
 import Link from "next/link";
@@ -44,7 +45,14 @@ export default function FavoritesPage() {
           </Link>
         </div>
 
-        <FavoritesList />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <FavoritesList />
+          </div>
+          <div className="lg:col-span-1">
+            <ActivityFeed />
+          </div>
+        </div>
       </div>
     </Layout>
   );

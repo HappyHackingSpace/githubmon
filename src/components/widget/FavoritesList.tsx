@@ -1,26 +1,100 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { usePreferencesStore } from "@/stores/preferences";
 import { useFavoritesStore } from "@/stores/favorites";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronDown, ChevronRight, Star, GitPullRequest, User, TrendingUp, TrendingDown, Code } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronDown, ChevronRight, Star, GitPullRequest, User, TrendingUp, TrendingDown, Code, Filter, SortAsc, ExternalLink, Copy, GitBranch } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 export function FavoritesList() {
   const pinnedRepos = usePreferencesStore((state) => state.pinnedRepos);
   const favoriteUsers = usePreferencesStore((state) => state.favoriteUsers);
+  const categories = usePreferencesStore((state) => state.categories);
+  const repoMetadata = usePreferencesStore((state) => state.repoMetadata);
+  const userMetadata = usePreferencesStore((state) => state.userMetadata);
   const { repoMetrics, userMetrics, loading, error, fetchAllFavorites, isHydrated } = useFavoritesStore();
 
   const [reposExpanded, setReposExpanded] = useState(true);
   const [usersExpanded, setUsersExpanded] = useState(true);
+
+  const [repoFilter, setRepoFilter] = useState<string>("all");
+  const [repoSort, setRepoSort] = useState<string>("stars");
+  const [userFilter, setUserFilter] = useState<string>("all");
+  const [userSort, setUserSort] = useState<string>("activity");
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (isHydrated && (pinnedRepos.length > 0 || favoriteUsers.length > 0)) {
       fetchAllFavorites(pinnedRepos, favoriteUsers);
     }
   }, [pinnedRepos, favoriteUsers, isHydrated, fetchAllFavorites]);
+
+  const handleCopyUrl = (url: string, identifier: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedUrl(identifier);
+    setTimeout(() => setCopiedUrl(null), 2000);
+  };
+
+  const filteredAndSortedRepos = useMemo(() => {
+    let filtered = pinnedRepos.filter((repoName) => {
+      if (repoFilter === "all") return true;
+      const metadata = repoMetadata[repoName];
+      return metadata?.categoryId === repoFilter;
+    });
+
+    return filtered.sort((a, b) => {
+      const metricsA = repoMetrics[a];
+      const metricsB = repoMetrics[b];
+
+      if (!metricsA || !metricsB) return 0;
+
+      switch (repoSort) {
+        case "stars":
+          return metricsB.stars - metricsA.stars;
+        case "activity":
+          return new Date(metricsB.lastActivity).getTime() - new Date(metricsA.lastActivity).getTime();
+        case "name":
+          return a.localeCompare(b);
+        case "dateAdded":
+          return (repoMetadata[b]?.dateAdded || 0) - (repoMetadata[a]?.dateAdded || 0);
+        default:
+          return 0;
+      }
+    });
+  }, [pinnedRepos, repoFilter, repoSort, repoMetrics, repoMetadata]);
+
+  const filteredAndSortedUsers = useMemo(() => {
+    let filtered = favoriteUsers.filter((username) => {
+      if (userFilter === "all") return true;
+      const metadata = userMetadata[username];
+      return metadata?.categoryId === userFilter;
+    });
+
+    return filtered.sort((a, b) => {
+      const metricsA = userMetrics[a];
+      const metricsB = userMetrics[b];
+
+      if (!metricsA || !metricsB) return 0;
+
+      switch (userSort) {
+        case "activity":
+          return metricsB.recentActivity - metricsA.recentActivity;
+        case "followers":
+          return metricsB.followers - metricsA.followers;
+        case "name":
+          return a.localeCompare(b);
+        case "dateAdded":
+          return (userMetadata[b]?.dateAdded || 0) - (userMetadata[a]?.dateAdded || 0);
+        default:
+          return 0;
+      }
+    });
+  }, [favoriteUsers, userFilter, userSort, userMetrics, userMetadata]);
 
   if (!isHydrated) {
     return (
@@ -64,21 +138,59 @@ export function FavoritesList() {
       <CardContent className="space-y-4">
         {pinnedRepos.length > 0 && (
           <div>
-            <button
-              onClick={() => setReposExpanded(!reposExpanded)}
-              className="flex items-center gap-2 w-full text-left mb-3 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              {reposExpanded ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
+            <div className="flex items-center justify-between mb-3">
+              <button
+                onClick={() => setReposExpanded(!reposExpanded)}
+                className="flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
+                {reposExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+                <span className="font-semibold">Pinned Repositories ({filteredAndSortedRepos.length})</span>
+              </button>
+
+              {reposExpanded && (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <Filter className="h-3 w-3 text-muted-foreground" />
+                    <Select value={repoFilter} onValueChange={setRepoFilter}>
+                      <SelectTrigger className="h-7 text-xs w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All categories</SelectItem>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <SortAsc className="h-3 w-3 text-muted-foreground" />
+                    <Select value={repoSort} onValueChange={setRepoSort}>
+                      <SelectTrigger className="h-7 text-xs w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="stars">Most stars</SelectItem>
+                        <SelectItem value="activity">Recent activity</SelectItem>
+                        <SelectItem value="dateAdded">Recently added</SelectItem>
+                        <SelectItem value="name">Alphabetical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               )}
-              <span className="font-semibold">Pinned Repositories ({pinnedRepos.length})</span>
-            </button>
+            </div>
 
             {reposExpanded && (
               <div className="space-y-3">
-                {pinnedRepos.map((repoFullName) => {
+                {filteredAndSortedRepos.map((repoFullName) => {
                   const metrics = repoMetrics[repoFullName];
                   const isLoading = loading.repos[repoFullName];
                   const errorMsg = error.repos[repoFullName];
@@ -153,8 +265,50 @@ export function FavoritesList() {
                             )}
                           </div>
 
-                          <div className="text-xs text-muted-foreground">
-                            Last activity: {new Date(metrics.lastActivity).toLocaleDateString()}
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="text-xs text-muted-foreground">
+                              Last activity: {new Date(metrics.lastActivity).toLocaleDateString()}
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2"
+                                onClick={() => window.open(metrics.url, "_blank")}
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2"
+                                onClick={() =>
+                                  handleCopyUrl(
+                                    `https://github.com/${metrics.fullName}.git`,
+                                    `clone-${metrics.fullName}`
+                                  )
+                                }
+                              >
+                                {copiedUrl === `clone-${metrics.fullName}` ? (
+                                  <span className="text-xs text-green-600">Copied!</span>
+                                ) : (
+                                  <GitBranch className="h-3 w-3" />
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2"
+                                onClick={() => handleCopyUrl(metrics.url, `url-${metrics.fullName}`)}
+                              >
+                                {copiedUrl === `url-${metrics.fullName}` ? (
+                                  <span className="text-xs text-green-600">Copied!</span>
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ) : (
@@ -170,21 +324,59 @@ export function FavoritesList() {
 
         {favoriteUsers.length > 0 && (
           <div>
-            <button
-              onClick={() => setUsersExpanded(!usersExpanded)}
-              className="flex items-center gap-2 w-full text-left mb-3 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              {usersExpanded ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
+            <div className="flex items-center justify-between mb-3">
+              <button
+                onClick={() => setUsersExpanded(!usersExpanded)}
+                className="flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
+                {usersExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+                <span className="font-semibold">Favorite Developers ({filteredAndSortedUsers.length})</span>
+              </button>
+
+              {usersExpanded && (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <Filter className="h-3 w-3 text-muted-foreground" />
+                    <Select value={userFilter} onValueChange={setUserFilter}>
+                      <SelectTrigger className="h-7 text-xs w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All categories</SelectItem>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <SortAsc className="h-3 w-3 text-muted-foreground" />
+                    <Select value={userSort} onValueChange={setUserSort}>
+                      <SelectTrigger className="h-7 text-xs w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="activity">Most active</SelectItem>
+                        <SelectItem value="followers">Most followers</SelectItem>
+                        <SelectItem value="dateAdded">Recently added</SelectItem>
+                        <SelectItem value="name">Alphabetical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               )}
-              <span className="font-semibold">Favorite Developers ({favoriteUsers.length})</span>
-            </button>
+            </div>
 
             {usersExpanded && (
               <div className="space-y-3">
-                {favoriteUsers.map((username) => {
+                {filteredAndSortedUsers.map((username) => {
                   const metrics = userMetrics[username];
                   const isLoading = loading.users[username];
                   const errorMsg = error.users[username];
@@ -263,6 +455,29 @@ export function FavoritesList() {
                               </div>
                             </div>
                           )}
+
+                          <div className="flex items-center gap-1 mt-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2"
+                              onClick={() => window.open(metrics.url, "_blank")}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2"
+                              onClick={() => handleCopyUrl(metrics.url, `user-${metrics.username}`)}
+                            >
+                              {copiedUrl === `user-${metrics.username}` ? (
+                                <span className="text-xs text-green-600">Copied!</span>
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       ) : (
                         <div className="text-sm text-muted-foreground">No metrics available</div>

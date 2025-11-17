@@ -21,6 +21,7 @@ import {
   SidebarToggle,
 } from "@/components/layout/SidebarSearch";
 import { useSearchStore, useSidebarState } from "@/stores";
+import { usePreferencesStore } from "@/stores/preferences";
 import { SearchModal } from "@/components/search/SearchModal";
 import { githubAPIClient } from "@/lib/api/github-api-client";
 import {
@@ -86,6 +87,8 @@ function SearchContent() {
   const repoParam = searchParams?.get("repo");
   const { setCurrentQuery, setCurrentSearchType, setSearchModalOpen } =
     useSearchStore();
+  const { pinnedRepos, favoriteUsers, togglePinnedRepo, toggleFavoriteUser } =
+    usePreferencesStore();
 
   const [searchResults, setSearchResults] = useState<{
     repos: TrendingRepo[];
@@ -378,16 +381,40 @@ function SearchContent() {
                             </p>
                           )}
                         </div>
-                        <Button asChild>
-                          <a
-                            href={userAnalytics.profile.html_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <div className="flex gap-2">
+                          <Button
+                            variant={
+                              favoriteUsers.includes(userAnalytics.profile.login)
+                                ? "default"
+                                : "outline"
+                            }
+                            size="sm"
+                            onClick={() =>
+                              toggleFavoriteUser(userAnalytics.profile.login)
+                            }
                           >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            View Profile
-                          </a>
-                        </Button>
+                            <Star
+                              className={`w-4 h-4 mr-2 ${
+                                favoriteUsers.includes(userAnalytics.profile.login)
+                                  ? "fill-current"
+                                  : ""
+                              }`}
+                            />
+                            {favoriteUsers.includes(userAnalytics.profile.login)
+                              ? "Favorited"
+                              : "Add Favorite"}
+                          </Button>
+                          <Button asChild>
+                            <a
+                              href={userAnalytics.profile.html_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              View Profile
+                            </a>
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -424,16 +451,38 @@ function SearchContent() {
                               <span>Followers: {user.followers_count}</span>
                             </div>
                           </div>
-                          <Button asChild>
-                            <a
-                              href={user.html_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                          <div className="flex gap-2">
+                            <Button
+                              variant={
+                                favoriteUsers.includes(user.login)
+                                  ? "default"
+                                  : "outline"
+                              }
+                              size="sm"
+                              onClick={() => toggleFavoriteUser(user.login)}
                             >
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              View Profile
-                            </a>
-                          </Button>
+                              <Star
+                                className={`w-4 h-4 mr-2 ${
+                                  favoriteUsers.includes(user.login)
+                                    ? "fill-current"
+                                    : ""
+                                }`}
+                              />
+                              {favoriteUsers.includes(user.login)
+                                ? "Favorited"
+                                : "Add Favorite"}
+                            </Button>
+                            <Button asChild>
+                              <a
+                                href={user.html_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                View Profile
+                              </a>
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -927,16 +976,38 @@ function SearchContent() {
                             </span>
                           </div>
                         </div>
-                        <Button asChild>
-                          <a
-                            href={repo.html_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <div className="flex gap-2">
+                          <Button
+                            variant={
+                              pinnedRepos.includes(repo.full_name)
+                                ? "default"
+                                : "outline"
+                            }
+                            size="sm"
+                            onClick={() => togglePinnedRepo(repo.full_name)}
                           >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            View Repo
-                          </a>
-                        </Button>
+                            <Star
+                              className={`w-4 h-4 mr-2 ${
+                                pinnedRepos.includes(repo.full_name)
+                                  ? "fill-current"
+                                  : ""
+                              }`}
+                            />
+                            {pinnedRepos.includes(repo.full_name)
+                              ? "Pinned"
+                              : "Pin Repo"}
+                          </Button>
+                          <Button asChild>
+                            <a
+                              href={repo.html_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              View Repo
+                            </a>
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
