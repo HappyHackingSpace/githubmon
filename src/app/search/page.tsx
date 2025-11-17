@@ -384,23 +384,23 @@ function SearchContent() {
                         <div className="flex gap-2">
                           <Button
                             variant={
-                              favoriteUsers.includes(userAnalytics.profile.login)
+                              favoriteUsers.includes(userAnalytics.profile!.login)
                                 ? "default"
                                 : "outline"
                             }
                             size="sm"
                             onClick={() =>
-                              toggleFavoriteUser(userAnalytics.profile.login)
+                              toggleFavoriteUser(userAnalytics.profile!.login)
                             }
                           >
                             <Star
                               className={`w-4 h-4 mr-2 ${
-                                favoriteUsers.includes(userAnalytics.profile.login)
+                                favoriteUsers.includes(userAnalytics.profile!.login)
                                   ? "fill-current"
                                   : ""
                               }`}
                             />
-                            {favoriteUsers.includes(userAnalytics.profile.login)
+                            {favoriteUsers.includes(userAnalytics.profile!.login)
                               ? "Favorited"
                               : "Add Favorite"}
                           </Button>
