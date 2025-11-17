@@ -46,6 +46,7 @@ import {
 import { createColumns } from "./columns";
 import type { GitHubIssue } from "@/types/quickWins";
 import { useKanbanStore } from "@/stores/kanban";
+import { useQuickWinsStore } from "@/stores/quickWins";
 
 interface QuickWinsTableProps {
   data: GitHubIssue[];
@@ -72,6 +73,9 @@ export function QuickWinsTable({
   const [languageFilter, setLanguageFilter] = useState<string>("all");
 
   const addTask = useKanbanStore((state) => state.addTask);
+  const dismissedIssues = useQuickWinsStore((state) => state.dismissedIssues);
+  const dismissIssue = useQuickWinsStore((state) => state.dismissIssue);
+  const isHydrated = useQuickWinsStore((state) => state.isHydrated);
 
   const handleAddToKanban = useCallback((issue: GitHubIssue) => {
     addTask({
@@ -85,17 +89,28 @@ export function QuickWinsTable({
     });
   }, [addTask]);
 
-  const columns = useMemo(() => createColumns({ onAddToKanban: handleAddToKanban }), [handleAddToKanban]);
+  const handleDismiss = useCallback((issueId: number) => {
+    dismissIssue(issueId);
+  }, [dismissIssue]);
+
+  const columns = useMemo(
+    () => createColumns({ onAddToKanban: handleAddToKanban, onDismiss: handleDismiss }),
+    [handleAddToKanban, handleDismiss]
+  );
 
   const filteredData = useMemo(() => {
     let filtered = data;
+
+    if (isHydrated) {
+      filtered = filtered.filter((item) => !dismissedIssues.has(item.id));
+    }
 
     if (languageFilter !== "all") {
       filtered = filtered.filter((item) => item.language === languageFilter);
     }
 
     return filtered;
-  }, [data, languageFilter]);
+  }, [data, languageFilter, dismissedIssues, isHydrated]);
 
   const availableLanguages = useMemo(() => {
     const languages = [
