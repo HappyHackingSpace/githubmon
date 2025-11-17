@@ -21,7 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Plus, CheckCircle } from "lucide-react";
-import { useKanbanStore, useActionItemsStore } from "@/stores";
+import { useKanbanStore } from "@/stores";
 import type {
   ActionItem,
   AssignedItem,
@@ -32,25 +32,25 @@ import { useRouter } from "next/navigation";
 
 interface AddToKanbanButtonProps {
   item: ActionItem | AssignedItem | MentionItem | StalePR;
-  itemType: "assigned" | "mentions" | "stale";
 }
 
-export function AddToKanbanButton({ item, itemType }: AddToKanbanButtonProps) {
+export function AddToKanbanButton({ item }: AddToKanbanButtonProps) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [selectedColumn, setSelectedColumn] = useState("todo");
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const { addTaskFromActionItem, columns, columnOrder } = useKanbanStore();
-  const { markAsRead } = useActionItemsStore();
+  const { addTaskFromActionItem, columns, columnOrder, isActionItemAdded } =
+    useKanbanStore();
   const router = useRouter();
+
+  const isAlreadyAdded = isActionItemAdded(item.id.toString());
 
   const handleAdd = () => {
     setIsAdding(true);
     try {
       addTaskFromActionItem(item, notes, selectedColumn);
-      markAsRead(itemType, item.id.toString());
       setShowSuccess(true);
       setTimeout(() => {
         setOpen(false);
@@ -69,6 +69,20 @@ export function AddToKanbanButton({ item, itemType }: AddToKanbanButtonProps) {
     setOpen(false);
     router.push("/dashboard");
   };
+
+  if (isAlreadyAdded) {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0 text-green-600 dark:text-green-400"
+        disabled
+        title="Already added to Kanban"
+      >
+        <CheckCircle className="h-4 w-4" />
+      </Button>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
