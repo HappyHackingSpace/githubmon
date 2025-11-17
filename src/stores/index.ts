@@ -10,6 +10,7 @@ export { useSearchStore } from "./search";
 export { useDataCacheStore } from "./cache";
 export { useAppStore } from "./app";
 export { useActionItemsStore } from "./actionItems";
+export { useKanbanStore } from "./kanban";
 
 // ============ HYDRATION HOOK ============
 

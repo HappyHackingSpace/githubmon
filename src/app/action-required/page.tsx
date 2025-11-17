@@ -27,8 +27,10 @@ import {
   LucideIcon,
 } from "lucide-react";
 import { useActionItemsStore } from "@/stores";
+import type { ActionItem as StoreActionItem } from "@/stores/actionItems";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchModal } from "@/components/search/SearchModal";
+import { AddToKanbanButton } from "@/components/action-required/AddToKanbanButton";
 
 interface ActionItem {
   id: string | number;
@@ -142,11 +144,12 @@ function ActionRequiredContent() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40%]">Title / Repository</TableHead>
-                <TableHead className="w-[15%]">Priority</TableHead>
-                <TableHead className="w-[15%]">Activity</TableHead>
-                <TableHead className="w-[15%]">Repo Popularity</TableHead>
-                <TableHead className="w-[15%]">Type</TableHead>
+                <TableHead className="w-[35%]">Title / Repository</TableHead>
+                <TableHead className="w-[12%]">Priority</TableHead>
+                <TableHead className="w-[12%]">Activity</TableHead>
+                <TableHead className="w-[13%]">Repo Popularity</TableHead>
+                <TableHead className="w-[13%]">Type</TableHead>
+                <TableHead className="w-[15%]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -169,6 +172,9 @@ function ActionRequiredContent() {
                   </TableCell>
                   <TableCell>
                     <div className="w-16 h-6 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
                   </TableCell>
                 </TableRow>
               ))}
@@ -215,11 +221,12 @@ function ActionRequiredContent() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[40%]">Title / Repository</TableHead>
-              <TableHead className="w-[15%]">Priority</TableHead>
-              <TableHead className="w-[15%]">Activity</TableHead>
-              <TableHead className="w-[15%]">Repo Popularity</TableHead>
-              <TableHead className="w-[15%]">Type</TableHead>
+              <TableHead className="w-[35%]">Title / Repository</TableHead>
+              <TableHead className="w-[12%]">Priority</TableHead>
+              <TableHead className="w-[12%]">Activity</TableHead>
+              <TableHead className="w-[13%]">Repo Popularity</TableHead>
+              <TableHead className="w-[13%]">Type</TableHead>
+              <TableHead className="w-[15%]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -283,6 +290,9 @@ function ActionRequiredContent() {
                   <Badge variant="outline" className="capitalize">
                     {item.type === "pullRequest" ? "PR" : "Issue"}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <AddToKanbanButton item={item as StoreActionItem} />
                 </TableCell>
               </TableRow>
             ))}
