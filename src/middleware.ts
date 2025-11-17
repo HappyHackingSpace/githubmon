@@ -25,8 +25,8 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  const protectedRoutes = ["/dashboard", "/settings"];
-  const protectedApiRoutes = ["/api/action-required"];
+  const protectedRoutes = ["/dashboard", "/settings", "/favorites"];
+  const protectedApiRoutes = ["/api/action-required", "/api/favorites"];
   const authRoutes = ["/auth/callback", "/api/auth", "/login"];
   const publicRoutes = ["/", "/privacy-policy", "/terms-of-service"];
 

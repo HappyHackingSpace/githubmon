@@ -65,6 +65,7 @@ export function Sidebar() {
     if (
       pathname === "/dashboard" ||
       pathname === "/settings" ||
+      pathname === "/favorites" ||
       pathname === "/search"
     ) {
       setActionRequiredOpen(false);
@@ -394,10 +395,10 @@ export function Sidebar() {
 
               {/* Favorites Link */}
               <Link
-                href="/dashboard#favorites"
+                href="/favorites"
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
                   ${
-                    pathname === "/dashboard"
+                    pathname === "/favorites"
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   }`}
