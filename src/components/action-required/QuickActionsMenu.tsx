@@ -31,8 +31,7 @@ import {
   Plus,
   Loader2,
 } from "lucide-react";
-import { useKanbanStore, useAuthStore } from "@/stores";
-import { githubAPIClient } from "@/lib/api/github-api-client";
+import { useKanbanStore, useActionItemsStore } from "@/stores";
 import type {
   ActionItem,
   AssignedItem,
@@ -43,12 +42,12 @@ import { useRouter } from "next/navigation";
 
 interface QuickActionsMenuProps {
   item: ActionItem | AssignedItem | MentionItem | StalePR;
-  onItemClosed?: (itemId: string) => void;
+  itemType: "assigned" | "mentions" | "stale";
 }
 
 export function QuickActionsMenu({
   item,
-  onItemClosed,
+  itemType,
 }: QuickActionsMenuProps) {
   const [kanbanDialogOpen, setKanbanDialogOpen] = useState(false);
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
@@ -65,27 +64,10 @@ export function QuickActionsMenu({
     isActionItemAdded,
     removeActionItemFromKanban,
   } = useKanbanStore();
-  const { orgData } = useAuthStore();
+  const { markAsRead } = useActionItemsStore();
   const router = useRouter();
 
   const isAlreadyAdded = isActionItemAdded(item.id.toString());
-
-  const parseRepoFromUrl = (
-    url?: string
-  ): { owner: string; repo: string; number: number } | null => {
-    if (!url) return null;
-
-    const match = url.match(
-      /github\.com\/([^/]+)\/([^/]+)\/(issues|pull)\/(\d+)/
-    );
-    if (!match) return null;
-
-    return {
-      owner: match[1],
-      repo: match[2],
-      number: parseInt(match[4], 10),
-    };
-  };
 
   const handleAddToKanban = () => {
     setIsAddingToKanban(true);
@@ -114,47 +96,11 @@ export function QuickActionsMenu({
   };
 
   const handleClose = async () => {
-    const parsed = parseRepoFromUrl(item.url);
-    if (!parsed) {
-      console.error("Could not parse repository information from URL");
-      setConfirmCloseOpen(false);
-      return;
-    }
-
-    if (!orgData?.token) {
-      console.error("GitHub token not available");
-      setConfirmCloseOpen(false);
-      return;
-    }
-
     setIsClosing(true);
 
-    githubAPIClient.setUserToken(orgData.token);
-
     try {
-      let result;
-      if (item.type === "issue") {
-        result = await githubAPIClient.closeIssue(
-          parsed.owner,
-          parsed.repo,
-          parsed.number
-        );
-      } else {
-        result = await githubAPIClient.closePullRequest(
-          parsed.owner,
-          parsed.repo,
-          parsed.number
-        );
-      }
-
-      if (result.success) {
-        setConfirmCloseOpen(false);
-        if (onItemClosed) {
-          onItemClosed(item.id.toString());
-        }
-      } else {
-        console.error("Failed to close:", result.error);
-      }
+      await markAsRead(itemType, item.id.toString());
+      setConfirmCloseOpen(false);
     } catch (error) {
       console.error(
         "Error closing item:",
