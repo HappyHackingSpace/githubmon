@@ -2,11 +2,12 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ExternalLink, Calendar, ListPlus } from "lucide-react";
+import { ExternalLink, Calendar, ListPlus, X } from "lucide-react";
 import type { GitHubIssue } from "@/types/quickWins";
 
 interface CreateColumnsOptions {
   onAddToKanban?: (issue: GitHubIssue) => void;
+  onDismiss?: (issueId: number) => void;
 }
 
 export const createColumns = (options?: CreateColumnsOptions): ColumnDef<GitHubIssue>[] => [
@@ -167,16 +168,28 @@ export const createColumns = (options?: CreateColumnsOptions): ColumnDef<GitHubI
     cell: ({ row }) => {
       const issue = row.original;
       return (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => options?.onAddToKanban?.(issue)}
-          disabled={!options?.onAddToKanban}
-          className="gap-1"
-        >
-          <ListPlus className="w-4 h-4" />
-          Add to Kanban
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => options?.onAddToKanban?.(issue)}
+            disabled={!options?.onAddToKanban}
+            className="gap-1"
+          >
+            <ListPlus className="w-4 h-4" />
+            Add to Kanban
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => options?.onDismiss?.(issue.id)}
+            disabled={!options?.onDismiss}
+            className="gap-1 text-gray-500 hover:text-red-600"
+            title="Dismiss this issue"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
       );
     },
     enableSorting: false,
