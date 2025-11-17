@@ -23,7 +23,11 @@ export function QuickWinsCounters() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <Link href="/quick-wins" className="block">
+      <Link 
+        href="/quick-wins" 
+        className="block"
+        aria-label="View Good First Issues - Quick Wins page"
+      >
         <Card className="cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -37,9 +41,21 @@ export function QuickWinsCounters() {
           <CardContent>
             {error.goodIssues ? (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-red-600 dark:text-red-400">
-                  Failed to load
-                </span>
+                <div className="space-y-2">
+                  <span className="text-sm text-red-600 dark:text-red-400" role="alert">
+                    Failed to load: {error.goodIssues}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      fetchGoodIssues(true);
+                    }}
+                    className="text-sm text-blue-600 hover:underline"
+                    aria-label="Retry loading Good First Issues"
+                  >
+                    Retry
+                  </button>
+                </div>
               </div>
             ) : loading.goodIssues ? (
               <div className="flex items-center gap-2">
@@ -55,7 +71,11 @@ export function QuickWinsCounters() {
         </Card>
       </Link>
 
-      <Link href="/quick-wins" className="block">
+      <Link 
+        href="/quick-wins" 
+        className="block"
+        aria-label="View Easy Fixes - Quick Wins page"
+      >
         <Card className="cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -69,9 +89,21 @@ export function QuickWinsCounters() {
           <CardContent>
             {error.easyFixes ? (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-red-600 dark:text-red-400">
-                  Failed to load
-                </span>
+                <div className="space-y-2">
+                  <span className="text-sm text-red-600 dark:text-red-400" role="alert">
+                    Failed to load: {error.easyFixes}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      fetchEasyFixes(true);
+                    }}
+                    className="text-sm text-blue-600 hover:underline"
+                    aria-label="Retry loading Easy Fixes"
+                  >
+                    Retry
+                  </button>
+                </div>
               </div>
             ) : loading.easyFixes ? (
               <div className="flex items-center gap-2">
