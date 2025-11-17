@@ -11,6 +11,7 @@ interface UserPreferencesState {
   defaultPeriod: "24h" | "7d" | "30d";
   favoriteLanguages: string[];
   pinnedRepos: string[];
+  favoriteUsers: string[];
 
   // UI preferences
   sidebarCollapsed: boolean;
@@ -27,6 +28,7 @@ interface UserPreferencesState {
   setDefaultPeriod: (period: "24h" | "7d" | "30d") => void;
   toggleFavoriteLanguage: (language: string) => void;
   togglePinnedRepo: (repoFullName: string) => void;
+  toggleFavoriteUser: (username: string) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setCompactMode: (compact: boolean) => void;
   setShowTutorials: (show: boolean) => void;
@@ -43,6 +45,7 @@ const defaultPreferences = {
   defaultPeriod: "24h" as const,
   favoriteLanguages: [],
   pinnedRepos: [],
+  favoriteUsers: [],
   sidebarCollapsed: false,
   compactMode: false,
   showTutorials: true,
@@ -71,6 +74,13 @@ export const usePreferencesStore = create<UserPreferencesState>()(
           pinnedRepos: state.pinnedRepos.includes(repoFullName)
             ? state.pinnedRepos.filter((r) => r !== repoFullName)
             : [...state.pinnedRepos, repoFullName],
+        })),
+
+      toggleFavoriteUser: (username) =>
+        set((state) => ({
+          favoriteUsers: state.favoriteUsers.includes(username)
+            ? state.favoriteUsers.filter((u) => u !== username)
+            : [...state.favoriteUsers, username],
         })),
 
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),

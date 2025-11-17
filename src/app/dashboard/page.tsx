@@ -5,6 +5,7 @@ import { useRequireAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { TodoDashboard } from "@/components/widget/TodoDashboard";
 import { QuickWinsCounters } from "@/components/widget/QuickWinsCounters";
+import { FavoritesList } from "@/components/widget/FavoritesList";
 
 export default function DashboardPage() {
   const { isLoading } = useRequireAuth();
@@ -28,6 +29,8 @@ export default function DashboardPage() {
         <PageHeader />
 
         <QuickWinsCounters />
+
+        <FavoritesList />
 
         <TodoDashboard />
       </div>
