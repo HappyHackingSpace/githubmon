@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, subscribeWithSelector } from "zustand/middleware";
 import { GitHubIssue } from "@/types/quickWins";
 import { useDataCacheStore } from "./cache";
 import { githubGraphQLClient } from "@/lib/api/github-graphql-client";
@@ -7,6 +8,8 @@ import { useAuthStore } from "./auth";
 interface QuickWinsState {
   goodIssues: GitHubIssue[];
   easyFixes: GitHubIssue[];
+  dismissedIssues: Set<number>;
+  isHydrated: boolean;
   loading: {
     goodIssues: boolean;
     easyFixes: boolean;
@@ -18,13 +21,24 @@ interface QuickWinsState {
   fetchGoodIssues: (forceRefresh?: boolean) => Promise<void>;
   fetchEasyFixes: (forceRefresh?: boolean) => Promise<void>;
   loadFromCache: () => void;
+  dismissIssue: (issueId: number) => void;
+  undismissIssue: (issueId: number) => void;
+  clearDismissed: () => void;
+  hydrate: () => void;
 }
 
-export const useQuickWinsStore = create<QuickWinsState>((set, get) => ({
+export const useQuickWinsStore = create<QuickWinsState>()(
+  subscribeWithSelector(
+    persist(
+      (set, get) => ({
   goodIssues: [],
   easyFixes: [],
+  dismissedIssues: new Set<number>(),
+  isHydrated: false,
   loading: { goodIssues: false, easyFixes: false },
   error: { goodIssues: null, easyFixes: null },
+
+  hydrate: () => set({ isHydrated: true }),
 
   loadFromCache: () => {
     const cache = useDataCacheStore.getState().getQuickWinsCache();
@@ -136,4 +150,54 @@ export const useQuickWinsStore = create<QuickWinsState>((set, get) => ({
       }));
     }
   },
-}));
+
+  dismissIssue: (issueId: number) =>
+    set((state) => {
+      const newDismissed = new Set(state.dismissedIssues);
+      newDismissed.add(issueId);
+      return { dismissedIssues: newDismissed };
+    }),
+
+  undismissIssue: (issueId: number) =>
+    set((state) => {
+      const newDismissed = new Set(state.dismissedIssues);
+      newDismissed.delete(issueId);
+      return { dismissedIssues: newDismissed };
+    }),
+
+  clearDismissed: () => set({ dismissedIssues: new Set<number>() }),
+      }),
+      {
+        name: "quick-wins-storage",
+        storage: {
+          getItem: (name) => {
+            const str = localStorage.getItem(name);
+            if (!str) return null;
+            const data = JSON.parse(str);
+            return {
+              ...data,
+              state: {
+                ...data.state,
+                dismissedIssues: new Set(data.state.dismissedIssues || []),
+              },
+            };
+          },
+          setItem: (name, value) => {
+            const data = {
+              ...value,
+              state: {
+                ...value.state,
+                dismissedIssues: Array.from(value.state.dismissedIssues),
+              },
+            };
+            localStorage.setItem(name, JSON.stringify(data));
+          },
+          removeItem: (name) => localStorage.removeItem(name),
+        },
+        onRehydrateStorage: () => (state) => {
+          state?.hydrate();
+        },
+      }
+    )
+  )
+);
