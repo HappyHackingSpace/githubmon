@@ -20,6 +20,7 @@ export interface KanbanTask {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  sourceActionItemId?: string;
 }
 
 type SerializedKanbanTask = Omit<KanbanTask, "createdAt" | "updatedAt"> & {
@@ -349,6 +350,7 @@ export const useKanbanStore = create<KanbanState>()(
           notes,
           createdAt: new Date(),
           updatedAt: new Date(),
+          sourceActionItemId: item.id.toString(),
         };
         set((state) => {
           const newAddedIds = new Set(state.addedActionItemIds);
@@ -375,15 +377,7 @@ export const useKanbanStore = create<KanbanState>()(
       removeActionItemFromKanban: (itemId: string) => {
         set((state) => {
           const tasksToRemove = Object.entries(state.tasks)
-            .filter(([, task]) => {
-              const isPersonalTask = task.type === "personal";
-              const matchesId = task.id.startsWith("personal-");
-              return isPersonalTask && matchesId;
-            })
-            .filter(([, task]) => {
-              const urlMatch = task.githubUrl?.includes(itemId);
-              return urlMatch;
-            })
+            .filter(([, task]) => task.sourceActionItemId === itemId)
             .map(([id]) => id);
 
           const newTasks = { ...state.tasks };
@@ -456,6 +450,7 @@ export const useKanbanStore = create<KanbanState>()(
 
       deleteTask: (taskId) => {
         set((state) => {
+          const taskToDelete = state.tasks[taskId];
           const newTasks = { ...state.tasks };
           delete newTasks[taskId];
 
@@ -469,9 +464,15 @@ export const useKanbanStore = create<KanbanState>()(
             };
           });
 
+          const newAddedIds = new Set(state.addedActionItemIds);
+          if (taskToDelete?.sourceActionItemId) {
+            newAddedIds.delete(taskToDelete.sourceActionItemId);
+          }
+
           return {
             tasks: newTasks,
             columns: newColumns,
+            addedActionItemIds: newAddedIds,
           };
         });
       },
