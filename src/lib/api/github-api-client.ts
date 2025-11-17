@@ -1232,6 +1232,92 @@ class GitHubAPIClient {
     );
     keysToDelete.forEach((key) => this.cache.delete(key));
   }
+
+  async closeIssue(
+    owner: string,
+    repo: string,
+    issueNumber: number
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.githubToken) {
+      return { success: false, error: "No GitHub token available" };
+    }
+
+    try {
+      const headers: HeadersInit = {
+        Accept: "application/vnd.github.v3+json",
+        "User-Agent": "GitHubMon/1.0",
+        Authorization: `Bearer ${this.githubToken}`,
+        "Content-Type": "application/json",
+      };
+
+      const response = await fetch(
+        `${this.baseUrl}/repos/${owner}/${repo}/issues/${issueNumber}`,
+        {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ state: "closed" }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return {
+          success: false,
+          error: `HTTP ${response.status}: ${errorText}`,
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  async closePullRequest(
+    owner: string,
+    repo: string,
+    prNumber: number
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.githubToken) {
+      return { success: false, error: "No GitHub token available" };
+    }
+
+    try {
+      const headers: HeadersInit = {
+        Accept: "application/vnd.github.v3+json",
+        "User-Agent": "GitHubMon/1.0",
+        Authorization: `Bearer ${this.githubToken}`,
+        "Content-Type": "application/json",
+      };
+
+      const response = await fetch(
+        `${this.baseUrl}/repos/${owner}/${repo}/pulls/${prNumber}`,
+        {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ state: "closed" }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return {
+          success: false,
+          error: `HTTP ${response.status}: ${errorText}`,
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
 }
 
 export const githubAPIClient = new GitHubAPIClient();

@@ -30,7 +30,7 @@ import { useActionItemsStore } from "@/stores";
 import type { ActionItem as StoreActionItem } from "@/stores/actionItems";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchModal } from "@/components/search/SearchModal";
-import { AddToKanbanButton } from "@/components/action-required/AddToKanbanButton";
+import { QuickActionsMenu } from "@/components/action-required/QuickActionsMenu";
 
 interface ActionItem {
   id: string | number;
@@ -74,6 +74,7 @@ function ActionRequiredContent() {
     loading,
     errors,
     refreshData,
+    markAsRead,
   } = useActionItemsStore();
 
   const searchParams = useSearchParams();
@@ -136,6 +137,10 @@ function ActionRequiredContent() {
     if (VALID_TABS.includes(tab as ValidTab)) {
       router.push(`/action-required?tab=${tab}`);
     }
+  };
+
+  const handleItemClosed = (itemId: string, type: "assigned" | "mentions" | "stale") => {
+    markAsRead(type, itemId);
   };
 
   const ActionItemsList = ({
@@ -348,7 +353,10 @@ function ActionRequiredContent() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <AddToKanbanButton item={item as StoreActionItem} />
+                  <QuickActionsMenu
+                    item={item as StoreActionItem}
+                    onItemClosed={(itemId) => handleItemClosed(itemId, type)}
+                  />
                 </TableCell>
               </TableRow>
             ))}
