@@ -58,6 +58,7 @@ interface KanbanState {
   tasks: Record<string, KanbanTask>;
   columns: Record<string, KanbanColumn>;
   columnOrder: string[];
+  addedActionItemIds: Set<string>;
 
   syncFromGitHub: () => Promise<number>;
   addTask: (
@@ -70,6 +71,8 @@ interface KanbanState {
     notes?: string,
     columnId?: string
   ) => string;
+  isActionItemAdded: (itemId: string) => boolean;
+  removeActionItemFromKanban: (itemId: string) => void;
   updateTask: (id: string, updates: Partial<KanbanTask>) => void;
   moveTask: (
     taskId: string,
@@ -207,10 +210,11 @@ const analyzeContext = (context: GitHubDataContext) => {
 
 export const useKanbanStore = create<KanbanState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       tasks: {},
       columns: defaultColumns,
       columnOrder: ["todo", "in-progress", "review", "done"],
+      addedActionItemIds: new Set<string>(),
 
       syncFromGitHub: async () => {
         const { githubSettings } = useSettingsStore.getState();
@@ -346,17 +350,66 @@ export const useKanbanStore = create<KanbanState>()(
           createdAt: new Date(),
           updatedAt: new Date(),
         };
-        set((state) => ({
-          tasks: { ...state.tasks, [id]: task },
-          columns: {
-            ...state.columns,
-            [columnId]: {
-              ...state.columns[columnId],
-              taskIds: [...state.columns[columnId].taskIds, id],
+        set((state) => {
+          const newAddedIds = new Set(state.addedActionItemIds);
+          newAddedIds.add(item.id.toString());
+          return {
+            tasks: { ...state.tasks, [id]: task },
+            columns: {
+              ...state.columns,
+              [columnId]: {
+                ...state.columns[columnId],
+                taskIds: [...state.columns[columnId].taskIds, id],
+              },
             },
-          },
-        }));
+            addedActionItemIds: newAddedIds,
+          };
+        });
         return id;
+      },
+
+      isActionItemAdded: (itemId: string) => {
+        return get().addedActionItemIds.has(itemId);
+      },
+
+      removeActionItemFromKanban: (itemId: string) => {
+        set((state) => {
+          const tasksToRemove = Object.entries(state.tasks)
+            .filter(([, task]) => {
+              const isPersonalTask = task.type === "personal";
+              const matchesId = task.id.startsWith("personal-");
+              return isPersonalTask && matchesId;
+            })
+            .filter(([, task]) => {
+              const urlMatch = task.githubUrl?.includes(itemId);
+              return urlMatch;
+            })
+            .map(([id]) => id);
+
+          const newTasks = { ...state.tasks };
+          tasksToRemove.forEach((taskId) => {
+            delete newTasks[taskId];
+          });
+
+          const newColumns = { ...state.columns };
+          Object.keys(newColumns).forEach((columnId) => {
+            newColumns[columnId] = {
+              ...newColumns[columnId],
+              taskIds: newColumns[columnId].taskIds.filter(
+                (id) => !tasksToRemove.includes(id)
+              ),
+            };
+          });
+
+          const newAddedIds = new Set(state.addedActionItemIds);
+          newAddedIds.delete(itemId);
+
+          return {
+            tasks: newTasks,
+            columns: newColumns,
+            addedActionItemIds: newAddedIds,
+          };
+        });
       },
 
       moveTask: (taskId, fromColumnId, toColumnId, newIndex) => {
@@ -509,14 +562,29 @@ export const useKanbanStore = create<KanbanState>()(
         }
         return localStorage;
       }),
+      partialize: (state) => ({
+        tasks: state.tasks,
+        columns: state.columns,
+        columnOrder: state.columnOrder,
+        addedActionItemIds: Array.from(state.addedActionItemIds),
+      }),
       onRehydrateStorage: () => (state) => {
-        if (!state?.tasks) return;
-        for (const id of Object.keys(state.tasks)) {
-          const t = state.tasks[id] as SerializedKanbanTask;
-          if (t?.createdAt && typeof t.createdAt === "string")
-            t.createdAt = new Date(t.createdAt);
-          if (t?.updatedAt && typeof t.updatedAt === "string")
-            t.updatedAt = new Date(t.updatedAt);
+        if (!state) return;
+
+        if (state.tasks) {
+          for (const id of Object.keys(state.tasks)) {
+            const t = state.tasks[id] as SerializedKanbanTask;
+            if (t?.createdAt && typeof t.createdAt === "string")
+              t.createdAt = new Date(t.createdAt);
+            if (t?.updatedAt && typeof t.updatedAt === "string")
+              t.updatedAt = new Date(t.updatedAt);
+          }
+        }
+
+        if (Array.isArray(state.addedActionItemIds)) {
+          state.addedActionItemIds = new Set(state.addedActionItemIds);
+        } else if (!state.addedActionItemIds) {
+          state.addedActionItemIds = new Set();
         }
       },
     }
