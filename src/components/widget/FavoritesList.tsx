@@ -24,7 +24,7 @@ export function FavoritesList() {
 
   if (!isHydrated) {
     return (
-      <Card id="favorites">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">Favorites</CardTitle>
           <CardDescription>Your pinned repositories and favorite developers</CardDescription>
@@ -41,7 +41,7 @@ export function FavoritesList() {
 
   if (pinnedRepos.length === 0 && favoriteUsers.length === 0) {
     return (
-      <Card id="favorites">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">Favorites</CardTitle>
           <CardDescription>Your pinned repositories and favorite developers</CardDescription>
@@ -56,7 +56,7 @@ export function FavoritesList() {
   }
 
   return (
-    <Card id="favorites">
+    <Card>
       <CardHeader>
         <CardTitle className="text-lg">Favorites</CardTitle>
         <CardDescription>Live metrics from your favorites (updated within 24h)</CardDescription>
