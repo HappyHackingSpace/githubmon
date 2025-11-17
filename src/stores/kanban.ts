@@ -65,6 +65,11 @@ interface KanbanState {
       columnId?: string;
     }
   ) => void;
+  addTaskFromActionItem: (
+    item: ActionItem | AssignedItem | MentionItem | StalePR,
+    notes?: string,
+    columnId?: string
+  ) => string;
   updateTask: (id: string, updates: Partial<KanbanTask>) => void;
   moveTask: (
     taskId: string,
@@ -323,6 +328,35 @@ export const useKanbanStore = create<KanbanState>()(
             },
           },
         }));
+      },
+
+      addTaskFromActionItem: (item, notes, columnId = "todo") => {
+        const id = `personal-${Date.now()}-${Math.random()
+          .toString(36)
+          .substr(2, 9)}`;
+        const task: KanbanTask = {
+          id,
+          title: item.title,
+          description: `From: ${item.repo}${item.author ? ` (by ${item.author})` : ""}`,
+          type: "personal",
+          priority: item.priority,
+          githubUrl: item.url,
+          labels: [],
+          notes,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        set((state) => ({
+          tasks: { ...state.tasks, [id]: task },
+          columns: {
+            ...state.columns,
+            [columnId]: {
+              ...state.columns[columnId],
+              taskIds: [...state.columns[columnId].taskIds, id],
+            },
+          },
+        }));
+        return id;
       },
 
       moveTask: (taskId, fromColumnId, toColumnId, newIndex) => {
