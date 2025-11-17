@@ -86,15 +86,36 @@ function ActionRequiredContent() {
     : "assigned";
 
   // Memoize refreshData to prevent unnecessary calls
-  const memoizedRefreshData = useCallback(() => {
-    refreshData().catch((error) => {
-      console.error("Failed to refresh action items:", error);
+  const STALE_THRESHOLD = 5 * 60 * 1000;
+
+  const refreshActiveTab = useCallback((tabType: ValidTab) => {
+    refreshData(tabType).catch((error) => {
+      console.error(`Failed to refresh ${tabType} items:`, error);
     });
   }, [refreshData]);
 
   useEffect(() => {
-    memoizedRefreshData();
-  }, [memoizedRefreshData]);
+    const lastRefresh = useActionItemsStore.getState().lastRefresh[currentTab];
+
+    if (!lastRefresh || Date.now() - lastRefresh > STALE_THRESHOLD) {
+      refreshActiveTab(currentTab);
+    }
+  }, [currentTab, refreshActiveTab, STALE_THRESHOLD]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const lastRefresh = useActionItemsStore.getState().lastRefresh[currentTab];
+
+        if (!lastRefresh || Date.now() - lastRefresh > STALE_THRESHOLD) {
+          refreshActiveTab(currentTab);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [currentTab, refreshActiveTab, STALE_THRESHOLD]);
 
   const actionItemsByType = useMemo(
     () => ({
@@ -382,13 +403,13 @@ function ActionRequiredContent() {
           <Button
             variant="outline"
             size="sm"
-            onClick={memoizedRefreshData}
-            disabled={loading.assigned || loading.mentions || loading.stale}
+            onClick={() => refreshActiveTab(currentTab)}
+            disabled={loading[currentTab]}
             className="flex items-center gap-2"
           >
             <RefreshCw
               className={`w-4 h-4 ${
-                loading.assigned || loading.mentions || loading.stale
+                loading[currentTab]
                   ? "animate-spin"
                   : ""
               }`}
