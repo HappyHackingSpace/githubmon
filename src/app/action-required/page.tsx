@@ -66,6 +66,20 @@ function formatTimeAgo(dateString: string): string {
   return `${Math.floor(diffInSeconds / 2592000)}mo ago`;
 }
 
+function getStaleRowClassName(daysOld: number | undefined): string {
+  if (!daysOld) return "";
+
+  if (daysOld > 14) {
+    return "bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30";
+  }
+
+  if (daysOld > 7) {
+    return "bg-yellow-50 dark:bg-yellow-950/20 hover:bg-yellow-100 dark:hover:bg-yellow-950/30";
+  }
+
+  return "";
+}
+
 function ActionRequiredContent() {
   const {
     assignedItems,
@@ -279,7 +293,10 @@ function ActionRequiredContent() {
           </TableHeader>
           <TableBody>
             {items.map((item: ActionItem) => (
-              <TableRow key={item.id}>
+              <TableRow
+                key={item.id}
+                className={type === "stale" ? getStaleRowClassName(item.daysOld) : ""}
+              >
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <div className="min-w-0 flex-1">
