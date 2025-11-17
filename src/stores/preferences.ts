@@ -1,6 +1,25 @@
-// stores/preferences.ts
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+
+export interface FavoriteCategory {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface FavoriteRepoMetadata {
+  fullName: string;
+  dateAdded: number;
+  categoryId: string | null;
+  notes: string;
+}
+
+export interface FavoriteUserMetadata {
+  username: string;
+  dateAdded: number;
+  categoryId: string | null;
+  notes: string;
+}
 
 interface UserPreferencesState {
   theme: "light" | "dark" | "system";
@@ -13,22 +32,33 @@ interface UserPreferencesState {
   pinnedRepos: string[];
   favoriteUsers: string[];
 
-  // UI preferences
+  categories: FavoriteCategory[];
+  repoMetadata: Record<string, FavoriteRepoMetadata>;
+  userMetadata: Record<string, FavoriteUserMetadata>;
+
   sidebarCollapsed: boolean;
   compactMode: boolean;
   showTutorials: boolean;
 
-  // Notification preferences
   enableNotifications: boolean;
   notifyOnTrends: boolean;
 
-  // Actions
   setTheme: (theme: "light" | "dark" | "system") => void;
   setDefaultSearchType: (type: "all" | "repos" | "users") => void;
   setDefaultPeriod: (period: "24h" | "7d" | "30d") => void;
   toggleFavoriteLanguage: (language: string) => void;
-  togglePinnedRepo: (repoFullName: string) => void;
-  toggleFavoriteUser: (username: string) => void;
+  togglePinnedRepo: (repoFullName: string, categoryId?: string | null) => void;
+  toggleFavoriteUser: (username: string, categoryId?: string | null) => void;
+
+  addCategory: (name: string, color: string) => string;
+  updateCategory: (id: string, name: string, color: string) => void;
+  deleteCategory: (id: string) => void;
+
+  setRepoCategory: (repoFullName: string, categoryId: string | null) => void;
+  setUserCategory: (username: string, categoryId: string | null) => void;
+  setRepoNotes: (repoFullName: string, notes: string) => void;
+  setUserNotes: (username: string, notes: string) => void;
+
   setSidebarCollapsed: (collapsed: boolean) => void;
   setCompactMode: (compact: boolean) => void;
   setShowTutorials: (show: boolean) => void;
@@ -46,6 +76,13 @@ const defaultPreferences = {
   favoriteLanguages: [],
   pinnedRepos: [],
   favoriteUsers: [],
+  categories: [
+    { id: "work", name: "Work", color: "#3b82f6" },
+    { id: "learning", name: "Learning", color: "#10b981" },
+    { id: "inspiration", name: "Inspiration", color: "#f59e0b" },
+  ] as FavoriteCategory[],
+  repoMetadata: {} as Record<string, FavoriteRepoMetadata>,
+  userMetadata: {} as Record<string, FavoriteUserMetadata>,
   sidebarCollapsed: false,
   compactMode: false,
   showTutorials: true,
@@ -69,18 +106,142 @@ export const usePreferencesStore = create<UserPreferencesState>()(
             : [...state.favoriteLanguages, language],
         })),
 
-      togglePinnedRepo: (repoFullName) =>
+      togglePinnedRepo: (repoFullName, categoryId = null) =>
+        set((state) => {
+          const isRemoving = state.pinnedRepos.includes(repoFullName);
+
+          if (isRemoving) {
+            const newMetadata = { ...state.repoMetadata };
+            delete newMetadata[repoFullName];
+
+            return {
+              pinnedRepos: state.pinnedRepos.filter((r) => r !== repoFullName),
+              repoMetadata: newMetadata,
+            };
+          } else {
+            return {
+              pinnedRepos: [...state.pinnedRepos, repoFullName],
+              repoMetadata: {
+                ...state.repoMetadata,
+                [repoFullName]: {
+                  fullName: repoFullName,
+                  dateAdded: Date.now(),
+                  categoryId,
+                  notes: "",
+                },
+              },
+            };
+          }
+        }),
+
+      toggleFavoriteUser: (username, categoryId = null) =>
+        set((state) => {
+          const isRemoving = state.favoriteUsers.includes(username);
+
+          if (isRemoving) {
+            const newMetadata = { ...state.userMetadata };
+            delete newMetadata[username];
+
+            return {
+              favoriteUsers: state.favoriteUsers.filter((u) => u !== username),
+              userMetadata: newMetadata,
+            };
+          } else {
+            return {
+              favoriteUsers: [...state.favoriteUsers, username],
+              userMetadata: {
+                ...state.userMetadata,
+                [username]: {
+                  username,
+                  dateAdded: Date.now(),
+                  categoryId,
+                  notes: "",
+                },
+              },
+            };
+          }
+        }),
+
+      addCategory: (name, color) => {
+        const id = `cat-${Date.now()}`;
         set((state) => ({
-          pinnedRepos: state.pinnedRepos.includes(repoFullName)
-            ? state.pinnedRepos.filter((r) => r !== repoFullName)
-            : [...state.pinnedRepos, repoFullName],
+          categories: [...state.categories, { id, name, color }],
+        }));
+        return id;
+      },
+
+      updateCategory: (id, name, color) =>
+        set((state) => ({
+          categories: state.categories.map((cat) =>
+            cat.id === id ? { ...cat, name, color } : cat
+          ),
         })),
 
-      toggleFavoriteUser: (username) =>
+      deleteCategory: (id) =>
+        set((state) => {
+          const newRepoMetadata = { ...state.repoMetadata };
+          Object.keys(newRepoMetadata).forEach((key) => {
+            if (newRepoMetadata[key].categoryId === id) {
+              newRepoMetadata[key] = { ...newRepoMetadata[key], categoryId: null };
+            }
+          });
+
+          const newUserMetadata = { ...state.userMetadata };
+          Object.keys(newUserMetadata).forEach((key) => {
+            if (newUserMetadata[key].categoryId === id) {
+              newUserMetadata[key] = { ...newUserMetadata[key], categoryId: null };
+            }
+          });
+
+          return {
+            categories: state.categories.filter((cat) => cat.id !== id),
+            repoMetadata: newRepoMetadata,
+            userMetadata: newUserMetadata,
+          };
+        }),
+
+      setRepoCategory: (repoFullName, categoryId) =>
         set((state) => ({
-          favoriteUsers: state.favoriteUsers.includes(username)
-            ? state.favoriteUsers.filter((u) => u !== username)
-            : [...state.favoriteUsers, username],
+          repoMetadata: {
+            ...state.repoMetadata,
+            [repoFullName]: {
+              ...state.repoMetadata[repoFullName],
+              categoryId,
+            },
+          },
+        })),
+
+      setUserCategory: (username, categoryId) =>
+        set((state) => ({
+          userMetadata: {
+            ...state.userMetadata,
+            [username]: {
+              ...state.userMetadata[username],
+              categoryId,
+            },
+          },
+        })),
+
+      setRepoNotes: (repoFullName, notes) =>
+        set((state) => ({
+          repoMetadata: {
+            ...state.repoMetadata,
+            [repoFullName]: {
+              ...state.repoMetadata[repoFullName],
+              notes,
+            },
+          },
+        })),
+
+      setUserNotes: (username, notes) =>
+        set((state) => ({
+          userMetadata: {
+            ...state.userMetadata,
+            [username]: {
+              ...state.userMetadata[username],
+              notes,
+            },
+          },
         })),
 
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
