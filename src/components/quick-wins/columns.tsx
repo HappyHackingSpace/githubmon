@@ -2,10 +2,14 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ExternalLink, Calendar } from "lucide-react";
+import { ExternalLink, Calendar, ListPlus } from "lucide-react";
 import type { GitHubIssue } from "@/types/quickWins";
 
-export const createColumns = (): ColumnDef<GitHubIssue>[] => [
+interface CreateColumnsOptions {
+  onAddToKanban?: (issue: GitHubIssue) => void;
+}
+
+export const createColumns = (options?: CreateColumnsOptions): ColumnDef<GitHubIssue>[] => [
   {
     accessorKey: "title",
     header: ({ column }) => (
@@ -153,6 +157,26 @@ export const createColumns = (): ColumnDef<GitHubIssue>[] => [
             {author.login}
           </span>
         </div>
+      );
+    },
+    enableSorting: false,
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => {
+      const issue = row.original;
+      return (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => options?.onAddToKanban?.(issue)}
+          disabled={!options?.onAddToKanban}
+          className="gap-1"
+        >
+          <ListPlus className="w-4 h-4" />
+          Add to Kanban
+        </Button>
       );
     },
     enableSorting: false,
