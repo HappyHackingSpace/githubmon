@@ -24,7 +24,6 @@ import {
   Zap,
   ExternalLink,
   RefreshCw,
-  Star,
   LucideIcon,
 } from "lucide-react";
 import { useActionItemsStore } from "@/stores";
