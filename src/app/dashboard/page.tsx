@@ -4,6 +4,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useRequireAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { TodoDashboard } from "@/components/widget/TodoDashboard";
+import { QuickWinsCounters } from "@/components/widget/QuickWinsCounters";
 
 export default function DashboardPage() {
   const { isLoading } = useRequireAuth();
@@ -25,6 +26,8 @@ export default function DashboardPage() {
     <Layout>
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <PageHeader />
+
+        <QuickWinsCounters />
 
         <TodoDashboard />
       </div>
