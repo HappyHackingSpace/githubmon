@@ -21,7 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Plus, CheckCircle } from "lucide-react";
-import { useKanbanStore } from "@/stores";
+import { useKanbanStore, useActionItemsStore } from "@/stores";
 import type {
   ActionItem,
   AssignedItem,
@@ -32,9 +32,10 @@ import { useRouter } from "next/navigation";
 
 interface AddToKanbanButtonProps {
   item: ActionItem | AssignedItem | MentionItem | StalePR;
+  itemType: "assigned" | "mentions" | "stale";
 }
 
-export function AddToKanbanButton({ item }: AddToKanbanButtonProps) {
+export function AddToKanbanButton({ item, itemType }: AddToKanbanButtonProps) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [selectedColumn, setSelectedColumn] = useState("todo");
@@ -42,12 +43,14 @@ export function AddToKanbanButton({ item }: AddToKanbanButtonProps) {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const { addTaskFromActionItem, columns, columnOrder } = useKanbanStore();
+  const { markAsRead } = useActionItemsStore();
   const router = useRouter();
 
   const handleAdd = () => {
     setIsAdding(true);
     try {
       addTaskFromActionItem(item, notes, selectedColumn);
+      markAsRead(itemType, item.id.toString());
       setShowSuccess(true);
       setTimeout(() => {
         setOpen(false);

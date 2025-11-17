@@ -292,7 +292,7 @@ function ActionRequiredContent() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <AddToKanbanButton item={item as StoreActionItem} />
+                  <AddToKanbanButton item={item as StoreActionItem} itemType={type} />
                 </TableCell>
               </TableRow>
             ))}
