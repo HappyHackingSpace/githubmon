@@ -76,6 +76,13 @@ interface GitHubActionItem {
   mentionType?: "mention" | "review_request" | "comment";
   comments?: number;
   stars?: number;
+  additions?: number;
+  deletions?: number;
+  language?: string;
+  mergeable?: "MERGEABLE" | "CONFLICTING" | "UNKNOWN";
+  statusCheckRollup?: {
+    state: "SUCCESS" | "FAILURE" | "PENDING" | "EXPECTED";
+  };
 }
 
 interface ActionRequiredQueryResult {
@@ -111,6 +118,7 @@ interface ActionItem {
   repository: {
     nameWithOwner: string;
     stargazerCount: number;
+    primaryLanguage?: { name: string } | null;
   };
   author: {
     login: string;
@@ -134,6 +142,7 @@ interface PullRequest {
   repository: {
     nameWithOwner: string;
     stargazerCount: number;
+    primaryLanguage?: { name: string } | null;
   };
   author: {
     login: string;
@@ -150,6 +159,10 @@ interface PullRequest {
   };
   additions?: number;
   deletions?: number;
+  mergeable?: string;
+  statusCheckRollup?: {
+    state: string;
+  } | null;
   __typename?: string;
 }
 
@@ -167,6 +180,10 @@ interface StalePullRequest extends Omit<PullRequest, "assignees"> {
   reviewDecision: string | null;
   additions?: number;
   deletions?: number;
+  mergeable?: string;
+  statusCheckRollup?: {
+    state: string;
+  } | null;
 }
 
 class GitHubGraphQLClient {
@@ -509,6 +526,9 @@ class GitHubGraphQLClient {
             repository {
               nameWithOwner
               stargazerCount
+              primaryLanguage {
+                name
+              }
             }
             author {
               login
@@ -537,6 +557,9 @@ class GitHubGraphQLClient {
             repository {
               nameWithOwner
               stargazerCount
+              primaryLanguage {
+                name
+              }
             }
             author {
               login
@@ -558,6 +581,10 @@ class GitHubGraphQLClient {
             }
             additions
             deletions
+            mergeable
+            statusCheckRollup {
+              state
+            }
           }
         }
       }
@@ -578,6 +605,9 @@ class GitHubGraphQLClient {
             repository {
               nameWithOwner
               stargazerCount
+              primaryLanguage {
+                name
+              }
             }
             author {
               login
@@ -595,6 +625,10 @@ class GitHubGraphQLClient {
             reviewDecision
             additions
             deletions
+            mergeable
+            statusCheckRollup {
+              state
+            }
           }
         }
       }
@@ -615,6 +649,9 @@ class GitHubGraphQLClient {
             repository {
               nameWithOwner
               stargazerCount
+              primaryLanguage {
+                name
+              }
             }
             author {
               login
@@ -632,6 +669,10 @@ class GitHubGraphQLClient {
             reviewDecision
             additions
             deletions
+            mergeable
+            statusCheckRollup {
+              state
+            }
           }
         }
       }
@@ -652,6 +693,9 @@ class GitHubGraphQLClient {
             repository {
               nameWithOwner
               stargazerCount
+              primaryLanguage {
+                name
+              }
             }
             author {
               login
@@ -677,6 +721,9 @@ class GitHubGraphQLClient {
             repository {
               nameWithOwner
               stargazerCount
+              primaryLanguage {
+                name
+              }
             }
             author {
               login
@@ -702,6 +749,10 @@ class GitHubGraphQLClient {
             }
             additions
             deletions
+            mergeable
+            statusCheckRollup {
+              state
+            }
           }
         }
       }
@@ -722,6 +773,9 @@ class GitHubGraphQLClient {
             repository {
               nameWithOwner
               stargazerCount
+              primaryLanguage {
+                name
+              }
             }
             author {
               login
@@ -747,6 +801,10 @@ class GitHubGraphQLClient {
             }
             additions
             deletions
+            mergeable
+            statusCheckRollup {
+              state
+            }
           }
         }
       }
@@ -877,6 +935,16 @@ class GitHubGraphQLClient {
       ? { additions: item.additions, deletions: item.deletions }
       : undefined;
 
+    const language = item.repository.primaryLanguage?.name || undefined;
+
+    const mergeable = isPR && "mergeable" in item
+      ? (item.mergeable as "MERGEABLE" | "CONFLICTING" | "UNKNOWN")
+      : undefined;
+
+    const statusCheckRollup = isPR && "statusCheckRollup" in item && item.statusCheckRollup
+      ? { state: item.statusCheckRollup.state as "SUCCESS" | "FAILURE" | "PENDING" | "EXPECTED" }
+      : undefined;
+
     return {
       id: item.id,
       title: item.title,
@@ -901,6 +969,10 @@ class GitHubGraphQLClient {
       comments: commentCount,
       stars: item.repository.stargazerCount || 0,
       ...(mentionType && { mentionType }),
+      ...(prSize && { additions: prSize.additions, deletions: prSize.deletions }),
+      ...(language && { language }),
+      ...(mergeable && { mergeable }),
+      ...(statusCheckRollup && { statusCheckRollup }),
     };
   }
 
