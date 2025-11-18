@@ -14,10 +14,12 @@ import {
   Users,
   Package,
   ChevronRight,
+  Maximize,
 } from "lucide-react"
 import type { TrendingRepo, TopContributor } from "@/types/oss-insight"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
+import { RepoDeepDive } from "./RepoDeepDive"
 
 interface SplitViewSearchProps {
   repos: TrendingRepo[]
@@ -41,6 +43,7 @@ export function SplitViewSearch({
   const [activeTab, setActiveTab] = useState<"repos" | "users">(
     repos.length > 0 ? "repos" : "users"
   )
+  const [showDeepDive, setShowDeepDive] = useState(false)
 
   const handleRepoClick = useCallback((repo: TrendingRepo) => {
     setSelectedRepo(repo)
@@ -202,86 +205,102 @@ export function SplitViewSearch({
       <Panel defaultSize={70} minSize={60}>
         <div className="h-full overflow-y-auto">
           {activeTab === "repos" && selectedRepo && (
-            <motion.div
-              key={selectedRepo.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-              className="p-6"
-            >
-              <div className="max-w-4xl mx-auto">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4 mb-6">
-                      <Image
-                        src={selectedRepo.owner.avatar_url}
-                        alt={selectedRepo.owner.login}
-                        width={80}
-                        height={80}
-                        className="rounded-lg"
-                      />
-                      <div className="flex-1">
-                        <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                          {selectedRepo.full_name}
-                        </h2>
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {selectedRepo.language && (
-                            <Badge variant="outline">
-                              {selectedRepo.language}
-                            </Badge>
-                          )}
-                          {selectedRepo.archived && (
-                            <Badge variant="secondary">Archived</Badge>
-                          )}
+            <>
+              {showDeepDive ? (
+                <RepoDeepDive
+                  repo={selectedRepo}
+                  onClose={() => setShowDeepDive(false)}
+                />
+              ) : (
+                <motion.div
+                  key={selectedRepo.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="p-6"
+                >
+                  <div className="max-w-4xl mx-auto">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4 mb-6">
+                          <Image
+                            src={selectedRepo.owner.avatar_url}
+                            alt={selectedRepo.owner.login}
+                            width={80}
+                            height={80}
+                            className="rounded-lg"
+                          />
+                          <div className="flex-1">
+                            <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                              {selectedRepo.full_name}
+                            </h2>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {selectedRepo.language && (
+                                <Badge variant="outline">
+                                  {selectedRepo.language}
+                                </Badge>
+                              )}
+                              {selectedRepo.archived && (
+                                <Badge variant="secondary">Archived</Badge>
+                              )}
+                            </div>
+                            {selectedRepo.description && (
+                              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                                {selectedRepo.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-6 text-sm text-gray-500">
+                              <span className="flex items-center">
+                                <Star className="w-4 h-4 mr-2" />
+                                {selectedRepo.stargazers_count.toLocaleString()}{" "}
+                                stars
+                              </span>
+                              <span className="flex items-center">
+                                <GitFork className="w-4 h-4 mr-2" />
+                                {selectedRepo.forks_count.toLocaleString()} forks
+                              </span>
+                              <span className="flex items-center">
+                                <Eye className="w-4 h-4 mr-2" />
+                                {selectedRepo.watchers_count.toLocaleString()}{" "}
+                                watchers
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        {selectedRepo.description && (
-                          <p className="text-gray-600 dark:text-gray-300 mb-4">
-                            {selectedRepo.description}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-6 text-sm text-gray-500">
-                          <span className="flex items-center">
-                            <Star className="w-4 h-4 mr-2" />
-                            {selectedRepo.stargazers_count.toLocaleString()}{" "}
-                            stars
-                          </span>
-                          <span className="flex items-center">
-                            <GitFork className="w-4 h-4 mr-2" />
-                            {selectedRepo.forks_count.toLocaleString()} forks
-                          </span>
-                          <span className="flex items-center">
-                            <Eye className="w-4 h-4 mr-2" />
-                            {selectedRepo.watchers_count.toLocaleString()}{" "}
-                            watchers
-                          </span>
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() =>
-                          handleNavigateToRepo(selectedRepo.full_name)
-                        }
-                        className="flex-1"
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        View Full Details
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() =>
-                          window.open(selectedRepo.html_url, "_blank")
-                        }
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Open on GitHub
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </motion.div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => setShowDeepDive(true)}
+                            className="flex-1"
+                          >
+                            <Maximize className="w-4 h-4 mr-2" />
+                            Deep Dive
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              handleNavigateToRepo(selectedRepo.full_name)
+                            }
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Full Page
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              window.open(selectedRepo.html_url, "_blank")
+                            }
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            GitHub
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </motion.div>
+              )}
+            </>
           )}
 
           {activeTab === "users" && selectedUser && (
