@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Sidebar } from "./Sidebar";
 import { useSidebarState } from "@/stores";
 import { SidebarToggle } from "./SidebarToggle";
+import { Breadcrumb } from "./Breadcrumb";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { setOpen } = useSidebarState();
@@ -20,7 +21,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </Suspense>
         <SidebarToggle onClick={() => setOpen(true)} />
       </div>
-      <main className="lg:ml-64 ml-0 h-full overflow-auto">{children}</main>
+      <main className="lg:ml-64 ml-0 h-full overflow-auto">
+        <div className="p-6">
+          <Breadcrumb />
+          {children}
+        </div>
+      </main>
     </div>
   );
 }

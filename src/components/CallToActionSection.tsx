@@ -8,8 +8,8 @@ export function CallToActionSection() {
   const router = useRouter();
 
   return (
-    <section className="text-center py-12">
-      <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl hover:shadow-2xl transition-all duration-300 max-w-4xl mx-auto">
+    <section className="text-center py-12 px-4">
+      <Card className="bg-background/80 backdrop-blur-md border border-border/20 shadow-xl hover:shadow-2xl transition-all duration-300 max-w-4xl mx-auto">
         <CardContent className="p-8">
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="flex-shrink-0">

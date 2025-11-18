@@ -7,6 +7,8 @@ import { OAuthSessionSync } from "@/components/providers/OAuthSessionSync";
 
 import { NotificationProvider } from "@/components/common/NotificationProvider";
 import { DataInitializer } from "@/components/providers/DataInitializer";
+import { CommandPalette } from "@/components/command/CommandPalette";
+import { PageTracker } from "@/components/providers/PageTracker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +39,8 @@ export default function RootLayout({
           <ThemeProvider defaultTheme="system" storageKey="githubmon-theme">
             <OAuthSessionSync />
             <DataInitializer />
+            <PageTracker />
+            <CommandPalette />
             {children}
             <NotificationProvider />
           </ThemeProvider>
