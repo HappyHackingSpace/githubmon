@@ -13,7 +13,7 @@ export function Header() {
 
   const router = useRouter();
   return (
-    <header className="bg-background border-b border-border sticky top-0 z-50">
+    <header className="bg-background/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-0.5">
           <div className="flex items-center space-x-4">
@@ -23,7 +23,7 @@ export function Header() {
           <Button
             variant="outline"
             onClick={() => setSearchModalOpen(true)}
-            className="w-64 flex justify-start "
+            className="w-64 flex justify-start backdrop-blur-sm"
           >
             <Search className="w-20 h-20 mr-5" />
             Search GitHub ...
@@ -39,7 +39,7 @@ export function Header() {
               variant="ghost"
               size="sm"
               onClick={() => router.push("/login")}
-              className="flex items-center space-x-1"
+              className="flex items-center space-x-1 backdrop-blur-sm"
             >
               <User className="w-4 h-4" />
               <span>Login</span>
