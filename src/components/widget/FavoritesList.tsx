@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { usePreferencesStore } from "@/stores/preferences";
 import { useFavoritesStore } from "@/stores/favorites";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, ChevronRight, Star, GitPullRequest, User, TrendingUp, TrendingDown, Code, Filter, SortAsc, ExternalLink, Copy, GitBranch } from "lucide-react";
+import { ChevronDown, ChevronRight, Star, GitPullRequest, User, TrendingUp, TrendingDown, Code, Filter, SortAsc, ExternalLink, Copy, GitBranch, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 export function FavoritesList() {
+  const router = useRouter();
   const pinnedRepos = usePreferencesStore((state) => state.pinnedRepos);
   const favoriteUsers = usePreferencesStore((state) => state.favoriteUsers);
   const categories = usePreferencesStore((state) => state.categories);
@@ -274,6 +276,15 @@ export function FavoritesList() {
                                 size="sm"
                                 variant="ghost"
                                 className="h-6 px-2"
+                                onClick={() => router.push(`/search?repo=${encodeURIComponent(metrics.fullName)}`)}
+                                title="View repository analysis"
+                              >
+                                <BarChart3 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2"
                                 onClick={() => window.open(metrics.url, "_blank")}
                               >
                                 <ExternalLink className="h-3 w-3" />
@@ -456,6 +467,15 @@ export function FavoritesList() {
                           )}
 
                           <div className="flex items-center gap-1 mt-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2"
+                              onClick={() => router.push(`/search?user=${encodeURIComponent(metrics.username)}`)}
+                              title="View user analytics"
+                            >
+                              <BarChart3 className="h-3 w-3" />
+                            </Button>
                             <Button
                               size="sm"
                               variant="ghost"
