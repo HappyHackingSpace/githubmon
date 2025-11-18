@@ -53,6 +53,12 @@ interface ActionItem {
 const VALID_TABS = ["assigned", "mentions", "stale"] as const;
 type ValidTab = (typeof VALID_TABS)[number];
 
+function extractIssueNumber(url?: string): string | null {
+  if (!url) return null;
+  const match = url.match(/\/(issues|pull)\/(\d+)/);
+  return match ? match[2] : null;
+}
+
 function formatTimeAgo(dateString: string): string {
   const now = new Date();
   const past = new Date(dateString);
@@ -301,6 +307,11 @@ function ActionRequiredContent() {
                   <div className="flex items-center gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
+                        {extractIssueNumber(item.url) && (
+                          <span className="text-sm text-gray-500 dark:text-gray-400 font-mono flex-shrink-0">
+                            #{extractIssueNumber(item.url)}
+                          </span>
+                        )}
                         <a
                           href={isValidUrl(item.url) ? item.url : "#"}
                           target="_blank"

@@ -1,11 +1,9 @@
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useRequireAuth } from "@/hooks/useAuth";
 import { useDataCacheStore } from "@/stores/cache";
 import { AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export function PageHeader() {
-  // const { setSearchModalOpen } = useSearchStore()
   const { orgData } = useRequireAuth();
   const { rateLimitInfo } = useDataCacheStore();
 
@@ -26,7 +24,6 @@ export function PageHeader() {
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Rate Limit Critical Warning */}
         {isRateLimitCritical && (
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
             <AlertTriangle className="w-5 h-5" />
@@ -36,20 +33,6 @@ export function PageHeader() {
             </Badge>
           </div>
         )}
-
-        {/* {showSearch && (
-          <Button
-            variant="outline"
-            onClick={() => setSearchModalOpen(true)}
-            className="px-6 py-2.5 font-medium text-base"
-            size="lg"
-          >
-            <Search className="w-6 h-6 mr-2" />
-            Search
-          </Button>
-        )}
-        {onRefresh && <RefreshButton onRefresh={onRefresh} />} */}
-        <ThemeToggle />
       </div>
     </div>
   );
