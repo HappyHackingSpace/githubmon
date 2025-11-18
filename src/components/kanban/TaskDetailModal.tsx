@@ -39,10 +39,14 @@ export function TaskDetailModal({
     description: "",
     priority: "medium" as "low" | "medium" | "high" | "urgent",
     notes: "",
+    dueDate: "",
+    tags: [] as string[],
   });
+  const [tagInput, setTagInput] = useState("");
 
   const handleClose = useCallback(() => {
     setIsEditing(false);
+    setTagInput("");
     onClose();
   }, [onClose]);
 
@@ -53,10 +57,30 @@ export function TaskDetailModal({
         description: task.description || "",
         priority: task.priority,
         notes: task.notes || "",
+        dueDate: task.dueDate
+          ? new Date(task.dueDate).toISOString().split("T")[0]
+          : "",
+        tags: task.tags || [],
       });
       setIsEditing(false);
+      setTagInput("");
     }
   }, [task]);
+
+  const handleAddTag = () => {
+    const trimmedTag = tagInput.trim();
+    if (trimmedTag && !editData.tags.includes(trimmedTag)) {
+      setEditData({ ...editData, tags: [...editData.tags, trimmedTag] });
+      setTagInput("");
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setEditData({
+      ...editData,
+      tags: editData.tags.filter((tag) => tag !== tagToRemove),
+    });
+  };
 
   const handleSave = () => {
     if (task) {
@@ -65,6 +89,8 @@ export function TaskDetailModal({
         description: editData.description || undefined,
         priority: editData.priority,
         notes: editData.notes || undefined,
+        dueDate: editData.dueDate ? new Date(editData.dueDate) : undefined,
+        tags: editData.tags.length > 0 ? editData.tags : undefined,
       });
       setIsEditing(false);
     }
@@ -77,7 +103,12 @@ export function TaskDetailModal({
         description: task.description || "",
         priority: task.priority,
         notes: task.notes || "",
+        dueDate: task.dueDate
+          ? new Date(task.dueDate).toISOString().split("T")[0]
+          : "",
+        tags: task.tags || [],
       });
+      setTagInput("");
     }
     setIsEditing(false);
   }, [task]);
@@ -255,10 +286,82 @@ export function TaskDetailModal({
 
           <Separator />
 
+          {/* Due Date */}
+          <div>
+            <Label className="text-sm font-medium">Due Date</Label>
+            {isEditing ? (
+              <Input
+                type="date"
+                value={editData.dueDate}
+                onChange={(e) =>
+                  setEditData({ ...editData, dueDate: e.target.value })
+                }
+                className="mt-2"
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground mt-2">
+                {task.dueDate ? formatDate(task.dueDate) : "No due date set"}
+              </p>
+            )}
+          </div>
+
+          {/* Tags */}
+          <div>
+            <Label className="text-sm font-medium">Tags</Label>
+            {isEditing ? (
+              <>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddTag();
+                      }
+                    }}
+                    placeholder="Add tag..."
+                  />
+                  <Button type="button" variant="outline" onClick={handleAddTag}>
+                    Add
+                  </Button>
+                </div>
+                {editData.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {editData.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="gap-1">
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="hover:text-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {task.tags && task.tags.length > 0 ? (
+                  task.tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">No tags</span>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Labels */}
           {task.labels.length > 0 && (
             <div>
-              <Label className="text-sm font-medium">Labels</Label>
+              <Label className="text-sm font-medium">GitHub Labels</Label>
               <div className="flex flex-wrap gap-1 mt-2">
                 {task.labels.map((label, index) => (
                   <Badge key={index} variant="outline" className="text-xs">
