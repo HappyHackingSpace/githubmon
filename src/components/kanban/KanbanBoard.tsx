@@ -391,7 +391,7 @@ export function KanbanBoard() {
           const repo = urlParts[urlParts.length - 3];
           const number = parseInt(urlParts[urlParts.length - 1], 10);
 
-          githubAPIClient.setToken(orgData.token);
+          githubAPIClient.setUserToken(orgData.token);
 
           const result =
             task.type === "github-issue"
