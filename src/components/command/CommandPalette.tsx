@@ -14,7 +14,6 @@ import {
 import { useNavigationStore, useSearchStore, usePreferencesStore, useAuthStore } from "@/stores"
 import { menuItems } from "@/config/menu"
 import {
-  Home,
   Search,
   Settings,
   Moon,
@@ -22,8 +21,6 @@ import {
   LogOut,
   Monitor,
   Clock,
-  Star,
-  Users,
   GitBranch,
 } from "lucide-react"
 import { signOut } from "next-auth/react"

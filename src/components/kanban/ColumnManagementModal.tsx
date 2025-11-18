@@ -176,7 +176,7 @@ export function ColumnManagementModal({
   isOpen,
   onClose,
 }: ColumnManagementModalProps) {
-  const { columns, columnOrder, updateColumn, addColumn, deleteColumn, reorderColumns, tasks } =
+  const { columns, columnOrder, updateColumn, addColumn, deleteColumn, reorderColumns } =
     useKanbanStore();
   const [showAddColumn, setShowAddColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState("");

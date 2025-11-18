@@ -7,7 +7,6 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { MapPin, Building2, Link as LinkIcon, Calendar, Award } from "lucide-react";
 import { githubAPIClient } from "@/lib/api/github-api-client";

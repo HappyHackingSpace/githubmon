@@ -33,7 +33,6 @@ import {
   ExternalLink,
   RefreshCw,
   LucideIcon,
-  GitMerge,
   AlertCircle,
   CheckCircle2,
   XCircle,

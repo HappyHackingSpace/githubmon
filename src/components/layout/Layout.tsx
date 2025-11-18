@@ -2,14 +2,12 @@
 
 import { Suspense } from "react";
 import { Sidebar } from "./Sidebar";
-import { AppHeader } from "./AppHeader";
-import { useSidebarState, usePreferencesStore } from "@/stores";
+import { useSidebarState } from "@/stores";
 import { SidebarToggle } from "./SidebarToggle";
 import { Breadcrumb } from "./Breadcrumb";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { setOpen } = useSidebarState();
-  const { sidebarCollapsed } = usePreferencesStore();
 
   return (
     <div className="relative h-screen overflow-hidden">
