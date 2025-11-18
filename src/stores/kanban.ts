@@ -17,15 +17,18 @@ export interface KanbanTask {
   priority: "low" | "medium" | "high" | "urgent";
   githubUrl?: string;
   labels: string[];
+  tags?: string[];
   notes?: string;
+  dueDate?: Date;
   createdAt: Date;
   updatedAt: Date;
   sourceActionItemId?: string;
 }
 
-type SerializedKanbanTask = Omit<KanbanTask, "createdAt" | "updatedAt"> & {
+type SerializedKanbanTask = Omit<KanbanTask, "createdAt" | "updatedAt" | "dueDate"> & {
   createdAt: string | Date;
   updatedAt: string | Date;
+  dueDate?: string | Date;
 };
 
 interface GitHubItemWithExtras {
@@ -294,8 +297,19 @@ export const useKanbanStore = create<KanbanState>()(
 
           newTasks.forEach((task) => {
             existingTasks[task.id] = task;
-            const targetColumn =
-              contextSuggestions.length > 0 ? "todo" : "todo";
+
+            let targetColumn = "todo";
+
+            if (task.type === "github-pr" && task.priority === "high") {
+              targetColumn = "review";
+            } else if (task.priority === "urgent") {
+              targetColumn = "in-progress";
+            } else if (task.priority === "high") {
+              targetColumn = "todo";
+            } else {
+              targetColumn = "todo";
+            }
+
             updatedColumns[targetColumn] = {
               ...updatedColumns[targetColumn],
               taskIds: [...updatedColumns[targetColumn].taskIds, task.id],
@@ -521,6 +535,7 @@ export const useKanbanStore = create<KanbanState>()(
               taskIds: [],
             },
           },
+          columnOrder: [...state.columnOrder, id],
         }));
       },
 
@@ -538,9 +553,27 @@ export const useKanbanStore = create<KanbanState>()(
 
       deleteColumn: (id) => {
         set((state) => {
+          const column = state.columns[id];
+          if (!column) return state;
+
+          const tasksToDelete = column.taskIds;
+          const newTasks = { ...state.tasks };
+
+          tasksToDelete.forEach((taskId) => {
+            const task = newTasks[taskId];
+            if (task?.sourceActionItemId) {
+              const newAddedIds = new Set(state.addedActionItemIds);
+              newAddedIds.delete(task.sourceActionItemId);
+              state.addedActionItemIds = newAddedIds;
+            }
+            delete newTasks[taskId];
+          });
+
           const newColumns = { ...state.columns };
           delete newColumns[id];
+
           return {
+            tasks: newTasks,
             columns: newColumns,
             columnOrder: state.columnOrder.filter((colId) => colId !== id),
           };
@@ -579,6 +612,8 @@ export const useKanbanStore = create<KanbanState>()(
               t.createdAt = new Date(t.createdAt);
             if (t?.updatedAt && typeof t.updatedAt === "string")
               t.updatedAt = new Date(t.updatedAt);
+            if (t?.dueDate && typeof t.dueDate === "string")
+              t.dueDate = new Date(t.dueDate);
           }
         }
 

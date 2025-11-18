@@ -18,6 +18,7 @@ import {
   Loader2,
   GitBranch,
   Users,
+  Maximize2,
 } from "lucide-react";
 import { githubAPIClient } from "@/lib/api/github-api-client";
 import {
@@ -26,6 +27,7 @@ import {
   useNotifications,
 } from "@/stores";
 import type { TrendingRepo, TopContributor } from "@/types/oss-insight";
+import { SplitViewSearch } from "./SplitViewSearch";
 
 import { useRouter } from "next/navigation";
 
@@ -46,6 +48,7 @@ export function SearchModal() {
 
   const { defaultSearchType } = usePreferencesStore();
   const { add: addNotification } = useNotifications();
+  const [viewMode, setViewMode] = useState<"list" | "split">("split");
 
   useEffect(() => {
     if (isSearchModalOpen && !currentQuery) {
@@ -163,8 +166,6 @@ export function SearchModal() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSearchModalOpen, setSearchModalOpen]);
 
-  const hasResults =
-    currentResults.repos.length > 0 || currentResults.users.length > 0;
   const handleUserClick = (username: string) => {
     setCurrentQuery(username);
     setCurrentSearchType("users");
@@ -179,18 +180,34 @@ export function SearchModal() {
     router.push(`/search?repo=${repoName}`);
   };
 
+  const hasResults =
+    currentResults.repos.length > 0 || currentResults.users.length > 0;
+
   return (
     <Dialog open={isSearchModalOpen} onOpenChange={setSearchModalOpen}>
-      <DialogContent className="max-w-4xl max-h-[80vh] p-0 overflow-y-auto">
+      <DialogContent className={`${hasResults && viewMode === "split" ? "max-w-7xl h-[85vh]" : "max-w-4xl max-h-[80vh]"} p-0 ${viewMode === "split" && hasResults ? "" : "overflow-y-auto"}`}>
         <DialogHeader className="p-6 pb-4 border-b">
-          <DialogTitle className="flex items-center space-x-2">
-            <Search className="w-5 h-5" />
-            <span>Search on GitHub</span>
-          </DialogTitle>
-          <DialogDescription>
-            Search for repositories, users, and organizations on GitHub. Use
-            filters to narrow your results.
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="flex items-center space-x-2">
+                <Search className="w-5 h-5" />
+                <span>Search on GitHub</span>
+              </DialogTitle>
+              <DialogDescription>
+                Search for repositories, users, and organizations on GitHub.
+              </DialogDescription>
+            </div>
+            {hasResults && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewMode(viewMode === "split" ? "list" : "split")}
+              >
+                <Maximize2 className="w-4 h-4 mr-2" />
+                {viewMode === "split" ? "List View" : "Split View"}
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         {/* Search Input & Filters */}
@@ -225,7 +242,17 @@ export function SearchModal() {
         </div>
 
         {/* Results */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
+        {viewMode === "split" && hasResults ? (
+          <div className="flex-1 h-[calc(85vh-200px)]">
+            <SplitViewSearch
+              repos={currentResults.repos}
+              users={currentResults.users}
+              onRepoSelect={handleRepoClick}
+              onUserSelect={handleUserClick}
+            />
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
           {currentResults.loading && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
@@ -389,6 +416,7 @@ export function SearchModal() {
             </div>
           )}
         </div>
+        )}
 
         {/* Footer Tips */}
         <div className="border-t px-6 py-3 bg-gray-50 text-xs text-gray-500">

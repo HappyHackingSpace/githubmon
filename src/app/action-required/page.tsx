@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, Suspense, useCallback, useMemo } from "react";
+import { useEffect, Suspense, useCallback, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -25,8 +33,14 @@ import {
   ExternalLink,
   RefreshCw,
   LucideIcon,
+  GitMerge,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Plus,
 } from "lucide-react";
-import { useActionItemsStore } from "@/stores";
+import { useActionItemsStore, useKanbanStore } from "@/stores";
 import type { ActionItem as StoreActionItem } from "@/stores/actionItems";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchModal } from "@/components/search/SearchModal";
@@ -48,6 +62,13 @@ interface ActionItem {
   updatedAt: string;
   comments?: number;
   stars?: number;
+  additions?: number;
+  deletions?: number;
+  language?: string;
+  mergeable?: "MERGEABLE" | "CONFLICTING" | "UNKNOWN";
+  statusCheckRollup?: {
+    state: "SUCCESS" | "FAILURE" | "PENDING" | "EXPECTED";
+  };
 }
 
 const VALID_TABS = ["assigned", "mentions", "stale"] as const;
@@ -198,6 +219,61 @@ function ActionRequiredContent() {
     const isLoading = loading[type];
     const error = errors[type];
 
+    const [selectedRepo, setSelectedRepo] = useState<string>("all");
+    const [selectedLanguage, setSelectedLanguage] = useState<string>("all");
+    const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+    const { addTaskFromActionItem } = useKanbanStore();
+
+    const repositories = useMemo(() => {
+      const repos = new Set(items.map((item: ActionItem) => item.repo));
+      return Array.from(repos).sort();
+    }, [items]);
+
+    const languages = useMemo(() => {
+      const langs = new Set(
+        items
+          .map((item: ActionItem) => item.language)
+          .filter((lang): lang is string => !!lang)
+      );
+      return Array.from(langs).sort();
+    }, [items]);
+
+    const filteredItems = useMemo(() => {
+      return items.filter((item: ActionItem) => {
+        if (selectedRepo !== "all" && item.repo !== selectedRepo) return false;
+        if (selectedLanguage !== "all" && item.language !== selectedLanguage) return false;
+        return true;
+      });
+    }, [items, selectedRepo, selectedLanguage]);
+
+    const toggleSelectAll = () => {
+      if (selectedItems.size === filteredItems.length) {
+        setSelectedItems(new Set());
+      } else {
+        setSelectedItems(new Set(filteredItems.map((item: ActionItem) => item.id.toString())));
+      }
+    };
+
+    const toggleSelectItem = (itemId: string) => {
+      const newSelected = new Set(selectedItems);
+      if (newSelected.has(itemId)) {
+        newSelected.delete(itemId);
+      } else {
+        newSelected.add(itemId);
+      }
+      setSelectedItems(newSelected);
+    };
+
+    const handleBulkAddToKanban = () => {
+      const itemsToAdd = filteredItems.filter((item: ActionItem) =>
+        selectedItems.has(item.id.toString())
+      );
+      itemsToAdd.forEach((item: ActionItem) => {
+        addTaskFromActionItem(item as StoreActionItem, "", "todo");
+      });
+      setSelectedItems(new Set());
+    };
+
     if (isLoading) {
       return (
         <div className="rounded-md border">
@@ -284,25 +360,84 @@ function ActionRequiredContent() {
     }
 
     return (
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[30%]">Title / Repository</TableHead>
-              <TableHead className="w-[10%]">Author</TableHead>
-              <TableHead className="w-[18%]">Labels</TableHead>
-              <TableHead className="w-[10%]">Priority</TableHead>
-              <TableHead className="w-[8%]">Activity</TableHead>
-              <TableHead className="w-[10%]">Updated</TableHead>
-              <TableHead className="w-[14%]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((item: ActionItem) => (
+      <div className="space-y-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Repository:</label>
+            <Select value={selectedRepo} onValueChange={setSelectedRepo}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="All Repositories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Repositories</SelectItem>
+                {repositories.map((repo) => (
+                  <SelectItem key={repo} value={repo}>
+                    {repo}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {languages.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Language:</label>
+              <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="All Languages" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Languages</SelectItem>
+                  {languages.map((lang) => (
+                    <SelectItem key={lang} value={lang}>
+                      {lang}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {selectedItems.size > 0 && (
+            <div className="flex items-center gap-2 ml-auto">
+              <Badge variant="secondary">{selectedItems.size} selected</Badge>
+              <Button size="sm" onClick={handleBulkAddToKanban}>
+                <Plus className="w-4 h-4 mr-2" />
+                Bulk Add to Kanban
+              </Button>
+            </div>
+          )}
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[3%]">
+                  <Checkbox
+                    checked={selectedItems.size === filteredItems.length && filteredItems.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
+                <TableHead className="w-[27%]">Title / Repository</TableHead>
+                <TableHead className="w-[10%]">Author</TableHead>
+                <TableHead className="w-[15%]">Labels</TableHead>
+                <TableHead className="w-[8%]">Priority</TableHead>
+                <TableHead className="w-[8%]">Size</TableHead>
+                <TableHead className="w-[6%]">Activity</TableHead>
+                <TableHead className="w-[9%]">Updated</TableHead>
+                <TableHead className="w-[14%]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredItems.map((item: ActionItem) => (
               <TableRow
                 key={item.id}
-                className={type === "stale" ? getStaleRowClassName(item.daysOld) : ""}
+                className={getStaleRowClassName(item.daysOld)}
               >
+                <TableCell>
+                  <Checkbox
+                    checked={selectedItems.has(item.id.toString())}
+                    onCheckedChange={() => toggleSelectItem(item.id.toString())}
+                  />
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <div className="min-w-0 flex-1">
@@ -325,6 +460,26 @@ function ActionRequiredContent() {
                         </a>
                         {item.url && (
                           <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                        )}
+                        {item.type === "pullRequest" && item.mergeable === "CONFLICTING" && (
+                          <span title="Has merge conflicts">
+                            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                          </span>
+                        )}
+                        {item.type === "pullRequest" && item.statusCheckRollup?.state === "SUCCESS" && (
+                          <span title="All checks passed">
+                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          </span>
+                        )}
+                        {item.type === "pullRequest" && item.statusCheckRollup?.state === "FAILURE" && (
+                          <span title="Checks failed">
+                            <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                          </span>
+                        )}
+                        {item.type === "pullRequest" && item.statusCheckRollup?.state === "PENDING" && (
+                          <span title="Checks pending">
+                            <Loader2 className="w-4 h-4 text-yellow-500 flex-shrink-0 animate-spin" />
+                          </span>
                         )}
                       </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
@@ -387,6 +542,16 @@ function ActionRequiredContent() {
                   </Badge>
                 </TableCell>
                 <TableCell>
+                  {item.type === "pullRequest" && (item.additions !== undefined || item.deletions !== undefined) ? (
+                    <div className="flex flex-col text-xs">
+                      <span className="text-green-600 dark:text-green-400">+{item.additions || 0}</span>
+                      <span className="text-red-600 dark:text-red-400">-{item.deletions || 0}</span>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">N/A</span>
+                  )}
+                </TableCell>
+                <TableCell>
                   <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
                     <MessageSquare className="w-4 h-4" />
                     <span>{item.comments || 0}</span>
@@ -404,9 +569,10 @@ function ActionRequiredContent() {
                   />
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     );
   };

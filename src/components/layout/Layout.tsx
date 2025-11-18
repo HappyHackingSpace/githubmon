@@ -5,6 +5,7 @@ import { Sidebar } from "./Sidebar";
 import { AppHeader } from "./AppHeader";
 import { useSidebarState, usePreferencesStore } from "@/stores";
 import { SidebarToggle } from "./SidebarToggle";
+import { Breadcrumb } from "./Breadcrumb";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { setOpen } = useSidebarState();
@@ -22,9 +23,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </Suspense>
         <SidebarToggle onClick={() => setOpen(true)} />
       </div>
-      <main className={`ml-0 h-full overflow-auto transition-all duration-300 ${sidebarCollapsed ? "lg:ml-16" : "lg:ml-64"}`}>
-        <AppHeader />
+      
+      <main className="lg:ml-64 ml-0 h-full overflow-auto">
         <div className="p-6">
+          <Breadcrumb />
           {children}
         </div>
       </main>

@@ -9,9 +9,11 @@ import {
   useAuthStore,
   useStoreHydration,
   useActionItemsStore,
+  useNavigationStore,
   usePreferencesStore,
 } from "@/stores";
 import { useQuickWinsStore } from "@/stores/quickWins";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
   ChevronRight,
   Clock,
@@ -27,20 +29,26 @@ import {
   Loader2,
   PanelLeftClose,
   PanelLeftOpen,
+
+  GitBranch,
+  Pin,
+  Settings,
+  User,
 } from "lucide-react";
 import { Badge } from "../ui/badge";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
-
 export function Sidebar() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { isOpen, setOpen } = useSidebarState();
 
   const hasHydrated = useStoreHydration();
-  const { isConnected, logout } = useAuthStore();
   const { sidebarCollapsed, setSidebarCollapsed } = usePreferencesStore();
 
+  const { isConnected, logout, orgData } = useAuthStore();
+
   const { getCountByType, loading } = useActionItemsStore();
+  const { recentPages } = useNavigationStore();
+  const { pinnedRepos } = usePreferencesStore();
 
   const {
     goodIssues,
@@ -448,7 +456,6 @@ export function Sidebar() {
                 <Star className="w-5 h-5" />
                 {!sidebarCollapsed && <span>Favorites</span>}
               </Link>
-
               {!sidebarCollapsed && (
                 <>
                   <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
@@ -459,6 +466,49 @@ export function Sidebar() {
                     <span className="text-xs">Soon</span>
                   </div>
                 </>
+              )}
+              {hasHydrated && recentPages.length > 0 && (
+                <div className="mt-6">
+                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Recent Pages
+                  </div>
+                  <div className="space-y-1">
+                    {recentPages.slice(0, 5).map((page) => (
+                      <Link
+                        key={page.path}
+                        href={page.path}
+                        className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-sidebar-accent/50 transition-colors"
+                      >
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <span className="truncate">{page.title}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Pinned Repositories */}
+              {hasHydrated && pinnedRepos.length > 0 && (
+                <div className="mt-6">
+                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Pin className="w-3 h-3" />
+                    Pinned Repos
+                  </div>
+                  <div className="space-y-1">
+                    {pinnedRepos.slice(0, 5).map((repo) => (
+                      <a
+                        key={repo}
+                        href={`https://github.com/${repo}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-sidebar-accent/50 transition-colors"
+                      >
+                        <GitBranch className="w-4 h-4 text-muted-foreground" />
+                        <span className="truncate">{repo}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
               )}
             </nav>
           </div>
@@ -508,6 +558,50 @@ export function Sidebar() {
             </Button>
           )}
         </div>
+        {/* Footer - Modern User Profile Bar */}
+        {hasHydrated && isConnected && orgData && (
+          <div className="p-3 border-t border-sidebar-border flex-shrink-0 space-y-2">
+            <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-sidebar-accent/30">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                {orgData.username?.charAt(0).toUpperCase() || <User className="w-4 h-4" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">
+                  {orgData.username}
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {orgData.organizationName || "GitHub User"}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link href="/settings" className="flex-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-sm"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </Button>
+              </Link>
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                title="Logout"
+              >
+                {isLoggingOut ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <LogOut className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
       </aside>
     </>
   );

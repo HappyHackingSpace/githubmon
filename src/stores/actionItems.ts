@@ -22,6 +22,13 @@ export interface ActionItem {
   daysOld: number;
   comments?: number;
   stars?: number;
+  additions?: number;
+  deletions?: number;
+  language?: string;
+  mergeable?: "MERGEABLE" | "CONFLICTING" | "UNKNOWN";
+  statusCheckRollup?: {
+    state: "SUCCESS" | "FAILURE" | "PENDING" | "EXPECTED";
+  };
 }
 
 export interface AssignedItem extends ActionItem {
