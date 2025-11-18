@@ -206,6 +206,10 @@ export function ColumnManagementModal({
     }
   };
 
+  const handleUpdateColumn = (id: string, title: string, color: string) => {
+    updateColumn(id, { title, color });
+  };
+
   const handleDeleteColumn = (columnId: string) => {
     const column = columns[columnId];
     const taskCount = column?.taskIds.length || 0;
@@ -262,7 +266,7 @@ export function ColumnManagementModal({
                     title={column.title}
                     color={column.color}
                     taskCount={column.taskIds.length}
-                    onUpdate={updateColumn}
+                    onUpdate={handleUpdateColumn}
                     onDelete={handleDeleteColumn}
                   />
                 );
