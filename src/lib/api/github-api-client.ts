@@ -852,6 +852,56 @@ class GitHubAPIClient {
     }
   }
 
+  async getUserContributions(username: string): Promise<{ commits: number; prs: number; stars: number }> {
+    try {
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+      const eventsEndpoint = `/users/${username}/events/public?per_page=100`;
+      const events = await this.fetchWithCache<Array<{ type: string; created_at: string }>>(
+        eventsEndpoint,
+        true
+      );
+
+      let commits = 0;
+      let prs = 0;
+
+      if (Array.isArray(events)) {
+        for (const event of events) {
+          const eventDate = new Date(event.created_at);
+          if (eventDate < threeMonthsAgo) continue;
+
+          if (event.type === "PushEvent") {
+            commits += 1;
+          } else if (event.type === "PullRequestEvent") {
+            prs += 1;
+          }
+        }
+      }
+
+      const starredEndpoint = `/users/${username}/starred?per_page=1`;
+      const response = await fetch(`https://api.github.com${starredEndpoint}`, {
+        headers: this.getHeaders(),
+      });
+      const linkHeader = response.headers.get("link");
+      let stars = 0;
+      if (linkHeader) {
+        const match = linkHeader.match(/page=(\d+)>; rel="last"/);
+        if (match) {
+          stars = parseInt(match[1], 10);
+        }
+      } else {
+        const starred = await response.json();
+        stars = Array.isArray(starred) ? starred.length : 0;
+      }
+
+      return { commits, prs, stars };
+    } catch (error) {
+      console.error("Failed to fetch user contributions:", error);
+      return { commits: 0, prs: 0, stars: 0 };
+    }
+  }
+
   async getUserAnalytics(username: string): Promise<{
     profile: GitHubUserDetailed | null;
     overview: Array<{

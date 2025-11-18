@@ -10,6 +10,11 @@ interface CreateColumnsOptions {
   onDismiss?: (issueId: number) => void;
 }
 
+function extractIssueNumber(url: string): string | null {
+  const match = url.match(/\/(issues|pull)\/(\d+)/);
+  return match ? match[2] : null;
+}
+
 export const createColumns = (options?: CreateColumnsOptions): ColumnDef<GitHubIssue>[] => [
   {
     accessorKey: "title",
@@ -24,9 +29,15 @@ export const createColumns = (options?: CreateColumnsOptions): ColumnDef<GitHubI
     ),
     cell: ({ row }) => {
       const issue = row.original;
+      const issueNumber = extractIssueNumber(issue.url);
       return (
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
+            {issueNumber && (
+              <span className="text-sm text-gray-500 dark:text-gray-400 font-mono flex-shrink-0">
+                #{issueNumber}
+              </span>
+            )}
             <a
               href={issue.url}
               target="_blank"

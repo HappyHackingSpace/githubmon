@@ -19,7 +19,6 @@ import {
   Clock,
   LogOut,
   MessageSquare,
-  Sparkles,
   Star,
   Target,
   Zap,
@@ -28,19 +27,23 @@ import {
   Lightbulb,
   Wrench,
   Loader2,
+  PanelLeftClose,
+  PanelLeftOpen,
+
   GitBranch,
   Pin,
   Settings,
   User,
 } from "lucide-react";
 import { Badge } from "../ui/badge";
-
 export function Sidebar() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { isOpen, setOpen } = useSidebarState();
 
   const hasHydrated = useStoreHydration();
+  const { sidebarCollapsed, setSidebarCollapsed } = usePreferencesStore();
+
   const { isConnected, logout, orgData } = useAuthStore();
 
   const { getCountByType, loading } = useActionItemsStore();
@@ -171,84 +174,105 @@ export function Sidebar() {
 
       <aside
         className={`
-        fixed top-0 left-0 w-64 bg-sidebar border-r border-sidebar-border z-50 transform transition-transform duration-300 ease-in-out
+        fixed top-0 left-0 bg-sidebar border-r border-sidebar-border z-50 transform transition-all duration-300 ease-in-out
+        ${sidebarCollapsed ? "w-16" : "w-64"}
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0
-        flex flex-col 
+        flex flex-col
 
         h-screen
       `}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
-          <div>
-            <h2 className="text-lg font-bold text-sidebar-foreground">
-              GitHubMon
-            </h2>
-            <p className="text-xs text-muted-foreground">OSS Analytics</p>
-          </div>
-          <button
-            onClick={() => setOpen(false)}
-            className="lg:hidden text-muted-foreground hover:text-sidebar-foreground transition-colors"
-          >
-            ✕
-          </button>
+          {!sidebarCollapsed ? (
+            <>
+              <div>
+                <h2 className="text-lg font-bold text-sidebar-foreground">
+                  GitHubMon
+                </h2>
+                <p className="text-xs text-muted-foreground">OSS Analytics</p>
+              </div>
+              <button
+                onClick={() => setOpen(false)}
+                className="lg:hidden text-muted-foreground hover:text-sidebar-foreground transition-colors"
+              >
+                ✕
+              </button>
+            </>
+          ) : (
+            <div className="w-full flex justify-center">
+              <span className="text-lg font-bold text-sidebar-foreground">G</span>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto">
           {/* Navigation Menu */}
           <div className="p-3">
             <nav className="space-y-2">
-              {/* Dashboard Link */}
               <Link
                 href="/dashboard"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors
                   ${
                     pathname === "/dashboard"
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   }`}
+                title={sidebarCollapsed ? "Dashboard" : ""}
               >
                 <Home className="w-5 h-5" />
-                <span>Dashboard</span>
+                {!sidebarCollapsed && <span>Dashboard</span>}
               </Link>
 
-              {/* Action Required Accordion */}
               <div>
-                <button
-                  onClick={() =>
-                    handleActionRequiredToggle(!actionRequiredOpen)
-                  }
-                  className={`
-                    flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors cursor-pointer text-left
-                    ${
-                      isActionRequiredTab
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                    }
-                  `}
-                >
-                  <div className="flex items-center gap-3">
-                    <Zap className="w-5 h-5" />
-                    <span>Action Required</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Badge
-                      variant="outline"
-                      className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20"
-                    >
-                      {getActionRequiredTotal}
-                    </Badge>
-                    <ChevronRight
-                      className={`w-4 h-4 transition-transform ${
-                        actionRequiredOpen ? "rotate-90" : ""
+                {sidebarCollapsed ? (
+                  <Link
+                    href="/action-required"
+                    className={`flex items-center justify-center px-3 py-2 rounded-lg transition-colors
+                      ${
+                        isActionRequiredTab
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                       }`}
-                    />
-                  </div>
-                </button>
+                    title="Action Required"
+                  >
+                    <Zap className="w-5 h-5" />
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      onClick={() =>
+                        handleActionRequiredToggle(!actionRequiredOpen)
+                      }
+                      className={`
+                        flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors cursor-pointer text-left
+                        ${
+                          isActionRequiredTab
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                        }
+                      `}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Zap className="w-5 h-5" />
+                        <span>Action Required</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge
+                          variant="outline"
+                          className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20"
+                        >
+                          {getActionRequiredTotal}
+                        </Badge>
+                        <ChevronRight
+                          className={`w-4 h-4 transition-transform ${
+                            actionRequiredOpen ? "rotate-90" : ""
+                          }`}
+                        />
+                      </div>
+                    </button>
 
-                {/* Action Required sub-items */}
-                {actionRequiredOpen && (
+                    {actionRequiredOpen && (
                   <div className="pl-8 space-y-1 mt-1">
                     <Link
                       href="/action-required?tab=assigned"
@@ -308,43 +332,58 @@ export function Sidebar() {
                       </Badge>
                     </Link>
                   </div>
+                    )}
+                  </>
                 )}
               </div>
 
-              {/* Quick Wins Accordion */}
               <div>
-                <button
-                  onClick={() => handleQuickWinsToggle(!quickWinsOpen)}
-                  className={`
-                    flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors cursor-pointer text-left
-                    ${
-                      isQuickWinsTab
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                    }
-                  `}
-                >
-                  <div className="flex items-center gap-3">
-                    <Target className="w-5 h-5" />
-                    <span>Quick Wins</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Badge
-                      variant="outline"
-                      className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20"
-                    >
-                      {getQuickWinsTotal}
-                    </Badge>
-                    <ChevronRight
-                      className={`w-4 h-4 transition-transform ${
-                        quickWinsOpen ? "rotate-90" : ""
+                {sidebarCollapsed ? (
+                  <Link
+                    href="/quick-wins"
+                    className={`flex items-center justify-center px-3 py-2 rounded-lg transition-colors
+                      ${
+                        isQuickWinsTab
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                       }`}
-                    />
-                  </div>
-                </button>
+                    title="Quick Wins"
+                  >
+                    <Target className="w-5 h-5" />
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => handleQuickWinsToggle(!quickWinsOpen)}
+                      className={`
+                        flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors cursor-pointer text-left
+                        ${
+                          isQuickWinsTab
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                        }
+                      `}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Target className="w-5 h-5" />
+                        <span>Quick Wins</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge
+                          variant="outline"
+                          className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20"
+                        >
+                          {getQuickWinsTotal}
+                        </Badge>
+                        <ChevronRight
+                          className={`w-4 h-4 transition-transform ${
+                            quickWinsOpen ? "rotate-90" : ""
+                          }`}
+                        />
+                      </div>
+                    </button>
 
-                {/* Quick Wins sub-items */}
-                {quickWinsOpen && (
+                    {quickWinsOpen && (
                   <div className="pl-8 space-y-1 mt-1">
                     <Link
                       href="/quick-wins?tab=good-issues"
@@ -385,38 +424,49 @@ export function Sidebar() {
                       </Badge>
                     </Link>
                   </div>
+                    )}
+                  </>
                 )}
               </div>
 
-              {/* Settings Link */}
               <Link
                 href="/settings"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors
                   ${
                     pathname.startsWith("/settings")
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   }`}
+                title={sidebarCollapsed ? "Settings" : ""}
               >
                 <Wrench className="w-5 h-5" />
-                <span>Settings</span>
+                {!sidebarCollapsed && <span>Settings</span>}
               </Link>
 
-              {/* Favorites Link */}
               <Link
                 href="/favorites"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors
                   ${
                     pathname === "/favorites"
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   }`}
+                title={sidebarCollapsed ? "Favorites" : ""}
               >
                 <Star className="w-5 h-5" />
-                <span>Favorites</span>
+                {!sidebarCollapsed && <span>Favorites</span>}
               </Link>
-
-              {/* Recent Pages */}
+              {!sidebarCollapsed && (
+                <>
+                  <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5" />
+                      <span>Recent</span>
+                    </div>
+                    <span className="text-xs">Soon</span>
+                  </div>
+                </>
+              )}
               {hasHydrated && recentPages.length > 0 && (
                 <div className="mt-6">
                   <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -464,6 +514,50 @@ export function Sidebar() {
           </div>
         </div>
 
+        <div className="p-4 border-t border-sidebar-border flex-shrink-0 space-y-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className={`w-full ${sidebarCollapsed ? "justify-center px-2" : "justify-start"} text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50 hidden lg:flex`}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {sidebarCollapsed ? (
+              <PanelLeftOpen className="w-4 h-4" />
+            ) : (
+              <>
+                <PanelLeftClose className="w-4 h-4 mr-2" />
+                <span>Collapse</span>
+              </>
+            )}
+          </Button>
+
+          {!sidebarCollapsed && (
+            <div className="flex items-center justify-between px-3 py-1">
+              <span className="text-xs text-muted-foreground">Theme</span>
+              <ThemeToggle />
+            </div>
+          )}
+
+          {hasHydrated && isConnected && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className={`w-full ${sidebarCollapsed ? "justify-center px-2" : "justify-start"} text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50 disabled:opacity-50`}
+              title={sidebarCollapsed ? "Logout" : ""}
+            >
+              {isLoggingOut ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <LogOut className="w-4 h-4" />
+              )}
+              {!sidebarCollapsed && !isLoggingOut && <span className="ml-2">Logout</span>}
+              {!sidebarCollapsed && isLoggingOut && <span className="ml-2">Logging out...</span>}
+            </Button>
+          )}
+        </div>
         {/* Footer - Modern User Profile Bar */}
         {hasHydrated && isConnected && orgData && (
           <div className="p-3 border-t border-sidebar-border flex-shrink-0 space-y-2">
