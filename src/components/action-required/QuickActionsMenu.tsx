@@ -30,6 +30,7 @@ import {
   XCircle,
   Plus,
   Loader2,
+  Play,
 } from "lucide-react";
 import { useKanbanStore, useActionItemsStore } from "@/stores";
 import type {
@@ -87,6 +88,14 @@ export function QuickActionsMenu({
     }
   };
 
+  const handleQuickStart = () => {
+    try {
+      addTaskFromActionItem(item, "", "inProgress");
+    } catch (error) {
+      console.error("Failed to quick start task:", error);
+    }
+  };
+
   const handleRemoveFromKanban = () => {
     try {
       removeActionItemFromKanban(item.id.toString());
@@ -136,21 +145,38 @@ export function QuickActionsMenu({
             </TooltipContent>
           </Tooltip>
         ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => setKanbanDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Add to Kanban</p>
-            </TooltipContent>
-          </Tooltip>
+          <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                  onClick={handleQuickStart}
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Quick Start (In Progress)</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setKanbanDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add to Kanban</p>
+              </TooltipContent>
+            </Tooltip>
+          </>
         )}
 
         <Tooltip>
