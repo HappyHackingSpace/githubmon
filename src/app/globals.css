@@ -224,6 +224,28 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans;
+  }
+
+  code, pre, kbd, samp {
+    @apply font-mono;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-background/80 backdrop-blur-md border border-border/20;
+  }
+
+  .glass-modal {
+    @apply bg-background/90 backdrop-blur-lg border border-border/30;
+  }
+
+  .glass-header {
+    @apply bg-background/80 backdrop-blur-md border-b border-border/50;
   }
 }

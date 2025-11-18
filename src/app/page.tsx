@@ -8,6 +8,9 @@ import { SearchModal } from "@/components/search/SearchModal";
 import { CallToActionSection } from "@/components/CallToActionSection";
 import { Header } from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { DotPattern } from "@/components/ui/dot-pattern";
+import { BentoGrid } from "@/components/landing/BentoGrid";
+import { CodeDemo } from "@/components/landing/CodeDemo";
 
 export default function HomePage() {
   const router = useRouter();
@@ -38,18 +41,26 @@ export default function HomePage() {
   return (
     <>
       <Header />
-      <main className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Hero Section */}
-        <div className="text-center space-y-8">
-          <div className="space-y-4">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white">
-              GitHub Analytics
-              <span className="text-indigo-600 dark:text-indigo-400 block">
-                Made Simple
-              </span>
-            </h1>
+      <main className="relative max-w-7xl mx-auto p-6 space-y-6">
+        <DotPattern
+          className="opacity-50"
+          dotColor="rgba(139, 92, 246, 0.15)"
+          gap={30}
+        />
 
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+        <div className="text-center space-y-8 py-20 relative">
+          <div className="space-y-6">
+            <div className="relative inline-block">
+              <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400 dark:from-white dark:via-gray-100 dark:to-gray-300">
+                GitHub Analytics
+                <span className="block mt-2 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+                  Made Simple
+                </span>
+              </h1>
+              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-64 h-24 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 blur-3xl" />
+            </div>
+
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mt-8">
               Monitor your GitHub repositories, track trends, and analyze
               performance with powerful insights and beautiful visualizations.
             </p>
@@ -59,6 +70,8 @@ export default function HomePage() {
         <Separator />
       </main>
 
+      <BentoGrid />
+      <CodeDemo />
       <CallToActionSection />
       <SearchModal />
       <Footer />
