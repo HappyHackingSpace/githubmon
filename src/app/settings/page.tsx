@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRequireAuth } from "@/hooks/useAuth";
 import { ThemeSelector } from "@/components/theme/ThemeToggle";
 import { GitHubSettingsForm } from "@/components/settings/GitHubSettingsForm";
-import { Settings, Github, Palette } from "lucide-react";
+import { FavoritesSettings } from "@/components/settings/FavoritesSettings";
+import { Settings, Github, Palette, Star } from "lucide-react";
 
 export default function SettingsPage() {
   const { isLoading } = useRequireAuth();
@@ -41,6 +42,11 @@ export default function SettingsPage() {
               GitHub
             </TabsTrigger>
 
+            <TabsTrigger value="favorites" className="flex items-center gap-2">
+              <Star className="w-4 h-4" />
+              Favorites
+            </TabsTrigger>
+
             <TabsTrigger value="appearance" className="flex items-center gap-2">
               <Palette className="w-4 h-4" />
               Appearance
@@ -51,6 +57,20 @@ export default function SettingsPage() {
             <CardContent>
               <GitHubSettingsForm />
             </CardContent>
+          </TabsContent>
+
+          <TabsContent value="favorites" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="w-5 h-5" />
+                  Manage Favorites
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FavoritesSettings />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="appearance" className="space-y-6">

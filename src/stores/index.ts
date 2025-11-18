@@ -4,6 +4,7 @@ import { usePreferencesStore } from "./preferences";
 import { useSearchStore } from "./search";
 import { useDataCacheStore } from "./cache";
 import { useAppStore } from "./app";
+import { useFavoritesStore } from "./favorites";
 export { useAuthStore } from "./auth";
 export { usePreferencesStore } from "./preferences";
 export { useSearchStore } from "./search";
@@ -11,6 +12,7 @@ export { useDataCacheStore } from "./cache";
 export { useAppStore } from "./app";
 export { useActionItemsStore } from "./actionItems";
 export { useKanbanStore } from "./kanban";
+export { useFavoritesStore } from "./favorites";
 
 // ============ HYDRATION HOOK ============
 
@@ -27,6 +29,7 @@ const hydrateStores = async () => {
       usePreferencesStore.persist.rehydrate(),
       useSearchStore.persist.rehydrate(),
       useDataCacheStore.persist.rehydrate(),
+      useFavoritesStore.persist.rehydrate(),
     ]);
     isHydrated = true;
   })();
@@ -56,6 +59,10 @@ const defaultPreferences = {
   defaultPeriod: "24h" as const,
   favoriteLanguages: [],
   pinnedRepos: [],
+  favoriteUsers: [],
+  categories: [],
+  repoMetadata: {},
+  userMetadata: {},
   sidebarCollapsed: false,
   compactMode: false,
   showTutorials: true,
@@ -75,10 +82,20 @@ export const usePreferences = () => {
       setDefaultPeriod: () => {},
       toggleFavoriteLanguage: () => {},
       togglePinnedRepo: () => {},
+      toggleFavoriteUser: () => {},
+      addCategory: () => "",
+      updateCategory: () => {},
+      deleteCategory: () => {},
+      setRepoCategory: () => {},
+      setUserCategory: () => {},
+      setRepoNotes: () => {},
+      setUserNotes: () => {},
       setSidebarCollapsed: () => {},
       setCompactMode: () => {},
       setShowTutorials: () => {},
       setNotifications: () => {},
+      setSearchResultsPerPage: () => {},
+      setNotifyOnTrends: () => {},
       resetPreferences: () => {},
     };
   }

@@ -65,6 +65,7 @@ export function Sidebar() {
     if (
       pathname === "/dashboard" ||
       pathname === "/settings" ||
+      pathname === "/favorites" ||
       pathname === "/search"
     ) {
       setActionRequiredOpen(false);
@@ -392,14 +393,21 @@ export function Sidebar() {
                 <span>Settings</span>
               </Link>
 
+              {/* Favorites Link */}
+              <Link
+                href="/favorites"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                  ${
+                    pathname === "/favorites"
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                  }`}
+              >
+                <Star className="w-5 h-5" />
+                <span>Favorites</span>
+              </Link>
+
               {/* Coming Soon Items - Disabled */}
-              <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
-                <div className="flex items-center gap-3">
-                  <Star className="w-5 h-5" />
-                  <span>Favorites</span>
-                </div>
-                <span className="text-xs">Soon</span>
-              </div>
 
               <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
                 <div className="flex items-center gap-3">
