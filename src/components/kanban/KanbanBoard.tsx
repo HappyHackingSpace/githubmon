@@ -20,11 +20,24 @@ import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Plus, ExternalLink, GripVertical, Trash2, Eye, X } from "lucide-react";
 import { useKanbanStore, KanbanTask } from "@/stores/kanban";
 import { useState } from "react";
 import { TaskDetailModal } from "./TaskDetailModal";
 import { AddTaskModal } from "./AddTaskModal";
+import { ColumnManagementModal } from "./ColumnManagementModal";
+import { githubAPIClient } from "@/lib/api/github-api-client";
+import { useAuthStore } from "@/stores/auth";
 
 interface SortableTaskItemProps {
   task: KanbanTask;
@@ -54,6 +67,20 @@ function SortableTaskItem({
     opacity: isSortableDragging ? 0.5 : 1,
   };
 
+  const getDueDateStatus = () => {
+    if (!task.dueDate) return null;
+    const now = new Date();
+    const due = new Date(task.dueDate);
+    const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return { status: "overdue", color: "text-red-600", text: "Overdue" };
+    if (diffDays === 0) return { status: "today", color: "text-orange-600", text: "Today" };
+    if (diffDays <= 3) return { status: "soon", color: "text-yellow-600", text: `${diffDays}d` };
+    return { status: "normal", color: "text-muted-foreground", text: `${diffDays}d` };
+  };
+
+  const dueDateStatus = getDueDateStatus();
+
   return (
     <div
       ref={setNodeRef}
@@ -62,6 +89,8 @@ function SortableTaskItem({
         isDragging || isSortableDragging
           ? "shadow-lg"
           : "hover:shadow-md hover:border-primary/30"
+      } ${dueDateStatus?.status === "overdue" ? "border-red-500/50" : ""} ${
+        dueDateStatus?.status === "today" ? "border-orange-500/50" : ""
       }`}
       {...attributes}
       onClick={() => onView && onView(task)}
@@ -128,21 +157,43 @@ function SortableTaskItem({
         </p>
       )}
 
+      {task.tags && task.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 ml-4 mb-1">
+          {task.tags.slice(0, 3).map((tag) => (
+            <Badge key={tag} variant="secondary" className="text-xs px-1 py-0">
+              {tag}
+            </Badge>
+          ))}
+          {task.tags.length > 3 && (
+            <Badge variant="secondary" className="text-xs px-1 py-0">
+              +{task.tags.length - 3}
+            </Badge>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between ml-4">
-        <Badge
-          variant={
-            task.priority === "urgent"
-              ? "destructive"
-              : task.priority === "high"
-              ? "destructive"
-              : task.priority === "medium"
-              ? "default"
-              : "secondary"
-          }
-          className="text-xs px-1 py-0"
-        >
-          {task.priority}
-        </Badge>
+        <div className="flex items-center gap-1">
+          <Badge
+            variant={
+              task.priority === "urgent"
+                ? "destructive"
+                : task.priority === "high"
+                ? "destructive"
+                : task.priority === "medium"
+                ? "default"
+                : "secondary"
+            }
+            className="text-xs px-1 py-0"
+          >
+            {task.priority}
+          </Badge>
+          {dueDateStatus && (
+            <span className={`text-xs font-medium ${dueDateStatus.color}`}>
+              {dueDateStatus.text}
+            </span>
+          )}
+        </div>
 
         <Badge variant="outline" className="text-xs px-1 py-0">
           {task.type.replace("github-", "")}
@@ -177,12 +228,23 @@ export function KanbanBoard() {
     deleteTask,
     clearGitHubTasks,
   } = useKanbanStore();
+  const { orgData } = useAuthStore();
   const [activeTask, setActiveTask] = useState<KanbanTask | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [addTaskColumnId, setAddTaskColumnId] = useState<string | null>(null);
   const [isClearing, setIsClearing] = useState(false);
+  const [showColumnManagement, setShowColumnManagement] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [closeOnGitHub, setCloseOnGitHub] = useState(false);
+  const [pendingMove, setPendingMove] = useState<{
+    taskId: string;
+    fromColumnId: string;
+    toColumnId: string;
+    newIndex: number;
+  } | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -290,7 +352,76 @@ export function KanbanBoard() {
 
     if (!destinationColumnId) return;
 
-    moveTask(activeId, sourceColumnId, destinationColumnId, destinationIndex);
+    const task = tasks[activeId];
+    if (
+      destinationColumnId === "done" &&
+      task &&
+      (task.type === "github-issue" || task.type === "github-pr") &&
+      task.githubUrl
+    ) {
+      setPendingMove({
+        taskId: activeId,
+        fromColumnId: sourceColumnId,
+        toColumnId: destinationColumnId,
+        newIndex: destinationIndex,
+      });
+      setShowCloseConfirm(true);
+    } else {
+      moveTask(activeId, sourceColumnId, destinationColumnId, destinationIndex);
+    }
+  };
+
+  const handleConfirmClose = async () => {
+    if (!pendingMove) return;
+
+    moveTask(
+      pendingMove.taskId,
+      pendingMove.fromColumnId,
+      pendingMove.toColumnId,
+      pendingMove.newIndex
+    );
+
+    if (closeOnGitHub && orgData?.token) {
+      const task = tasks[pendingMove.taskId];
+      if (task?.githubUrl) {
+        setIsClosing(true);
+        try {
+          const urlParts = task.githubUrl.split("/");
+          const owner = urlParts[urlParts.length - 4];
+          const repo = urlParts[urlParts.length - 3];
+          const number = parseInt(urlParts[urlParts.length - 1], 10);
+
+          githubAPIClient.setToken(orgData.token);
+
+          const result =
+            task.type === "github-issue"
+              ? await githubAPIClient.closeIssue(owner, repo, number)
+              : await githubAPIClient.closePullRequest(owner, repo, number);
+
+          if (result.success) {
+            console.log("Successfully closed on GitHub");
+          } else {
+            console.error("Failed to close on GitHub:", result.error);
+            alert(`Failed to close on GitHub: ${result.error}`);
+          }
+        } catch (error) {
+          console.error("Error closing on GitHub:", error);
+          alert("Error closing on GitHub");
+        } finally {
+          setIsClosing(false);
+        }
+      }
+    }
+
+    setPendingMove(null);
+    setShowCloseConfirm(false);
+    setCloseOnGitHub(false);
+  };
+
+  const handleCancelClose = () => {
+    setPendingMove(null);
+    setShowCloseConfirm(false);
+    setCloseOnGitHub(false);
   };
 
   return (
@@ -298,6 +429,13 @@ export function KanbanBoard() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">Development Tasks</h2>
         <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowColumnManagement(true)}
+            variant="outline"
+            size="sm"
+          >
+            Manage Columns
+          </Button>
           <Button
             onClick={handleClearGitHubTasks}
             variant="outline"
@@ -422,6 +560,46 @@ export function KanbanBoard() {
         isOpen={showAddTaskModal}
         onClose={() => setShowAddTaskModal(false)}
         columnId={addTaskColumnId}
+      />
+
+      <Dialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move to Done</DialogTitle>
+            <DialogDescription>
+              This task is from GitHub. Would you like to close it on GitHub as
+              well?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2 py-4">
+            <Checkbox
+              id="close-github"
+              checked={closeOnGitHub}
+              onCheckedChange={(checked) =>
+                setCloseOnGitHub(checked === true)
+              }
+            />
+            <Label
+              htmlFor="close-github"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Close this {pendingMove && tasks[pendingMove.taskId]?.type === "github-issue" ? "issue" : "PR"} on GitHub
+            </Label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmClose} disabled={isClosing}>
+              {isClosing ? "Closing..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ColumnManagementModal
+        isOpen={showColumnManagement}
+        onClose={() => setShowColumnManagement(false)}
       />
     </div>
   );
