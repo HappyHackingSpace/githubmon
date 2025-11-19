@@ -15,11 +15,9 @@ import {
   Activity,
   Clock,
   TrendingUp,
-  Users,
   Package,
 } from "lucide-react";
 import { usePreferencesStore } from "@/stores/preferences";
-import { githubAPIClient } from "@/lib/api/github-api-client";
 import type { RepositorySearchResult } from "@/types/search";
 
 interface RepoResultLayoutProps {
@@ -37,8 +35,6 @@ export function RepoResultLayout({ result }: RepoResultLayoutProps) {
     async function fetchRepoMetrics() {
       setIsLoading(true);
       try {
-        const [owner, repo] = result.fullName.split("/");
-
         const goodFirstIssuesQuery = `repo:${result.fullName} label:"good first issue" state:open`;
         const goodFirstResponse = await fetch(
           `https://api.github.com/search/issues?q=${encodeURIComponent(goodFirstIssuesQuery)}&per_page=1`

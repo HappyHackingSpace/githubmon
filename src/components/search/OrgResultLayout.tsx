@@ -18,7 +18,6 @@ import {
   HelpCircle,
   TrendingUp,
   Folders,
-  BarChart3,
 } from "lucide-react";
 import { githubAPIClient } from "@/lib/api/github-api-client";
 import type { OrganizationSearchResult } from "@/types/search";
