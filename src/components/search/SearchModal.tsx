@@ -234,7 +234,7 @@ export function SearchModal() {
                     ? "All"
                     : type === "repos"
                     ? "Repositories"
-                    : "Users"}
+                    : "Users & Orgs"}
                 </Button>
               ))}
             </div>
@@ -338,19 +338,19 @@ export function SearchModal() {
             </div>
           )}
 
-          {/* Users */}
+          {/* Users & Organizations */}
           {currentResults.users.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <Users className="w-5 h-5 mr-2" />
-                Users ({currentResults.users.length})
+                Users & Organizations ({currentResults.users.length})
               </h3>
               <Card className="max-h-80 overflow-y-auto">
                 <CardContent className="p-0 divide-y">
                   {currentResults.users.map((user) => (
                     <div
                       key={user.login}
-                      className="flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 group cursor-pointer"
+                      className="flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 group cursor-pointer"
                       onClick={() => handleUserClick(user.login)}
                     >
                       <Image
@@ -361,14 +361,19 @@ export function SearchModal() {
                         className="rounded-full object-cover"
                       />
                       <div className="flex-1 min-w-0">
-                        <span className="font-medium text-indigo-600 group-hover:text-indigo-800 truncate">
-                          {user.login}
-                        </span>
-                        <Badge variant="outline" className="text-xs ml-2">
-                          {user.type}
-                        </Badge>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-indigo-600 group-hover:text-indigo-800 truncate">
+                            {user.login}
+                          </span>
+                          <Badge
+                            variant={user.type === "Organization" ? "default" : "outline"}
+                            className="text-xs"
+                          >
+                            {user.type}
+                          </Badge>
+                        </div>
                         {user.bio && (
-                          <span className="block text-xs text-gray-500 mt-0.5 truncate">
+                          <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                             {user.bio}
                           </span>
                         )}
