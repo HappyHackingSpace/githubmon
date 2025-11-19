@@ -7,7 +7,6 @@ import { useAppStore } from "./app";
 import { useFavoritesStore } from "./favorites";
 import { useNavigationStore } from "./navigation";
 import { useUserScoresStore } from "./userScores";
-import { useDetailPanelStore } from "./detailPanel";
 export { useAuthStore } from "./auth";
 export { usePreferencesStore } from "./preferences";
 export { useSearchStore } from "./search";
