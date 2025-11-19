@@ -61,6 +61,9 @@ export type {
   GitHubCommit,
   ContributorWithRepos,
   GitHubIssue,
+  UserContributions,
+  UserScore,
+  UserScoreCacheEntry,
 } from "./github";
 
 export type ValueOf<T> = T[keyof T];

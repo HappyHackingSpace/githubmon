@@ -4,10 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ExternalLink, Calendar, ListPlus, X, MessageCircle, Star, AlertCircle } from "lucide-react";
 import type { GitHubIssue } from "@/types/quickWins";
+import { UserHoverCard } from "@/components/ui/user-hover-card";
 
 interface CreateColumnsOptions {
   onAddToKanban?: (issue: GitHubIssue) => void;
   onDismiss?: (issueId: number) => void;
+}
+
+function extractIssueNumber(url: string): string | null {
+  const match = url.match(/\/(issues|pull)\/(\d+)/);
+  return match ? match[2] : null;
 }
 
 export const createColumns = (options?: CreateColumnsOptions): ColumnDef<GitHubIssue>[] => [
@@ -24,9 +30,15 @@ export const createColumns = (options?: CreateColumnsOptions): ColumnDef<GitHubI
     ),
     cell: ({ row }) => {
       const issue = row.original;
+      const issueNumber = extractIssueNumber(issue.url);
       return (
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
+            {issueNumber && (
+              <span className="text-sm text-gray-500 dark:text-gray-400 font-mono flex-shrink-0">
+                #{issueNumber}
+              </span>
+            )}
             <a
               href={issue.url}
               target="_blank"
@@ -228,17 +240,19 @@ export const createColumns = (options?: CreateColumnsOptions): ColumnDef<GitHubI
     cell: ({ row }) => {
       const author = row.original.author;
       return (
-        <div className="flex items-center gap-2">
-          <Avatar className="size-6">
-            <AvatarImage src={author.avatar_url} alt={author.login} />
-            <AvatarFallback className="text-xs">
-              {author.login.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-sm text-gray-600 truncate max-w-20">
-            {author.login}
-          </span>
-        </div>
+        <UserHoverCard username={author.login} showScore={true}>
+          <div className="flex items-center gap-2 cursor-pointer">
+            <Avatar className="size-6">
+              <AvatarImage src={author.avatar_url} alt={author.login} />
+              <AvatarFallback className="text-xs">
+                {author.login.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm text-gray-600 truncate max-w-20 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+              {author.login}
+            </span>
+          </div>
+        </UserHoverCard>
       );
     },
     enableSorting: false,
