@@ -201,6 +201,19 @@ class GitHubAPIClient {
     };
   }
 
+  private getHeaders(): HeadersInit {
+    const headers: HeadersInit = {
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "GitHubMon/1.0",
+    };
+
+    if (this.githubToken) {
+      headers["Authorization"] = `Bearer ${this.githubToken}`;
+    }
+
+    return headers;
+  }
+
   // Test GitHub API connection
   async testConnection(): Promise<{
     success: boolean;
