@@ -7,11 +7,12 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { MapPin, Building2, Link as LinkIcon, Calendar, Award } from "lucide-react";
 import { githubAPIClient } from "@/lib/api/github-api-client";
 import type { GitHubUserDetailed } from "@/types/github";
+
+export type UserProfile = GitHubUserDetailed;
 
 interface UserHoverCardProps {
   username: string;
@@ -19,7 +20,7 @@ interface UserHoverCardProps {
   showScore?: boolean;
 }
 
-function calculateOpenSourceScore(profile: GitHubUserDetailed, contributions?: { commits: number; prs: number; stars: number }): number {
+function calculateOpenSourceScore(profile: GitHubUserDetailed | null, contributions?: { commits: number; prs: number; stars: number }): number {
   const commitsScore = (contributions?.commits || 0) * 2;
   const prsScore = (contributions?.prs || 0) * 5;
   const starsScore = contributions?.stars || 0;
@@ -41,7 +42,7 @@ export function UserHoverCard({ username, children, showScore = false }: UserHov
         const userProfile = await githubAPIClient.getUserProfile(username);
         setProfile(userProfile);
 
-        if (showScore) {
+        if (showScore && userProfile) {
           const contributions = await githubAPIClient.getUserContributions(username);
           const calculatedScore = calculateOpenSourceScore(userProfile, contributions);
           setScore(calculatedScore);

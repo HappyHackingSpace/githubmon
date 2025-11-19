@@ -584,7 +584,7 @@ export function Sidebar() {
                   {orgData.username}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">
-                  {orgData.organizationName || "GitHub User"}
+                  {orgData.orgName || "GitHub User"}
                 </div>
               </div>
             </div>

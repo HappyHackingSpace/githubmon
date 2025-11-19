@@ -176,7 +176,7 @@ export function ColumnManagementModal({
   isOpen,
   onClose,
 }: ColumnManagementModalProps) {
-  const { columns, columnOrder, updateColumn, addColumn, deleteColumn, reorderColumns, tasks } =
+  const { columns, columnOrder, updateColumn, addColumn, deleteColumn, reorderColumns } =
     useKanbanStore();
   const [showAddColumn, setShowAddColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState("");
@@ -204,6 +204,10 @@ export function ColumnManagementModal({
       setNewColumnColor("#6366f1");
       setShowAddColumn(false);
     }
+  };
+
+  const handleUpdateColumn = (id: string, title: string, color: string) => {
+    updateColumn(id, { title, color });
   };
 
   const handleDeleteColumn = (columnId: string) => {
@@ -262,7 +266,7 @@ export function ColumnManagementModal({
                     title={column.title}
                     color={column.color}
                     taskCount={column.taskIds.length}
-                    onUpdate={updateColumn}
+                    onUpdate={handleUpdateColumn}
                     onDelete={handleDeleteColumn}
                   />
                 );

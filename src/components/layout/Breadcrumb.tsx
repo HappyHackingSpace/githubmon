@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight, Home } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 const PATH_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
@@ -48,7 +47,7 @@ export function Breadcrumb() {
         <Home className="h-4 w-4" />
       </Link>
 
-      {breadcrumbs.map((crumb, index) => (
+      {breadcrumbs.map((crumb) => (
         <div key={crumb.path} className="flex items-center space-x-2">
           <ChevronRight className="h-4 w-4 text-gray-400" />
           {crumb.isLast ? (

@@ -13,7 +13,6 @@ import {
   FileText,
   Folder,
   File,
-  GitBranch,
   Star,
   GitFork,
   ExternalLink,
@@ -25,7 +24,6 @@ import {
   Copy,
   Check,
 } from "lucide-react"
-import { githubAPIClient } from "@/lib/api/github-api-client"
 import type { TrendingRepo } from "@/types/oss-insight"
 import { usePreferencesStore } from "@/stores"
 
@@ -58,7 +56,7 @@ interface Issue {
   }>
 }
 
-export function RepoDeepDive({ repo, onClose }: RepoDeepDiveProps) {
+export function RepoDeepDive({ repo }: RepoDeepDiveProps) {
   const [activeTab, setActiveTab] = useState("readme")
   const [readme, setReadme] = useState<string | null>(null)
   const [readmeLoading, setReadmeLoading] = useState(false)
@@ -80,6 +78,7 @@ export function RepoDeepDive({ repo, onClose }: RepoDeepDiveProps) {
     } else if (activeTab === "issues" && issues.length === 0) {
       loadIssues()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab])
 
   const loadReadme = async () => {
@@ -286,7 +285,11 @@ export function RepoDeepDive({ repo, onClose }: RepoDeepDiveProps) {
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    code({ node, inline, className, children, ...props }: any) {
+                    code({ inline, className, children, ...props }: {
+                      inline?: boolean
+                      className?: string
+                      children?: React.ReactNode
+                    }) {
                       const match = /language-(\w+)/.exec(className || "")
                       return !inline && match ? (
                         <SyntaxHighlighter
