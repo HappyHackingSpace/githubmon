@@ -1203,6 +1203,129 @@ class GitHubGraphQLClient {
     }
   }
 
+  async getTopContributors(limit = 10): Promise<TopContributor[]> {
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    const dateString = oneDayAgo.toISOString().split("T")[0];
+
+    const query = `
+      query GetTopContributors($searchQuery: String!, $limit: Int!) {
+        search(query: $searchQuery, type: USER, first: $limit) {
+          nodes {
+            ... on User {
+              login
+              name
+              avatarUrl
+              url
+              bio
+              location
+              company
+              followers {
+                totalCount
+              }
+              repositories(first: 100, ownerAffiliations: OWNER, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                totalCount
+                nodes {
+                  stargazerCount
+                  primaryLanguage {
+                    name
+                  }
+                }
+              }
+              contributionsCollection(from: $since) {
+                contributionCalendar {
+                  totalContributions
+                }
+              }
+            }
+          }
+        }
+        rateLimit {
+          limit
+          cost
+          remaining
+          resetAt
+        }
+      }
+    `;
+
+    try {
+      const since = oneDayAgo.toISOString();
+      const searchQuery = `created:>${dateString} sort:joined`;
+
+      const result = await this.query<{
+        search: {
+          nodes: Array<GraphQLUser & {
+            contributionsCollection: {
+              contributionCalendar: {
+                totalContributions: number;
+              };
+            };
+          }>;
+        };
+        rateLimit: RateLimit;
+      }>(query, { searchQuery, limit, since });
+
+      return result.data.search.nodes.map((user) => {
+        const repositories = user.repositories.nodes || [];
+        const totalStars = repositories.reduce(
+          (sum, repo) => sum + (repo.stargazerCount || 0),
+          0
+        );
+
+        const languageCounts: Record<string, number> = {};
+        repositories.forEach((repo) => {
+          const lang = repo.primaryLanguage?.name;
+          if (lang) {
+            languageCounts[lang] = (languageCounts[lang] || 0) + 1;
+          }
+        });
+
+        const topLanguages = Object.entries(languageCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([lang]) => lang);
+
+        return {
+          login: user.login,
+          name: user.name || undefined,
+          avatar_url: user.avatarUrl,
+          html_url: user.url,
+          contributions: user.contributionsCollection.contributionCalendar.totalContributions,
+          repos_count: user.repositories.totalCount,
+          stars_earned: totalStars,
+          followers_count: user.followers.totalCount,
+          languages: topLanguages,
+          type: "User" as const,
+          bio: user.bio || "",
+          location: user.location || undefined,
+          company: user.company || undefined,
+          rank: 0,
+          rank_change: 0,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to fetch top contributors:", error);
+      return [];
+    }
+  }
+
+  async getTrendingRepositories(language: string | null = null, limit = 10): Promise<TrendingRepo[]> {
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    const dateString = oneDayAgo.toISOString().split("T")[0];
+
+    const languageFilter = language ? ` language:${language}` : "";
+    const searchQuery = `stars:>50 created:>${dateString}${languageFilter} sort:stars`;
+
+    try {
+      return await this.searchRepositories(searchQuery, "STARS", limit);
+    } catch (error) {
+      console.error("Failed to fetch trending repositories:", error);
+      return [];
+    }
+  }
+
   async getUserAnalytics(username: string): Promise<UserAnalyticsResult | null> {
     const query = `
       query GetUserAnalytics($username: String!) {

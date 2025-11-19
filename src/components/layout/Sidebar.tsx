@@ -180,11 +180,22 @@ export function Sidebar() {
         <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
           {!sidebarCollapsed ? (
             <>
-              <div>
-                <h2 className="text-lg font-bold text-sidebar-foreground">
-                  GitHubMon
-                </h2>
-                <p className="text-xs text-muted-foreground">OSS Analytics</p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSidebarCollapsed(true)}
+                  className="hidden lg:flex h-8 w-8 p-0"
+                  title="Collapse sidebar"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </Button>
+                <div>
+                  <h2 className="text-lg font-bold text-sidebar-foreground">
+                    GitHubMon
+                  </h2>
+                  <p className="text-xs text-muted-foreground">OSS Analytics</p>
+                </div>
               </div>
               <button
                 onClick={() => setOpen(false)}
@@ -195,7 +206,15 @@ export function Sidebar() {
             </>
           ) : (
             <div className="w-full flex justify-center">
-              <span className="text-lg font-bold text-sidebar-foreground">G</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarCollapsed(false)}
+                className="h-8 w-8 p-0"
+                title="Expand sidebar"
+              >
+                <PanelLeftOpen className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </div>
@@ -472,26 +491,6 @@ export function Sidebar() {
         </div>
 
         <div className="p-4 border-t border-sidebar-border flex-shrink-0 space-y-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={`w-full ${sidebarCollapsed ? "justify-center px-2" : "justify-start"} text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50 hidden lg:flex`}
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {sidebarCollapsed ? (
-              <>
-                <PanelLeftOpen className="w-4 h-4" aria-hidden="true" />
-                <span className="sr-only">Expand sidebar</span>
-              </>
-            ) : (
-              <>
-                <PanelLeftClose className="w-4 h-4 mr-2" aria-hidden="true" />
-                <span>Collapse</span>
-              </>
-            )}
-          </Button>
-
 
         </div>
         {/* Footer - Modern User Profile Bar */}
