@@ -579,9 +579,9 @@ export function ProtectedComponent() {
   return <SecureContent />
 }
 
-// In API routes
-import { getServerSession } from 'next-auth'
-import { authOptions } from '../auth/[...nextauth]/route'
+// In API routes (NextAuth v4 with Next.js App Router)
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -593,6 +593,56 @@ export async function GET(request: Request) {
   // Use session.accessToken for GitHub API
 }
 ```
+
+### NextAuth Best Practices
+
+**IMPORTANT: Correct Imports for Next.js 15 App Router**
+
+✅ **DO:**
+```typescript
+// Correct import for NextAuth v4 with App Router
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
+
+export async function GET() {
+  const session = await getServerSession(authOptions)
+  // ...
+}
+```
+
+❌ **DON'T:**
+```typescript
+// WRONG - Will cause "Module has no exported member" error
+import { getServerSession } from 'next-auth'  // ❌ Missing '/next'
+import { authOptions } from '../auth/[...nextauth]/route'  // ❌ Route files can't export custom values
+```
+
+**Key Points:**
+1. **Import Path**: Always use `next-auth/next` (not `next-auth`) for App Router
+2. **Auth Config Location**: Store `authOptions` in `src/lib/auth.ts` (not in route files)
+3. **Type Safety**: Export `authOptions` with `NextAuthOptions` type for TypeScript
+4. **Route Files**: Next.js route files can ONLY export `GET`, `POST`, etc. - no custom exports
+
+**Configuration Structure:**
+```typescript
+// src/lib/auth.ts
+import { NextAuthOptions } from "next-auth"
+import GitHubProvider from "next-auth/providers/github"
+
+export const authOptions: NextAuthOptions = {
+  providers: [GitHubProvider({...})],
+  callbacks: {...},
+  pages: {...}
+}
+
+// src/app/api/auth/[...nextauth]/route.ts
+import NextAuth from "next-auth/next"
+import { authOptions } from "@/lib/auth"
+
+const handler = NextAuth(authOptions)
+export { handler as GET, handler as POST }
+```
+
 
 ---
 
@@ -691,8 +741,8 @@ export async function GET(request: Request) {
 
 2. **Add authentication** (if needed):
    ```typescript
-   import { getServerSession } from 'next-auth'
-   import { authOptions } from '../auth/[...nextauth]/route'
+   import { getServerSession } from 'next-auth/next'
+   import { authOptions } from '@/lib/auth'
 
    export async function GET(request: NextRequest) {
      const session = await getServerSession(authOptions)
