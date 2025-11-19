@@ -17,6 +17,7 @@ export { useKanbanStore } from "./kanban";
 export { useFavoritesStore } from "./favorites";
 export { useNavigationStore } from "./navigation";
 export { useUserScoresStore } from "./userScores";
+export { useDetailPanelStore } from "./detailPanel";
 
 // ============ HYDRATION HOOK ============
 

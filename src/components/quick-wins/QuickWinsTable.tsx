@@ -47,6 +47,8 @@ import { createColumns } from "./columns";
 import type { GitHubIssue } from "@/types/quickWins";
 import { useKanbanStore } from "@/stores/kanban";
 import { useQuickWinsStore } from "@/stores/quickWins";
+import { useDetailPanelStore } from "@/stores/detailPanel";
+import { DetailPanel } from "@/components/ui/detail-panel";
 
 interface QuickWinsTableProps {
   data: GitHubIssue[];
@@ -76,6 +78,7 @@ export function QuickWinsTable({
   const dismissedIssues = useQuickWinsStore((state) => state.dismissedIssues);
   const dismissIssue = useQuickWinsStore((state) => state.dismissIssue);
   const isHydrated = useQuickWinsStore((state) => state.isHydrated);
+  const { selectedIssue, isOpen, closePanel, openPanel } = useDetailPanelStore();
 
   const handleAddToKanban = useCallback((issue: GitHubIssue) => {
     addTask({
@@ -273,7 +276,12 @@ export function QuickWinsTable({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-muted/50"
+                    className="hover:bg-muted/50 cursor-pointer"
+                    onClick={(e) => {
+                      if (!(e.target as HTMLElement).closest('button, a, input')) {
+                        openPanel(row.original as unknown as import("@/components/ui/detail-panel").DetailPanelIssue);
+                      }
+                    }}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="px-4 py-3">
@@ -395,6 +403,7 @@ export function QuickWinsTable({
           </div>
         </div>
       </CardContent>
+      <DetailPanel issue={selectedIssue} isOpen={isOpen} onClose={closePanel} />
     </Card>
   );
 }
