@@ -1,10 +1,8 @@
-import { useRequireAuth } from "@/hooks/useAuth";
 import { useDataCacheStore } from "@/stores/cache";
 import { AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export function PageHeader() {
-  const { orgData } = useRequireAuth();
   const { rateLimitInfo } = useDataCacheStore();
 
   const isRateLimitCritical =
@@ -14,14 +12,6 @@ export function PageHeader() {
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b pb-4 top-0 z-10">
-      <div className="flex flex-row items-center gap-4">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Good morning, {orgData?.orgName || "Developer"}!
-        </h1>
-        <p className="text-gray-600 dark:text-gray-300 mt-1">
-          Last updated: {new Date().toLocaleTimeString()}
-        </p>
-      </div>
 
       <div className="flex items-center gap-3">
         {isRateLimitCritical && (

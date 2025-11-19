@@ -24,7 +24,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       
       <main className="lg:ml-64 ml-0 h-full overflow-auto">
         <div className="p-6">
-          <Breadcrumb />
+          {/* <Breadcrumb /> */}
           {children}
         </div>
       </main>

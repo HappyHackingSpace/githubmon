@@ -9,7 +9,6 @@ import {
   useAuthStore,
   useStoreHydration,
   useActionItemsStore,
-  useNavigationStore,
   usePreferencesStore,
 } from "@/stores";
 import { useQuickWinsStore } from "@/stores/quickWins";
@@ -47,7 +46,6 @@ export function Sidebar() {
   const { isConnected, logout, orgData } = useAuthStore();
 
   const { getCountByType, loading } = useActionItemsStore();
-  const { recentPages } = useNavigationStore();
   const { pinnedRepos } = usePreferencesStore();
 
   const {
@@ -73,7 +71,6 @@ export function Sidebar() {
       setQuickWinsOpen(true);
     }
 
-    // Only close accordions if we're going to dashboard or other pages
     if (
       pathname === "/dashboard" ||
       pathname === "/settings" ||
@@ -87,7 +84,6 @@ export function Sidebar() {
 
   // Accordion toggle handlers
   const handleActionRequiredToggle = (open: boolean) => {
-    // If we're on action-required page and trying to close, don't allow it
     if (!open && pathname === "/action-required") {
       return;
     }
@@ -95,7 +91,6 @@ export function Sidebar() {
   };
 
   const handleQuickWinsToggle = (open: boolean) => {
-    // If we're on quick-wins page and trying to close, don't allow it
     if (!open && pathname === "/quick-wins") {
       return;
     }
@@ -104,7 +99,6 @@ export function Sidebar() {
 
   const currentTab = searchParams?.get("tab") || "assigned";
 
-  // Memoize badge count calculations to prevent unnecessary re-calculations
   const getBadgeCount = useMemo(() => {
     return (
       type: "assigned" | "mentions" | "stale" | "goodFirstIssues" | "easyFixes"
@@ -461,36 +455,7 @@ export function Sidebar() {
                 {!sidebarCollapsed && <span>Favorites</span>}
                 {sidebarCollapsed && <span className="sr-only">Favorites</span>}
               </Link>
-              {!sidebarCollapsed && (
-                <>
-                  <div className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-5 h-5" />
-                      <span>Recent</span>
-                    </div>
-                    <span className="text-xs">Soon</span>
-                  </div>
-                </>
-              )}
-              {hasHydrated && recentPages.length > 0 && (
-                <div className="mt-6">
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Recent Pages
-                  </div>
-                  <div className="space-y-1">
-                    {recentPages.slice(0, 5).map((page) => (
-                      <Link
-                        key={page.path}
-                        href={page.path}
-                        className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-sidebar-accent/50 transition-colors"
-                      >
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span className="truncate">{page.title}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
+            
 
               {/* Pinned Repositories */}
               {hasHydrated && pinnedRepos.length > 0 && (
@@ -540,37 +505,7 @@ export function Sidebar() {
             )}
           </Button>
 
-          {!sidebarCollapsed && (
-            <div className="flex items-center justify-between px-3 py-1">
-              <span className="text-xs text-muted-foreground">Theme</span>
-              <ThemeToggle />
-            </div>
-          )}
 
-          {hasHydrated && isConnected && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className={`w-full ${sidebarCollapsed ? "justify-center px-2" : "justify-start"} text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50 disabled:opacity-50`}
-              aria-label={isLoggingOut ? "Logging out..." : "Logout"}
-            >
-              {isLoggingOut ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                  {sidebarCollapsed && <span className="sr-only">Logging out...</span>}
-                </>
-              ) : (
-                <>
-                  <LogOut className="w-4 h-4" aria-hidden="true" />
-                  {sidebarCollapsed && <span className="sr-only">Logout</span>}
-                </>
-              )}
-              {!sidebarCollapsed && !isLoggingOut && <span className="ml-2">Logout</span>}
-              {!sidebarCollapsed && isLoggingOut && <span className="ml-2">Logging out...</span>}
-            </Button>
-          )}
         </div>
         {/* Footer - Modern User Profile Bar */}
         {hasHydrated && isConnected && orgData && (
