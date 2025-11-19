@@ -175,7 +175,7 @@ export function Sidebar() {
       <aside
         className={`
         fixed top-0 left-0 bg-sidebar border-r border-sidebar-border z-50 transform transition-all duration-300 ease-in-out
-        ${sidebarCollapsed ? "w-16" : "w-64"}
+        ${sidebarCollapsed ? "lg:w-16 w-64" : "w-64"}
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0
         flex flex-col
@@ -218,10 +218,11 @@ export function Sidebar() {
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   }`}
-                title={sidebarCollapsed ? "Dashboard" : ""}
+                aria-label="Dashboard"
               >
-                <Home className="w-5 h-5" />
+                <Home className="w-5 h-5" aria-hidden="true" />
                 {!sidebarCollapsed && <span>Dashboard</span>}
+                {sidebarCollapsed && <span className="sr-only">Dashboard</span>}
               </Link>
 
               <div>
@@ -234,9 +235,10 @@ export function Sidebar() {
                           ? "bg-sidebar-accent text-sidebar-accent-foreground"
                           : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                       }`}
-                    title="Action Required"
+                    aria-label="Action Required"
                   >
-                    <Zap className="w-5 h-5" />
+                    <Zap className="w-5 h-5" aria-hidden="true" />
+                    <span className="sr-only">Action Required</span>
                   </Link>
                 ) : (
                   <>
@@ -347,9 +349,10 @@ export function Sidebar() {
                           ? "bg-sidebar-accent text-sidebar-accent-foreground"
                           : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                       }`}
-                    title="Quick Wins"
+                    aria-label="Quick Wins"
                   >
-                    <Target className="w-5 h-5" />
+                    <Target className="w-5 h-5" aria-hidden="true" />
+                    <span className="sr-only">Quick Wins</span>
                   </Link>
                 ) : (
                   <>
@@ -437,10 +440,11 @@ export function Sidebar() {
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   }`}
-                title={sidebarCollapsed ? "Settings" : ""}
+                aria-label="Settings"
               >
-                <Wrench className="w-5 h-5" />
+                <Wrench className="w-5 h-5" aria-hidden="true" />
                 {!sidebarCollapsed && <span>Settings</span>}
+                {sidebarCollapsed && <span className="sr-only">Settings</span>}
               </Link>
 
               <Link
@@ -451,10 +455,11 @@ export function Sidebar() {
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   }`}
-                title={sidebarCollapsed ? "Favorites" : ""}
+                aria-label="Favorites"
               >
-                <Star className="w-5 h-5" />
+                <Star className="w-5 h-5" aria-hidden="true" />
                 {!sidebarCollapsed && <span>Favorites</span>}
+                {sidebarCollapsed && <span className="sr-only">Favorites</span>}
               </Link>
               {!sidebarCollapsed && (
                 <>
@@ -520,13 +525,16 @@ export function Sidebar() {
             size="sm"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className={`w-full ${sidebarCollapsed ? "justify-center px-2" : "justify-start"} text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50 hidden lg:flex`}
-            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {sidebarCollapsed ? (
-              <PanelLeftOpen className="w-4 h-4" />
+              <>
+                <PanelLeftOpen className="w-4 h-4" aria-hidden="true" />
+                <span className="sr-only">Expand sidebar</span>
+              </>
             ) : (
               <>
-                <PanelLeftClose className="w-4 h-4 mr-2" />
+                <PanelLeftClose className="w-4 h-4 mr-2" aria-hidden="true" />
                 <span>Collapse</span>
               </>
             )}
@@ -546,12 +554,18 @@ export function Sidebar() {
               onClick={handleLogout}
               disabled={isLoggingOut}
               className={`w-full ${sidebarCollapsed ? "justify-center px-2" : "justify-start"} text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50 disabled:opacity-50`}
-              title={sidebarCollapsed ? "Logout" : ""}
+              aria-label={isLoggingOut ? "Logging out..." : "Logout"}
             >
               {isLoggingOut ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                  {sidebarCollapsed && <span className="sr-only">Logging out...</span>}
+                </>
               ) : (
-                <LogOut className="w-4 h-4" />
+                <>
+                  <LogOut className="w-4 h-4" aria-hidden="true" />
+                  {sidebarCollapsed && <span className="sr-only">Logout</span>}
+                </>
               )}
               {!sidebarCollapsed && !isLoggingOut && <span className="ml-2">Logout</span>}
               {!sidebarCollapsed && isLoggingOut && <span className="ml-2">Logging out...</span>}

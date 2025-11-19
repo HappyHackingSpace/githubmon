@@ -238,6 +238,17 @@ class GitHubAPIClient {
     }
   }
 
+  private getRequestHeaders(): HeadersInit {
+    const headers: HeadersInit = {
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "GitHubMon/1.0",
+    };
+    if (this.githubToken) {
+      headers["Authorization"] = `Bearer ${this.githubToken}`;
+    }
+    return headers;
+  }
+
   private async fetchWithCache<T>(
     endpoint: string,
     useGithub = false,
@@ -871,7 +882,14 @@ class GitHubAPIClient {
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
       const eventsEndpoint = `/users/${username}/events/public?per_page=100`;
-      const events = await this.fetchWithCache<Array<{ type: string; created_at: string }>>(
+      const events = await this.fetchWithCache<Array<{
+        type: string;
+        created_at: string;
+        payload?: {
+          commits?: unknown[];
+          size?: number;
+        };
+      }>>(
         eventsEndpoint,
         true
       );
@@ -885,7 +903,7 @@ class GitHubAPIClient {
           if (eventDate < threeMonthsAgo) continue;
 
           if (event.type === "PushEvent") {
-            commits += 1;
+            commits += event.payload?.commits?.length || event.payload?.size || 1;
           } else if (event.type === "PullRequestEvent") {
             prs += 1;
           }
@@ -893,8 +911,8 @@ class GitHubAPIClient {
       }
 
       const starredEndpoint = `/users/${username}/starred?per_page=1`;
-      const response = await fetch(`https://api.github.com${starredEndpoint}`, {
-        headers: this.getHeaders(),
+      const response = await fetch(`${this.baseUrl}${starredEndpoint}`, {
+        headers: this.getRequestHeaders(),
       });
       const linkHeader = response.headers.get("link");
       let stars = 0;
