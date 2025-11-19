@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo } from "react";
 import { usePreferencesStore } from "@/stores/preferences";
 import { useFavoritesStore } from "@/stores/favorites";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Lightbulb, Star, Code, ExternalLink } from "lucide-react";
 import type { TrendingRepo } from "@/types/oss-insight";

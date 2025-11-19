@@ -39,7 +39,7 @@ if (
   );
 }
 
-const authOptions = {
+export const authOptions = {
   secret: NEXTAUTH_SECRET,
   providers: [
     GitHubProvider({
