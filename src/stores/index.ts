@@ -6,6 +6,7 @@ import { useDataCacheStore } from "./cache";
 import { useAppStore } from "./app";
 import { useFavoritesStore } from "./favorites";
 import { useNavigationStore } from "./navigation";
+import { useUserScoresStore } from "./userScores";
 export { useAuthStore } from "./auth";
 export { usePreferencesStore } from "./preferences";
 export { useSearchStore } from "./search";
@@ -15,6 +16,7 @@ export { useActionItemsStore } from "./actionItems";
 export { useKanbanStore } from "./kanban";
 export { useFavoritesStore } from "./favorites";
 export { useNavigationStore } from "./navigation";
+export { useUserScoresStore } from "./userScores";
 
 // ============ HYDRATION HOOK ============
 
@@ -33,6 +35,7 @@ const hydrateStores = async () => {
       useDataCacheStore.persist.rehydrate(),
       useFavoritesStore.persist.rehydrate(),
       useNavigationStore.persist.rehydrate(),
+      useUserScoresStore.persist.rehydrate(),
     ]);
     isHydrated = true;
   })();

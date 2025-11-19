@@ -346,3 +346,23 @@ export type GitHubUserType = "User" | "Organization";
 export type GitHubRepoVisibility = "public" | "private";
 export type GitHubIssueState = "open" | "closed";
 export type GitHubPRState = "open" | "closed" | "merged";
+
+export interface UserContributions {
+  commits: number;
+  prs: number;
+  stars: number;
+}
+
+export interface UserScore {
+  username: string;
+  score: number;
+  contributions: UserContributions;
+  calculatedAt: string;
+  level: "beginner" | "intermediate" | "advanced" | "expert" | "master";
+}
+
+export interface UserScoreCacheEntry {
+  username: string;
+  score: UserScore;
+  fetchedAt: number;
+}
