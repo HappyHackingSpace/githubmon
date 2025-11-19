@@ -45,6 +45,18 @@ import {
 import type { TrendingRepo, TopContributor } from "@/types/oss-insight";
 import { AreaChart, BarChart, LineChart } from "@/components/charts";
 import ChartWrapper from "@/components/charts/ChartWrapper";
+import { RepoResultLayout } from "@/components/search/RepoResultLayout";
+import { UserResultLayout } from "@/components/search/UserResultLayout";
+import { OrgResultLayout } from "@/components/search/OrgResultLayout";
+import {
+  convertRepoToUnified,
+  convertUserToUnified,
+  detectSearchResultType,
+  isRepositoryResult,
+  isUserResult,
+  isOrganizationResult,
+} from "@/types/search";
+import type { UnifiedSearchResult } from "@/types/search";
 
 interface UserBehaviorData extends Record<string, string | number> {
   day: string;
@@ -108,6 +120,8 @@ function SearchContent() {
     null
   );
   const [loadingAnalytics, setLoadingAnalytics] = useState<boolean>(false);
+  const [unifiedResult, setUnifiedResult] = useState<UnifiedSearchResult | null>(null);
+  const [showLegacyView, setShowLegacyView] = useState<boolean>(false);
 
   const loadUserAnalytics = useCallback(async () => {
     if (!userParam) return;
@@ -259,6 +273,7 @@ function SearchContent() {
   ]);
   const performSearch = async (query: string, type: "users" | "repos") => {
     setSearchResults((prev) => ({ ...prev, loading: true, error: null }));
+    setUnifiedResult(null);
 
     try {
       if (type === "users") {
@@ -269,6 +284,16 @@ function SearchContent() {
           loading: false,
           error: null,
         });
+
+        if (users && users.length > 0) {
+          const resultType = detectSearchResultType(query, { repos: [], users });
+
+          if (resultType === "user" || resultType === "organization") {
+            const firstUser = users[0];
+            const converted = convertUserToUnified(firstUser);
+            setUnifiedResult(converted);
+          }
+        }
       } else {
         const repos = await githubAPIClient.searchRepositories(
           query,
@@ -281,6 +306,15 @@ function SearchContent() {
           loading: false,
           error: null,
         });
+
+        if (repos && repos.length > 0) {
+          const resultType = detectSearchResultType(query, { repos, users: [] });
+
+          if (resultType === "repository" && repos.length === 1) {
+            const converted = convertRepoToUnified(repos[0]);
+            setUnifiedResult(converted);
+          }
+        }
       }
     } catch (error) {
       setSearchResults({
@@ -326,10 +360,41 @@ function SearchContent() {
           </div>
         )}
 
+        {/* Polymorphic Search Results */}
+        {unifiedResult && !showLegacyView && !searchResults.loading && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-2xl font-bold">
+                {isRepositoryResult(unifiedResult) && "Repository"}
+                {isUserResult(unifiedResult) && "User Profile"}
+                {isOrganizationResult(unifiedResult) && "Organization"}
+              </h1>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowLegacyView(true)}
+              >
+                Show Legacy View
+              </Button>
+            </div>
+
+            {isRepositoryResult(unifiedResult) && (
+              <RepoResultLayout result={unifiedResult} />
+            )}
+            {isUserResult(unifiedResult) && (
+              <UserResultLayout result={unifiedResult} />
+            )}
+            {isOrganizationResult(unifiedResult) && (
+              <OrgResultLayout result={unifiedResult} />
+            )}
+          </div>
+        )}
+
         {/* User Results with Analytics */}
         {userParam &&
           searchResults.users.length > 0 &&
-          !searchResults.loading && (
+          !searchResults.loading &&
+          (showLegacyView || !unifiedResult) && (
             <div className="space-y-8">
               {/* User Profile Section */}
               <div></div>
@@ -924,7 +989,8 @@ function SearchContent() {
         {/* Repository Results */}
         {repoParam &&
           searchResults.repos.length > 0 &&
-          !searchResults.loading && (
+          !searchResults.loading &&
+          (showLegacyView || !unifiedResult) && (
             <div>
               <div className="flex items-center mb-6">
                 <Package className="w-6 h-6 mr-2" />
