@@ -16,6 +16,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { UserHoverCard } from "@/components/ui/user-hover-card";
 import {
   Table,
   TableBody,
@@ -39,11 +40,12 @@ import {
   Loader2,
   Plus,
 } from "lucide-react";
-import { useActionItemsStore, useKanbanStore } from "@/stores";
+import { useActionItemsStore, useKanbanStore, useDetailPanelStore } from "@/stores";
 import type { ActionItem as StoreActionItem } from "@/stores/actionItems";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchModal } from "@/components/search/SearchModal";
 import { QuickActionsMenu } from "@/components/action-required/QuickActionsMenu";
+import { DetailPanel } from "@/components/ui/detail-panel";
 
 interface ActionItem {
   id: string | number;
@@ -116,6 +118,7 @@ function ActionRequiredContent() {
     refreshData,
   } = useActionItemsStore();
 
+  const { selectedIssue, isOpen, closePanel } = useDetailPanelStore();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -222,6 +225,7 @@ function ActionRequiredContent() {
     const [selectedLanguage, setSelectedLanguage] = useState<string>("all");
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
     const { addTaskFromActionItem } = useKanbanStore();
+    const { openPanel } = useDetailPanelStore();
 
     const repositories = useMemo(() => {
       const repos = new Set(items.map((item: ActionItem) => item.repo));
@@ -429,7 +433,12 @@ function ActionRequiredContent() {
               {filteredItems.map((item: ActionItem) => (
               <TableRow
                 key={item.id}
-                className={getStaleRowClassName(item.daysOld)}
+                className={`${getStaleRowClassName(item.daysOld)} cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50`}
+                onClick={(e) => {
+                  if (!(e.target as HTMLElement).closest('button, a, input')) {
+                    openPanel(item as unknown as import("@/components/ui/detail-panel").DetailPanelIssue);
+                  }
+                }}
               >
                 <TableCell>
                   <Checkbox
@@ -488,14 +497,19 @@ function ActionRequiredContent() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={item.author.avatarUrl} alt={item.author.login} />
-                      <AvatarFallback>
-                        {item.author.login.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
+                  <UserHoverCard username={item.author.login} showScore={true}>
+                    <div className="flex items-center gap-2 cursor-pointer">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={item.author.avatarUrl} alt={item.author.login} />
+                        <AvatarFallback>
+                          {item.author.login.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors truncate max-w-20">
+                        {item.author.login}
+                      </span>
+                    </div>
+                  </UserHoverCard>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
@@ -717,6 +731,8 @@ function ActionRequiredContent() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <DetailPanel issue={selectedIssue} isOpen={isOpen} onClose={closePanel} />
     </div>
   );
 }
