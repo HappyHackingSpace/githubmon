@@ -7,6 +7,7 @@ import { useAppStore } from "./app";
 import { useFavoritesStore } from "./favorites";
 import { useNavigationStore } from "./navigation";
 import { useUserScoresStore } from "./userScores";
+import { useDetailPanelStore } from "./detailPanel";
 export { useAuthStore } from "./auth";
 export { usePreferencesStore } from "./preferences";
 export { useSearchStore } from "./search";
@@ -17,6 +18,7 @@ export { useKanbanStore } from "./kanban";
 export { useFavoritesStore } from "./favorites";
 export { useNavigationStore } from "./navigation";
 export { useUserScoresStore } from "./userScores";
+export { useDetailPanelStore } from "./detailPanel";
 
 // ============ HYDRATION HOOK ============
 
