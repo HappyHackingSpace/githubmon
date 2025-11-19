@@ -1,23 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { UserMetrics } from "@/stores/favorites";
-
-interface GitHubUserResponse {
-  login: string;
-  avatar_url: string;
-  html_url: string;
-  bio: string | null;
-  public_repos: number;
-  followers: number;
-}
-
-interface GitHubRepoResponse {
-  language: string | null;
-}
-
-interface GitHubEventResponse {
-  type: string;
-  created_at: string;
-}
+import { githubGraphQLClient } from "@/lib/api/github-graphql-client";
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,7 +36,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const token = authData.orgData.token;
+    githubGraphQLClient.setToken(authData.orgData.token);
 
     const { searchParams } = new URL(request.url);
     const username = searchParams.get("username");
@@ -66,77 +48,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const headers: HeadersInit = {
-      Accept: "application/vnd.github.v3+json",
-      "User-Agent": "GitHubMon/1.0",
-      Authorization: `Bearer ${token}`,
-    };
+    const metrics = await githubGraphQLClient.getUserMetrics(username);
 
-    const userResponse = await fetch(
-      `https://api.github.com/users/${username}`,
-      { headers }
-    );
-
-    if (!userResponse.ok) {
-      throw new Error(
-        `Failed to fetch user: ${userResponse.status} ${userResponse.statusText}`
+    if (!metrics) {
+      return NextResponse.json(
+        { error: "User not found or data could not be retrieved" },
+        { status: 404 }
       );
     }
-
-    const userData: GitHubUserResponse = await userResponse.json();
-
-    const oneDayAgo = new Date();
-    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-
-    const eventsResponse = await fetch(
-      `https://api.github.com/users/${username}/events?per_page=100`,
-      { headers }
-    );
-
-    let recentActivity = 0;
-    if (eventsResponse.ok) {
-      const events: GitHubEventResponse[] = await eventsResponse.json();
-      recentActivity = events.filter((event) => {
-        const eventDate = new Date(event.created_at);
-        return eventDate >= oneDayAgo;
-      }).length;
-    }
-
-    const reposResponse = await fetch(
-      `https://api.github.com/users/${username}/repos?per_page=30&sort=updated`,
-      { headers }
-    );
-
-    const topLanguages: string[] = [];
-    if (reposResponse.ok) {
-      const repos: GitHubRepoResponse[] = await reposResponse.json();
-      const languageCounts: Record<string, number> = {};
-
-      repos.forEach((repo) => {
-        if (repo.language) {
-          languageCounts[repo.language] =
-            (languageCounts[repo.language] || 0) + 1;
-        }
-      });
-
-      const sortedLanguages = Object.entries(languageCounts)
-        .sort((a, b) => b[1] - a[1])
-        .map(([lang]) => lang)
-        .slice(0, 3);
-
-      topLanguages.push(...sortedLanguages);
-    }
-
-    const metrics: UserMetrics = {
-      username: userData.login,
-      avatarUrl: userData.avatar_url,
-      recentActivity,
-      topLanguages,
-      reposCount: userData.public_repos,
-      followers: userData.followers,
-      bio: userData.bio,
-      url: userData.html_url,
-    };
 
     return NextResponse.json(metrics);
   } catch (error) {
