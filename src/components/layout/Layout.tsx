@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { Sidebar } from "./Sidebar";
 import { useSidebarState } from "@/stores";
 import { SidebarToggle } from "./SidebarToggle";
-import { Breadcrumb } from "./Breadcrumb";
+// import { Breadcrumb } from "./Breadcrumb";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { setOpen } = useSidebarState();

@@ -426,35 +426,22 @@ export function Sidebar() {
                 )}
               </div>
 
-              <Link
-                href="/settings"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors
-                  ${
-                    pathname.startsWith("/settings")
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  }`}
-                aria-label="Settings"
-              >
-                <Wrench className="w-5 h-5" aria-hidden="true" />
-                {!sidebarCollapsed && <span>Settings</span>}
-                {sidebarCollapsed && <span className="sr-only">Settings</span>}
-              </Link>
+                <Link
+                  href="/favorites"
+                  className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors
+                    ${
+                      pathname === "/favorites"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    }`}
+                  aria-label="Favorites"
+                >
+                  <Star className="w-5 h-5" aria-hidden="true" />
+                  {!sidebarCollapsed && <span>Favorites</span>}
+                  {sidebarCollapsed && <span className="sr-only">Favorites</span>}
+                </Link>
+              
 
-              <Link
-                href="/favorites"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors
-                  ${
-                    pathname === "/favorites"
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  }`}
-                aria-label="Favorites"
-              >
-                <Star className="w-5 h-5" aria-hidden="true" />
-                {!sidebarCollapsed && <span>Favorites</span>}
-                {sidebarCollapsed && <span className="sr-only">Favorites</span>}
-              </Link>
             
 
               {/* Pinned Repositories */}
