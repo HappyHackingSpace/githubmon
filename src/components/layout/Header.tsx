@@ -15,25 +15,23 @@ export function Header() {
   return (
     <header className="bg-background/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-0.5">
+        <div className="flex justify-between items-center py-3">
           <div className="flex items-center space-x-4">
             <AnimatedLogo />
           </div>
-          {/* Search Bar */}
-          <Button
-            variant="outline"
-            onClick={() => setSearchModalOpen(true)}
-            className="w-64 flex justify-start backdrop-blur-sm"
-          >
-            <Search className="w-20 h-20 mr-5" />
-            Search GitHub ...
-          </Button>
+          <div className="flex-1 max-w-2xl mx-8">
+            <Button
+              variant="outline"
+              onClick={() => setSearchModalOpen(true)}
+              className="w-full flex justify-start backdrop-blur-sm"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              <span className="text-muted-foreground">Search GitHub repositories, users, and organizations...</span>
+            </Button>
+          </div>
 
-          {/* Rate Limit Warning */}
           <div className="flex items-center space-x-3">
             <RateLimitWarning />
-
-            {/* Auth buttons - only show when hydrated */}
 
             <Button
               variant="ghost"

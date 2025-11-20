@@ -1314,6 +1314,174 @@ class GitHubAPIClient {
     keysToDelete.forEach((key) => this.cache.delete(key));
   }
 
+  async getOrganizationDetails(orgName: string): Promise<{
+    login: string;
+    name: string | null;
+    description: string | null;
+    avatar_url: string;
+    html_url: string;
+    blog: string | null;
+    location: string | null;
+    email: string | null;
+    public_repos: number;
+    followers: number;
+    following: number;
+    created_at: string;
+    updated_at: string;
+  } | null> {
+    try {
+      const response = await this.fetchWithCache<{
+        login: string;
+        name: string | null;
+        description: string | null;
+        avatar_url: string;
+        html_url: string;
+        blog: string | null;
+        location: string | null;
+        email: string | null;
+        public_repos: number;
+        followers: number;
+        following: number;
+        created_at: string;
+        updated_at: string;
+      }>(`/orgs/${orgName}`, true);
+
+      return response;
+    } catch (error) {
+      console.error("Error fetching organization details:", error);
+      return null;
+    }
+  }
+
+  async getOrganizationRepos(
+    orgName: string,
+    limit = 20
+  ): Promise<TrendingRepo[]> {
+    try {
+      const response = await this.fetchWithCache<GitHubRepositoryResponse[]>(
+        `/orgs/${orgName}/repos?per_page=${limit}&sort=stars&direction=desc`,
+        true
+      );
+
+      return (
+        response?.map((repo: GitHubRepositoryResponse) => ({
+          id: repo.id,
+          full_name: repo.full_name,
+          name: repo.name,
+          description: repo.description,
+          stargazers_count: repo.stargazers_count,
+          forks_count: repo.forks_count,
+          open_issues_count: repo.open_issues_count,
+          language: repo.language,
+          html_url: repo.html_url,
+          created_at: repo.created_at,
+          updated_at: repo.updated_at,
+          pushed_at: repo.pushed_at,
+          size: repo.size,
+          watchers_count: repo.watchers_count,
+          archived: repo.archived,
+          fork: repo.fork,
+          topics: repo.topics || [],
+          owner: {
+            login: repo.owner.login,
+            avatar_url: repo.owner.avatar_url,
+            type: repo.owner.type,
+          },
+        })) || []
+      );
+    } catch (error) {
+      console.error("Error fetching organization repos:", error);
+      return [];
+    }
+  }
+
+  async getOrganizationHelpWantedIssues(
+    orgName: string,
+    limit = 50
+  ): Promise<Array<{
+    id: number;
+    title: string;
+    repo: string;
+    url: string;
+    labels: string[];
+    createdAt: string;
+    state: string;
+    comments: number;
+  }>> {
+    try {
+      const query = `org:${orgName} label:"help wanted" state:open`;
+      const response = await this.fetchWithCache<
+        GitHubSearchResponse<GitHubIssueResponse>
+      >(
+        `/search/issues?q=${encodeURIComponent(query)}&per_page=${limit}&sort=created&order=desc`,
+        true
+      );
+
+      return (
+        response.items?.map((issue: GitHubIssueResponse) => ({
+          id: issue.id,
+          title: issue.title,
+          repo: issue.repository_url
+            ? issue.repository_url.split("/").slice(-2).join("/")
+            : "unknown",
+          url: issue.html_url,
+          labels: issue.labels?.map((l: { name: string }) => l.name) || [],
+          createdAt: issue.created_at,
+          state: "open",
+          comments: issue.comments,
+        })) || []
+      );
+    } catch (error) {
+      console.error("Error fetching organization help wanted issues:", error);
+      return [];
+    }
+  }
+
+  async getOrganizationStats(orgName: string): Promise<{
+    totalStars: number;
+    totalForks: number;
+    totalOpenIssues: number;
+    languageDistribution: Array<{ language: string; count: number; stars: number }>;
+  } | null> {
+    try {
+      const repos = await this.getOrganizationRepos(orgName, 100);
+
+      const totalStars = repos.reduce((sum, repo) => sum + repo.stargazers_count, 0);
+      const totalForks = repos.reduce((sum, repo) => sum + repo.forks_count, 0);
+      const totalOpenIssues = repos.reduce((sum, repo) => sum + repo.open_issues_count, 0);
+
+      const languageMap = new Map<string, { count: number; stars: number }>();
+      repos.forEach((repo) => {
+        if (repo.language) {
+          const existing = languageMap.get(repo.language) || { count: 0, stars: 0 };
+          languageMap.set(repo.language, {
+            count: existing.count + 1,
+            stars: existing.stars + repo.stargazers_count,
+          });
+        }
+      });
+
+      const languageDistribution = Array.from(languageMap.entries())
+        .map(([language, stats]) => ({
+          language,
+          count: stats.count,
+          stars: stats.stars,
+        }))
+        .sort((a, b) => b.stars - a.stars)
+        .slice(0, 10);
+
+      return {
+        totalStars,
+        totalForks,
+        totalOpenIssues,
+        languageDistribution,
+      };
+    } catch (error) {
+      console.error("Error calculating organization stats:", error);
+      return null;
+    }
+  }
+
   async closeIssue(
     owner: string,
     repo: string,

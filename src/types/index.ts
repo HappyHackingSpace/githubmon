@@ -66,6 +66,24 @@ export type {
   UserScoreCacheEntry,
 } from "./github";
 
+export type {
+  SearchResultType,
+  BaseSearchResult,
+  RepositorySearchResult,
+  UserSearchResult,
+  OrganizationSearchResult,
+  UnifiedSearchResult,
+} from "./search";
+
+export {
+  isRepositoryResult,
+  isUserResult,
+  isOrganizationResult,
+  convertRepoToUnified,
+  convertUserToUnified,
+  detectSearchResultType,
+} from "./search";
+
 export type ValueOf<T> = T[keyof T];
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;

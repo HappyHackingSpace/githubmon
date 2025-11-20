@@ -4,6 +4,9 @@ import { Layout } from "@/components/layout/Layout";
 import { useRequireAuth } from "@/hooks/useAuth";
 import { FavoritesList } from "@/components/widget/FavoritesList";
 import { ActivityFeed } from "@/components/widget/ActivityFeed";
+import { OpenSourceWarriors } from "@/components/favorites/OpenSourceWarriors";
+import { TopContributedRepos } from "@/components/favorites/TopContributedRepos";
+import { Recommendations } from "@/components/favorites/Recommendations";
 import { Button } from "@/components/ui/button";
 import { Settings, Star } from "lucide-react";
 import Link from "next/link";
@@ -45,12 +48,15 @@ export default function FavoritesPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <FavoritesList />
-          </div>
-          <div className="lg:col-span-1">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-1 lg:w-[65%]">
             <ActivityFeed />
+          </div>
+          <div className="lg:w-[35%] space-y-6">
+            <FavoritesList />
+            <Recommendations />
+            <OpenSourceWarriors />
+            <TopContributedRepos />
           </div>
         </div>
       </div>
