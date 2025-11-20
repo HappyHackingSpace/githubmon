@@ -602,10 +602,16 @@ export async function GET(request: Request) {
 ```typescript
 // Correct import for NextAuth v4 with App Router
 import { getServerSession } from 'next-auth/next'
+import type { Session } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
+  // Explicit type casting ensures TypeScript recognizes custom properties
+  const session = await getServerSession(authOptions) as Session | null
+
+  if (!session?.accessToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   // ...
 }
 ```
@@ -615,6 +621,10 @@ export async function GET() {
 // WRONG - Will cause "Module has no exported member" error
 import { getServerSession } from 'next-auth'  // ❌ Missing '/next'
 import { authOptions } from '../auth/[...nextauth]/route'  // ❌ Route files can't export custom values
+
+// WRONG - TypeScript won't recognize custom properties
+const session = await getServerSession(authOptions)  // ❌ No type casting
+if (!session?.accessToken) { ... }  // ❌ Type error: Property 'accessToken' does not exist
 ```
 
 **Key Points:**
@@ -622,6 +632,8 @@ import { authOptions } from '../auth/[...nextauth]/route'  // ❌ Route files ca
 2. **Auth Config Location**: Store `authOptions` in `src/lib/auth.ts` (not in route files)
 3. **Type Safety**: Export `authOptions` with `NextAuthOptions` type for TypeScript
 4. **Route Files**: Next.js route files can ONLY export `GET`, `POST`, etc. - no custom exports
+5. **Explicit Type Casting**: Always cast `getServerSession()` result as `Session | null` to ensure TypeScript recognizes custom properties like `accessToken`
+6. **Type Definitions**: All NextAuth type augmentations should be in `src/types/next-auth.d.ts`
 
 **Configuration Structure:**
 ```typescript
