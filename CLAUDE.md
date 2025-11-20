@@ -638,10 +638,11 @@ if (!session?.accessToken) { ... }  // ❌ Type error: Property 'accessToken' do
 **Configuration Structure:**
 ```typescript
 // src/lib/auth.ts
-import { NextAuthOptions } from "next-auth"
 import GitHubProvider from "next-auth/providers/github"
 
-export const authOptions: NextAuthOptions = {
+// NOTE: Don't import NextAuthOptions type - it's not properly exported in v4.24.11
+// TypeScript will infer the correct type from NextAuth()
+export const authOptions = {
   providers: [GitHubProvider({...})],
   callbacks: {...},
   pages: {...}
@@ -654,6 +655,8 @@ import { authOptions } from "@/lib/auth"
 const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }
 ```
+
+**IMPORTANT**: NextAuth v4.24.11 has issues with exporting `NextAuthOptions` type. Use type inference instead of explicit typing.
 
 
 ---

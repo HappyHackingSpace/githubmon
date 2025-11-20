@@ -1,4 +1,3 @@
-import { NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 
 const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET;
@@ -16,7 +15,7 @@ if (
   );
 }
 
-export const authOptions: NextAuthOptions = {
+export const authOptions = {
   secret: NEXTAUTH_SECRET,
   providers: [
     GitHubProvider({
