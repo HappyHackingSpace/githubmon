@@ -48,7 +48,7 @@ export const authOptions = {
     error: "/login",
   },
   callbacks: {
-    async jwt({ token, account, user }) {
+    async jwt({ token, account, user }: { token: any; account: any; user: any }) {
       if (account && account.access_token) {
         token.accessToken = account.access_token;
       }
@@ -57,7 +57,7 @@ export const authOptions = {
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: any }) {
       if (token.login && session.user) {
         session.user.login = token.login;
       }
