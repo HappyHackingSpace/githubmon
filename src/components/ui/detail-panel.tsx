@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
-import { X, ExternalLink, Calendar, MessageCircle, Tag, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, ExternalLink, Calendar, MessageCircle, Tag, User, Play, Plus, XCircle, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserHoverCard } from "@/components/ui/user-hover-card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useKanbanStore, useActionItemsStore, useAuthStore } from "@/stores";
+import { githubAPIClient } from "@/lib/api/github-api-client";
 
 export interface DetailPanelIssue {
   id: number | string;
@@ -40,6 +43,58 @@ interface DetailPanelProps {
 }
 
 export function DetailPanel({ issue, isOpen, onClose }: DetailPanelProps) {
+  const [comments, setComments] = useState<Array<{
+    id: number;
+    user: { login: string; avatar_url: string };
+    body: string;
+    created_at: string;
+  }>>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [selectedPriority, setSelectedPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
+  const [isClosing, setIsClosing] = useState(false);
+  const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const { addTaskFromActionItem, isActionItemAdded, removeActionItemFromKanban } = useKanbanStore();
+  const { markAsRead } = useActionItemsStore();
+  const { orgData } = useAuthStore();
+
+  const isAlreadyAdded = issue ? isActionItemAdded(issue.id.toString()) : false;
+
+  useEffect(() => {
+    if (issue?.priority) {
+      setSelectedPriority(issue.priority);
+    }
+  }, [issue]);
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!issue?.url || !isOpen || !orgData?.token) return;
+
+      const urlMatch = issue.url.match(/github\.com\/([^/]+)\/([^/]+)\/(issues|pull)\/(\d+)/);
+      if (!urlMatch) return;
+
+      const [, owner, repo, , issueNumber] = urlMatch;
+
+      setLoadingComments(true);
+      githubAPIClient.setUserToken(orgData.token);
+
+      try {
+        const fetchedComments = await githubAPIClient.getIssueComments(
+          owner,
+          repo,
+          parseInt(issueNumber, 10)
+        );
+        setComments(fetchedComments);
+      } catch (error) {
+        console.error("Failed to fetch comments:", error);
+      } finally {
+        setLoadingComments(false);
+      }
+    };
+
+    fetchComments();
+  }, [issue, isOpen, orgData?.token]);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
@@ -63,6 +118,102 @@ export function DetailPanel({ issue, isOpen, onClose }: DetailPanelProps) {
     };
   }, [isOpen]);
 
+  const handleAddToKanban = () => {
+    if (!issue) return;
+    try {
+      const actionItem = {
+        id: issue.id.toString(),
+        title: issue.title,
+        repo: issue.repository || issue.repo || "Unknown",
+        type: issue.type === "pullRequest" ? ("pullRequest" as const) : ("issue" as const),
+        priority: issue.priority || ("medium" as const),
+        url: issue.url,
+        createdAt: issue.created_at || issue.createdAt || new Date().toISOString(),
+        updatedAt: issue.updated_at || issue.updatedAt || new Date().toISOString(),
+        author: {
+          login: issue.author.login,
+          avatarUrl: issue.author.avatar_url || issue.author.avatarUrl || "",
+        },
+        labels: issue.labels.map(l => ({ name: l.name, color: l.color })),
+        daysOld: 0,
+      };
+      addTaskFromActionItem(actionItem, "", "todo");
+      setActionMessage({ type: "success", text: "Added to Kanban board" });
+      setTimeout(() => setActionMessage(null), 3000);
+    } catch (error) {
+      console.error("Failed to add to Kanban:", error);
+      setActionMessage({ type: "error", text: "Failed to add to Kanban" });
+      setTimeout(() => setActionMessage(null), 3000);
+    }
+  };
+
+  const handleQuickStart = () => {
+    if (!issue) return;
+    try {
+      const actionItem = {
+        id: issue.id.toString(),
+        title: issue.title,
+        repo: issue.repository || issue.repo || "Unknown",
+        type: issue.type === "pullRequest" ? ("pullRequest" as const) : ("issue" as const),
+        priority: issue.priority || ("medium" as const),
+        url: issue.url,
+        createdAt: issue.created_at || issue.createdAt || new Date().toISOString(),
+        updatedAt: issue.updated_at || issue.updatedAt || new Date().toISOString(),
+        author: {
+          login: issue.author.login,
+          avatarUrl: issue.author.avatar_url || issue.author.avatarUrl || "",
+        },
+        labels: issue.labels.map(l => ({ name: l.name, color: l.color })),
+        daysOld: 0,
+      };
+      addTaskFromActionItem(actionItem, "", "inProgress");
+      setActionMessage({ type: "success", text: "Task started in Kanban" });
+      setTimeout(() => setActionMessage(null), 3000);
+    } catch (error) {
+      console.error("Failed to start task:", error);
+      setActionMessage({ type: "error", text: "Failed to start task" });
+      setTimeout(() => setActionMessage(null), 3000);
+    }
+  };
+
+  const handleRemoveFromKanban = () => {
+    if (!issue) return;
+    try {
+      removeActionItemFromKanban(issue.id.toString());
+      setActionMessage({ type: "success", text: "Removed from Kanban" });
+      setTimeout(() => setActionMessage(null), 3000);
+    } catch (error) {
+      console.error("Failed to remove from Kanban:", error);
+      setActionMessage({ type: "error", text: "Failed to remove from Kanban" });
+      setTimeout(() => setActionMessage(null), 3000);
+    }
+  };
+
+  const handleClose = async () => {
+    if (!issue?.url) return;
+
+    const urlMatch = issue.url.match(/github\.com\/([^/]+)\/([^/]+)\/(issues|pull)\/(\d+)/);
+    if (!urlMatch) return;
+
+    setIsClosing(true);
+
+    try {
+      const itemType: "assigned" | "mentions" | "stale" = issue.type === "pullRequest" ? "stale" : "assigned";
+      await markAsRead(itemType, issue.id.toString());
+      setActionMessage({ type: "success", text: `${issue.type === "pullRequest" ? "PR" : "Issue"} closed` });
+      setTimeout(() => {
+        setActionMessage(null);
+        onClose();
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to close:", error);
+      setActionMessage({ type: "error", text: "Failed to close item" });
+      setTimeout(() => setActionMessage(null), 3000);
+    } finally {
+      setIsClosing(false);
+    }
+  };
+
   if (!issue) return null;
 
   const repository = issue.repository || issue.repo || "Unknown Repository";
@@ -83,21 +234,6 @@ export function DetailPanel({ issue, isOpen, onClose }: DetailPanelProps) {
     }).format(date);
   };
 
-  const getPriorityColor = (priority?: string) => {
-    switch (priority) {
-      case "urgent":
-        return "bg-red-100 text-red-700 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-800";
-      case "high":
-        return "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800";
-      case "low":
-        return "bg-green-100 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-400 dark:border-green-800";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800";
-    }
-  };
-
   return (
     <>
       <div
@@ -114,18 +250,85 @@ export function DetailPanel({ issue, isOpen, onClose }: DetailPanelProps) {
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between z-10">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate pr-4">
-            Issue Details
-          </h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="flex-shrink-0"
-          >
-            <X className="w-5 h-5" />
-          </Button>
+        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 z-10">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate pr-4">
+              Issue Details
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="flex-shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {actionMessage && (
+            <div className={cn(
+              "flex items-center gap-2 p-2 rounded-md text-sm mb-3",
+              actionMessage.type === "success"
+                ? "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-200"
+                : "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-200"
+            )}>
+              {actionMessage.type === "success" ? (
+                <CheckCircle className="w-4 h-4" />
+              ) : (
+                <AlertCircle className="w-4 h-4" />
+              )}
+              {actionMessage.text}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            {isAlreadyAdded ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRemoveFromKanban}
+                className="flex-1"
+              >
+                <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                Remove from Kanban
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleQuickStart}
+                  className="flex-1"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Start
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddToKanban}
+                  className="flex-1"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add to Kanban
+                </Button>
+              </>
+            )}
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleClose}
+              disabled={isClosing}
+              className="flex-1"
+            >
+              {isClosing ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <XCircle className="w-4 h-4 mr-2" />
+              )}
+              Close
+            </Button>
+          </div>
         </div>
 
         <div className="p-6 space-y-6">
@@ -150,11 +353,28 @@ export function DetailPanel({ issue, isOpen, onClose }: DetailPanelProps) {
               )}
             </div>
 
-            {issue.priority && (
-              <Badge className={cn("mb-4", getPriorityColor(issue.priority))}>
-                {issue.priority.toUpperCase()}
-              </Badge>
-            )}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Priority:</span>
+              <Select value={selectedPriority} onValueChange={(value: "low" | "medium" | "high" | "urgent") => setSelectedPriority(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">
+                    <Badge variant="secondary" className="capitalize">Low</Badge>
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    <Badge variant="default" className="capitalize">Medium</Badge>
+                  </SelectItem>
+                  <SelectItem value="high">
+                    <Badge variant="destructive" className="capitalize">High</Badge>
+                  </SelectItem>
+                  <SelectItem value="urgent">
+                    <Badge variant="destructive" className="capitalize">Urgent</Badge>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -279,6 +499,49 @@ export function DetailPanel({ issue, isOpen, onClose }: DetailPanelProps) {
               </div>
             </div>
           )}
+
+          <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Comments ({comments.length})
+            </h4>
+
+            {loadingComments ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              </div>
+            ) : comments.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-6">
+                No comments yet
+              </p>
+            ) : (
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <Avatar className="w-8 h-8 flex-shrink-0">
+                      <AvatarImage src={comment.user.avatar_url} alt={comment.user.login} />
+                      <AvatarFallback>
+                        {comment.user.login.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {comment.user.login}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatDate(comment.created_at)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
+                        {comment.body}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>

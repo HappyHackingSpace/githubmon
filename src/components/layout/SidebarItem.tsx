@@ -39,8 +39,8 @@ export function SidebarItem({
     transition-all duration-200
     ${
       isActive
-        ? "bg-accent text-foreground"
-        : "hover:bg-accent/50 hover:text-foreground"
+        ? "bg-slate-700 text-slate-100"
+        : "text-slate-300 hover:bg-slate-800 hover:text-slate-100"
     }
     ${isCollapsed ? "justify-center" : ""}
     ${className}
@@ -48,7 +48,7 @@ export function SidebarItem({
 
   const content = (
     <>
-      <div className="shrink-0 min-w-[20px] flex items-center justify-center">
+      <div className="shrink-0 w-5 h-5 flex items-center justify-center">
         <Icon className="w-5 h-5" aria-hidden="true" />
       </div>
       {!isCollapsed && (

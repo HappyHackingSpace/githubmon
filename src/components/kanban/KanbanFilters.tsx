@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Archive, X, Sparkles } from "lucide-react";
+import { Search, Filter, Archive, X } from "lucide-react";
 import { useKanbanStore } from "@/stores/kanban";
 
 export function KanbanFilters() {
@@ -25,7 +25,6 @@ export function KanbanFilters() {
     toggleShowArchived,
     tasks,
     archivedTasks,
-    columnSuggestions,
   } = useKanbanStore();
 
   const hasActiveFilters = searchQuery || filterPriority !== "all" || filterType !== "all";
@@ -104,43 +103,6 @@ export function KanbanFilters() {
           </Button>
         )}
       </div>
-
-      {columnSuggestions.length > 0 && (
-        <div className="p-3 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 border border-violet-200 dark:border-violet-800 rounded-lg">
-          <div className="flex items-start gap-2">
-            <Sparkles className="w-5 h-5 text-violet-600 dark:text-violet-400 mt-0.5 flex-shrink-0" />
-            <div className="flex-1 space-y-2">
-              <p className="text-sm font-medium text-violet-900 dark:text-violet-100">
-                Smart Column Suggestions
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {columnSuggestions.slice(0, 3).map((suggestion) => (
-                  <Badge
-                    key={suggestion.id}
-                    variant="secondary"
-                    className="gap-1 cursor-help"
-                    title={suggestion.reason}
-                    style={{
-                      backgroundColor: `${suggestion.color}20`,
-                      borderColor: suggestion.color,
-                      color: suggestion.color,
-                    }}
-                  >
-                    {suggestion.title}
-                    <span className="text-xs opacity-70">
-                      ({Math.round(suggestion.confidence * 100)}%)
-                    </span>
-                  </Badge>
-                ))}
-              </div>
-              <p className="text-xs text-violet-700 dark:text-violet-300">
-                Based on your current workload, we suggest these columns. Use
-                Column Management to add them.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <span>{activeTaskCount} active tasks</span>

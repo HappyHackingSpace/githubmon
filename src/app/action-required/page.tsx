@@ -46,6 +46,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchModal } from "@/components/search/SearchModal";
 import { QuickActionsMenu } from "@/components/action-required/QuickActionsMenu";
 import { DetailPanel } from "@/components/ui/detail-panel";
+import { NewIssueDialog } from "@/components/action-required/NewIssueDialog";
 
 interface ActionItem {
   id: string | number;
@@ -72,7 +73,7 @@ interface ActionItem {
   };
 }
 
-const VALID_TABS = ["assigned", "mentions", "stale"] as const;
+const VALID_TABS = ["all", "assigned", "mentions", "stale"] as const;
 type ValidTab = (typeof VALID_TABS)[number];
 
 function extractIssueNumber(url?: string): string | null {
@@ -121,46 +122,100 @@ function ActionRequiredContent() {
   const { selectedIssue, isOpen, closePanel } = useDetailPanelStore();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [isNewIssueOpen, setIsNewIssueOpen] = useState(false);
 
   const tabParam = searchParams?.get("tab");
   const currentTab: ValidTab = VALID_TABS.includes(tabParam as ValidTab)
     ? (tabParam as ValidTab)
-    : "assigned";
+    : "all";
 
   // Memoize refreshData to prevent unnecessary calls
   const STALE_THRESHOLD = 5 * 60 * 1000;
 
   const refreshActiveTab = useCallback((tabType: ValidTab) => {
-    refreshData(tabType).catch((error) => {
-      console.error(`Failed to refresh ${tabType} items:`, error);
-    });
+    if (tabType === "all") {
+      ["assigned", "mentions", "stale"].forEach((type) => {
+        refreshData(type as "assigned" | "mentions" | "stale").catch((error) => {
+          console.error(`Failed to refresh ${type} items:`, error);
+        });
+      });
+    } else {
+      refreshData(tabType).catch((error) => {
+        console.error(`Failed to refresh ${tabType} items:`, error);
+      });
+    }
   }, [refreshData]);
 
   useEffect(() => {
-    const lastRefresh = useActionItemsStore.getState().lastRefresh[currentTab];
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        setIsNewIssueOpen(true);
+      }
+    };
 
-    if (!lastRefresh || Date.now() - lastRefresh > STALE_THRESHOLD) {
-      refreshActiveTab(currentTab);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (currentTab === "all") {
+      const lastRefreshes = useActionItemsStore.getState().lastRefresh;
+      const needsRefresh = ["assigned", "mentions", "stale"].some((type) => {
+        const lastRefresh = lastRefreshes[type as keyof typeof lastRefreshes];
+        return !lastRefresh || Date.now() - lastRefresh > STALE_THRESHOLD;
+      });
+
+      if (needsRefresh) {
+        ["assigned", "mentions", "stale"].forEach((type) => {
+          refreshData(type as "assigned" | "mentions" | "stale").catch((error) => {
+            console.error(`Failed to refresh ${type} items:`, error);
+          });
+        });
+      }
+    } else {
+      const lastRefresh = useActionItemsStore.getState().lastRefresh[currentTab];
+
+      if (!lastRefresh || Date.now() - lastRefresh > STALE_THRESHOLD) {
+        refreshActiveTab(currentTab);
+      }
     }
-  }, [currentTab, refreshActiveTab, STALE_THRESHOLD]);
+  }, [currentTab, refreshActiveTab, refreshData, STALE_THRESHOLD]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        const lastRefresh = useActionItemsStore.getState().lastRefresh[currentTab];
+        if (currentTab === "all") {
+          const lastRefreshes = useActionItemsStore.getState().lastRefresh;
+          const needsRefresh = ["assigned", "mentions", "stale"].some((type) => {
+            const lastRefresh = lastRefreshes[type as keyof typeof lastRefreshes];
+            return !lastRefresh || Date.now() - lastRefresh > STALE_THRESHOLD;
+          });
 
-        if (!lastRefresh || Date.now() - lastRefresh > STALE_THRESHOLD) {
-          refreshActiveTab(currentTab);
+          if (needsRefresh) {
+            ["assigned", "mentions", "stale"].forEach((type) => {
+              refreshData(type as "assigned" | "mentions" | "stale").catch((error) => {
+                console.error(`Failed to refresh ${type} items:`, error);
+              });
+            });
+          }
+        } else {
+          const lastRefresh = useActionItemsStore.getState().lastRefresh[currentTab];
+
+          if (!lastRefresh || Date.now() - lastRefresh > STALE_THRESHOLD) {
+            refreshActiveTab(currentTab);
+          }
         }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [currentTab, refreshActiveTab, STALE_THRESHOLD]);
+  }, [currentTab, refreshActiveTab, refreshData, STALE_THRESHOLD]);
 
   const actionItemsByType = useMemo(
     () => ({
+      all: [...assignedItems, ...mentionItems, ...staleItems],
       assigned: assignedItems,
       mentions: mentionItems,
       stale: staleItems,
@@ -170,6 +225,7 @@ function ActionRequiredContent() {
 
   const itemCounts = useMemo(
     () => ({
+      all: actionItemsByType.all.length,
       assigned: actionItemsByType.assigned.length,
       mentions: actionItemsByType.mentions.length,
       stale: actionItemsByType.stale.length,
@@ -178,7 +234,7 @@ function ActionRequiredContent() {
   );
 
   const getActionItems = useCallback(
-    (type: "assigned" | "mentions" | "stale") => {
+    (type: "all" | "assigned" | "mentions" | "stale") => {
       return actionItemsByType[type];
     },
     [actionItemsByType]
@@ -210,7 +266,7 @@ function ActionRequiredContent() {
     emptyMessage,
     emptyDescription,
   }: {
-    type: "assigned" | "mentions" | "stale";
+    type: "all" | "assigned" | "mentions" | "stale";
     icon: LucideIcon;
     title: string;
     emptyMessage: string;
@@ -218,8 +274,12 @@ function ActionRequiredContent() {
     color?: "blue" | "green" | "yellow" | "orange";
   }) => {
     const items = getActionItems(type);
-    const isLoading = loading[type];
-    const error = errors[type];
+    const isLoading = type === "all"
+      ? loading.assigned || loading.mentions || loading.stale
+      : loading[type];
+    const error = type === "all"
+      ? errors.assigned || errors.mentions || errors.stale
+      : errors[type];
 
     const [selectedRepo, setSelectedRepo] = useState<string>("all");
     const [selectedLanguage, setSelectedLanguage] = useState<string>("all");
@@ -340,7 +400,19 @@ function ActionRequiredContent() {
             variant="outline"
             size="sm"
             className="mt-3"
-            onClick={() => refreshData(type)}
+            onClick={() => {
+              if (type === "all") {
+                ["assigned", "mentions", "stale"].forEach((t) => {
+                  refreshData(t as "assigned" | "mentions" | "stale").catch((error) => {
+                    console.error(`Failed to refresh ${t} items:`, error);
+                  });
+                });
+              } else {
+                refreshData(type).catch((error) => {
+                  console.error(`Failed to refresh ${type} items:`, error);
+                });
+              }
+            }}
             disabled={isLoading}
           >
             <RefreshCw
@@ -366,7 +438,6 @@ function ActionRequiredContent() {
       <div className="space-y-4">
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Repository:</label>
             <Select value={selectedRepo} onValueChange={setSelectedRepo}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="All Repositories" />
@@ -383,7 +454,6 @@ function ActionRequiredContent() {
           </div>
           {languages.length > 0 && (
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Language:</label>
               <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="All Languages" />
@@ -455,19 +525,20 @@ function ActionRequiredContent() {
                             #{extractIssueNumber(item.url)}
                           </span>
                         )}
-                        <a
-                          href={isValidUrl(item.url) ? item.url : "#"}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium hover:text-blue-600 dark:hover:text-blue-400 truncate"
-                          onClick={(e) =>
-                            !isValidUrl(item.url ?? "") && e.preventDefault()
-                          }
-                        >
+                        <span className="font-medium truncate cursor-pointer hover:text-blue-600 dark:hover:text-blue-400">
                           {item.title}
-                        </a>
-                        {item.url && (
-                          <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                        </span>
+                        {item.url && isValidUrl(item.url) && (
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-shrink-0 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                            title="Open in GitHub"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
                         )}
                         {item.type === "pullRequest" && item.mergeable === "CONFLICTING" && (
                           <span title="Has merge conflicts">
@@ -578,7 +649,15 @@ function ActionRequiredContent() {
                 <TableCell>
                   <QuickActionsMenu
                     item={item as StoreActionItem}
-                    itemType={type}
+                    itemType={
+                      type === "all"
+                        ? ("mentionType" in item || "mentionedAt" in item)
+                          ? "mentions"
+                          : ("daysStale" in item || "lastActivity" in item)
+                          ? "stale"
+                          : "assigned"
+                        : type
+                    }
                   />
                 </TableCell>
               </TableRow>
@@ -603,22 +682,47 @@ function ActionRequiredContent() {
               Action Required
             </h1>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refreshActiveTab(currentTab)}
-            disabled={loading[currentTab]}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${
-                loading[currentTab]
-                  ? "animate-spin"
-                  : ""
-              }`}
-            />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setIsNewIssueOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              New Issue
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (currentTab === "all") {
+                  ["assigned", "mentions", "stale"].forEach((type) => {
+                    refreshData(type as "assigned" | "mentions" | "stale").catch((error) => {
+                      console.error(`Failed to refresh ${type} items:`, error);
+                    });
+                  });
+                } else {
+                  refreshActiveTab(currentTab);
+                }
+              }}
+              disabled={currentTab === "all"
+                ? loading.assigned || loading.mentions || loading.stale
+                : loading[currentTab]}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${
+                  (currentTab === "all"
+                    ? loading.assigned || loading.mentions || loading.stale
+                    : loading[currentTab])
+                    ? "animate-spin"
+                    : ""
+                }`}
+              />
+              Refresh
+            </Button>
+          </div>
         </div>
         <p className="text-gray-600 dark:text-gray-300">
           Items that need your immediate attention across your repositories
@@ -635,7 +739,14 @@ function ActionRequiredContent() {
         }}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            <Zap className="w-4 h-4" />
+            All
+            <Badge variant="secondary" className="ml-1">
+              {itemCounts.all}
+            </Badge>
+          </TabsTrigger>
           <TabsTrigger value="assigned" className="flex items-center gap-2">
             <Target className="w-4 h-4" />
             Assigned
@@ -658,6 +769,29 @@ function ActionRequiredContent() {
             </Badge>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="all" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-orange-500" />
+                All Action Items
+                <Badge variant="outline" className="ml-auto">
+                  {itemCounts.all} items
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ActionItemsList
+                type="all"
+                icon={Zap}
+                title="All Items"
+                emptyMessage="No action items found"
+                emptyDescription="All your action items will appear here"
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="assigned" className="mt-6">
           <Card>
@@ -733,6 +867,7 @@ function ActionRequiredContent() {
       </Tabs>
 
       <DetailPanel issue={selectedIssue} isOpen={isOpen} onClose={closePanel} />
+      <NewIssueDialog open={isNewIssueOpen} onOpenChange={setIsNewIssueOpen} />
     </div>
   );
 }
