@@ -1567,6 +1567,100 @@ class GitHubAPIClient {
       };
     }
   }
+
+  async getIssueComments(
+    owner: string,
+    repo: string,
+    issueNumber: number
+  ): Promise<Array<{
+    id: number;
+    user: {
+      login: string;
+      avatar_url: string;
+    };
+    body: string;
+    created_at: string;
+    updated_at: string;
+  }>> {
+    if (!this.githubToken) {
+      return [];
+    }
+
+    try {
+      const endpoint = `/repos/${owner}/${repo}/issues/${issueNumber}/comments?per_page=100`;
+      const comments = await this.fetchWithCache<Array<{
+        id: number;
+        user: {
+          login: string;
+          avatar_url: string;
+        };
+        body: string;
+        created_at: string;
+        updated_at: string;
+      }>>(endpoint, true);
+
+      return comments || [];
+    } catch (error) {
+      console.error("Error fetching issue comments:", error);
+      return [];
+    }
+  }
+
+  async createIssue(
+    owner: string,
+    repo: string,
+    title: string,
+    body?: string,
+    labels?: string[]
+  ): Promise<{ success: boolean; issue?: { html_url: string; number: number }; error?: string }> {
+    if (!this.githubToken) {
+      return { success: false, error: "No GitHub token available" };
+    }
+
+    try {
+      const headers: HeadersInit = {
+        Accept: "application/vnd.github.v3+json",
+        "User-Agent": "GitHubMon/1.0",
+        Authorization: `Bearer ${this.githubToken}`,
+        "Content-Type": "application/json",
+      };
+
+      const payload: { title: string; body?: string; labels?: string[] } = { title };
+      if (body) payload.body = body;
+      if (labels && labels.length > 0) payload.labels = labels;
+
+      const response = await fetch(
+        `${this.baseUrl}/repos/${owner}/${repo}/issues`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return {
+          success: false,
+          error: `HTTP ${response.status}: ${errorText}`,
+        };
+      }
+
+      const issue = await response.json();
+      return {
+        success: true,
+        issue: {
+          html_url: issue.html_url,
+          number: issue.number
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
 }
 
 export const githubAPIClient = new GitHubAPIClient();
