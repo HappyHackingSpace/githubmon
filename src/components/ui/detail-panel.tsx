@@ -121,7 +121,23 @@ export function DetailPanel({ issue, isOpen, onClose }: DetailPanelProps) {
   const handleAddToKanban = () => {
     if (!issue) return;
     try {
-      addTaskFromActionItem(issue as any, "", "todo");
+      const actionItem = {
+        id: issue.id.toString(),
+        title: issue.title,
+        repo: issue.repository || issue.repo || "Unknown",
+        type: issue.type === "pullRequest" ? ("pullRequest" as const) : ("issue" as const),
+        priority: issue.priority || ("medium" as const),
+        url: issue.url,
+        createdAt: issue.created_at || issue.createdAt || new Date().toISOString(),
+        updatedAt: issue.updated_at || issue.updatedAt || new Date().toISOString(),
+        author: {
+          login: issue.author.login,
+          avatarUrl: issue.author.avatar_url || issue.author.avatarUrl || "",
+        },
+        labels: issue.labels.map(l => ({ name: l.name, color: l.color })),
+        daysOld: 0,
+      };
+      addTaskFromActionItem(actionItem, "", "todo");
       setActionMessage({ type: "success", text: "Added to Kanban board" });
       setTimeout(() => setActionMessage(null), 3000);
     } catch (error) {
@@ -134,7 +150,23 @@ export function DetailPanel({ issue, isOpen, onClose }: DetailPanelProps) {
   const handleQuickStart = () => {
     if (!issue) return;
     try {
-      addTaskFromActionItem(issue as any, "", "inProgress");
+      const actionItem = {
+        id: issue.id.toString(),
+        title: issue.title,
+        repo: issue.repository || issue.repo || "Unknown",
+        type: issue.type === "pullRequest" ? ("pullRequest" as const) : ("issue" as const),
+        priority: issue.priority || ("medium" as const),
+        url: issue.url,
+        createdAt: issue.created_at || issue.createdAt || new Date().toISOString(),
+        updatedAt: issue.updated_at || issue.updatedAt || new Date().toISOString(),
+        author: {
+          login: issue.author.login,
+          avatarUrl: issue.author.avatar_url || issue.author.avatarUrl || "",
+        },
+        labels: issue.labels.map(l => ({ name: l.name, color: l.color })),
+        daysOld: 0,
+      };
+      addTaskFromActionItem(actionItem, "", "inProgress");
       setActionMessage({ type: "success", text: "Task started in Kanban" });
       setTimeout(() => setActionMessage(null), 3000);
     } catch (error) {
@@ -200,21 +232,6 @@ export function DetailPanel({ issue, isOpen, onClose }: DetailPanelProps) {
       hour: "2-digit",
       minute: "2-digit",
     }).format(date);
-  };
-
-  const getPriorityColor = (priority?: string) => {
-    switch (priority) {
-      case "urgent":
-        return "bg-red-100 text-red-700 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-800";
-      case "high":
-        return "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800";
-      case "low":
-        return "bg-green-100 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-400 dark:border-green-800";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800";
-    }
   };
 
   return (

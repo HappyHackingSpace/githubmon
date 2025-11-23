@@ -631,9 +631,9 @@ function ActionRequiredContent() {
                     item={item as StoreActionItem}
                     itemType={
                       type === "all"
-                        ? (item as any).mentionType || (item as any).mentionedAt
+                        ? ("mentionType" in item || "mentionedAt" in item)
                           ? "mentions"
-                          : (item as any).daysStale !== undefined || (item as any).lastActivity
+                          : ("daysStale" in item || "lastActivity" in item)
                           ? "stale"
                           : "assigned"
                         : type
