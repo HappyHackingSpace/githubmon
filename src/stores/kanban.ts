@@ -143,6 +143,7 @@ interface KanbanState {
   bulkMove: (taskIds: string[], toColumnId: string) => void;
   bulkUpdatePriority: (taskIds: string[], priority: KanbanTask["priority"]) => void;
   autoArchiveOldTasks: () => number;
+  deduplicateAllColumns: () => Record<string, KanbanColumn>;
 }
 
 const defaultColumns: Record<string, KanbanColumn> = {
@@ -549,15 +550,26 @@ export const useKanbanStore = create<KanbanState>()(
           const task = state.tasks[taskId];
           if (!task) return state;
 
-          const fromTaskIds = [...fromColumn.taskIds];
-          const toTaskIds =
-            fromColumnId === toColumnId ? fromTaskIds : [...toColumn.taskIds];
-          const taskIndex = fromTaskIds.indexOf(taskId);
-          if (taskIndex < 0) return state;
+          const allColumnIds = Object.keys(state.columns);
+          const cleanedColumns = { ...state.columns };
 
-          fromTaskIds.splice(taskIndex, 1);
-          const insertAt = Math.max(0, Math.min(newIndex, toTaskIds.length));
-          toTaskIds.splice(insertAt, 0, taskId);
+          allColumnIds.forEach((colId) => {
+            if (colId !== toColumnId) {
+              cleanedColumns[colId] = {
+                ...cleanedColumns[colId],
+                taskIds: cleanedColumns[colId].taskIds.filter((id) => id !== taskId),
+              };
+            }
+          });
+
+          const destTaskIds = cleanedColumns[toColumnId].taskIds.filter((id) => id !== taskId);
+          const insertAt = Math.max(0, Math.min(newIndex, destTaskIds.length));
+          destTaskIds.splice(insertAt, 0, taskId);
+
+          cleanedColumns[toColumnId] = {
+            ...cleanedColumns[toColumnId],
+            taskIds: destTaskIds,
+          };
 
           const updatedTask = {
             ...task,
@@ -580,17 +592,7 @@ export const useKanbanStore = create<KanbanState>()(
               ...state.tasks,
               [taskId]: updatedTask,
             },
-            columns: {
-              ...state.columns,
-              [fromColumnId]: {
-                ...fromColumn,
-                taskIds: fromTaskIds,
-              },
-              [toColumnId]: {
-                ...toColumn,
-                taskIds: toTaskIds,
-              },
-            },
+            columns: cleanedColumns,
           };
         });
       },
@@ -997,6 +999,38 @@ export const useKanbanStore = create<KanbanState>()(
         });
 
         return archived;
+      },
+
+      deduplicateAllColumns: () => {
+        set((state) => {
+          const cleanedColumns = { ...state.columns };
+          let totalDuplicatesRemoved = 0;
+
+          Object.keys(cleanedColumns).forEach((columnId) => {
+            const column = cleanedColumns[columnId];
+            if (column?.taskIds) {
+              const originalLength = column.taskIds.length;
+              const uniqueTaskIds = [...new Set(column.taskIds)];
+              const duplicatesRemoved = originalLength - uniqueTaskIds.length;
+
+              if (duplicatesRemoved > 0) {
+                totalDuplicatesRemoved += duplicatesRemoved;
+                cleanedColumns[columnId] = {
+                  ...column,
+                  taskIds: uniqueTaskIds,
+                };
+              }
+            }
+          });
+
+          if (totalDuplicatesRemoved > 0) {
+            console.log(`Removed ${totalDuplicatesRemoved} duplicate task references`);
+          }
+
+          return { columns: cleanedColumns };
+        });
+
+        return get().columns;
       },
     }),
     {
