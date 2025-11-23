@@ -366,7 +366,6 @@ function ActionRequiredContent() {
       <div className="space-y-4">
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Repository:</label>
             <Select value={selectedRepo} onValueChange={setSelectedRepo}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="All Repositories" />
@@ -383,7 +382,6 @@ function ActionRequiredContent() {
           </div>
           {languages.length > 0 && (
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Language:</label>
               <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="All Languages" />
