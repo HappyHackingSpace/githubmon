@@ -38,7 +38,8 @@ interface EditableColumnProps {
   title: string;
   color: string;
   taskCount: number;
-  onUpdate: (id: string, title: string, color: string) => void;
+  wipLimit?: number;
+  onUpdate: (id: string, title: string, color: string, wipLimit?: number) => void;
   onDelete: (id: string) => void;
 }
 
@@ -47,12 +48,14 @@ function EditableColumn({
   title,
   color,
   taskCount,
+  wipLimit,
   onUpdate,
   onDelete,
 }: EditableColumnProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(title);
   const [editColor, setEditColor] = useState(color);
+  const [editWipLimit, setEditWipLimit] = useState(wipLimit?.toString() || "");
 
   const {
     attributes,
@@ -71,7 +74,8 @@ function EditableColumn({
 
   const handleSave = () => {
     if (editTitle.trim()) {
-      onUpdate(columnId, editTitle.trim(), editColor);
+      const wipLimitNum = editWipLimit ? parseInt(editWipLimit, 10) : undefined;
+      onUpdate(columnId, editTitle.trim(), editColor, wipLimitNum);
       setIsEditing(false);
     }
   };
@@ -79,6 +83,7 @@ function EditableColumn({
   const handleCancel = () => {
     setEditTitle(title);
     setEditColor(color);
+    setEditWipLimit(wipLimit?.toString() || "");
     setIsEditing(false);
   };
 
@@ -121,6 +126,20 @@ function EditableColumn({
               />
             </div>
           </div>
+          <div>
+            <Label htmlFor={`wip-${columnId}`} className="text-xs">
+              WIP Limit (optional)
+            </Label>
+            <Input
+              id={`wip-${columnId}`}
+              type="number"
+              min="0"
+              value={editWipLimit}
+              onChange={(e) => setEditWipLimit(e.target.value)}
+              placeholder="No limit"
+              className="mt-1"
+            />
+          </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSave}>
               Save
@@ -148,6 +167,11 @@ function EditableColumn({
             <Badge variant="outline" className="text-xs">
               {taskCount}
             </Badge>
+            {wipLimit && (
+              <Badge variant="secondary" className="text-xs">
+                WIP: {wipLimit}
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -181,6 +205,7 @@ export function ColumnManagementModal({
   const [showAddColumn, setShowAddColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [newColumnColor, setNewColumnColor] = useState("#6366f1");
+  const [newColumnWipLimit, setNewColumnWipLimit] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -194,20 +219,23 @@ export function ColumnManagementModal({
     setShowAddColumn(false);
     setNewColumnTitle("");
     setNewColumnColor("#6366f1");
+    setNewColumnWipLimit("");
     onClose();
   }, [onClose]);
 
   const handleAddColumn = () => {
     if (newColumnTitle.trim()) {
-      addColumn(newColumnTitle.trim(), newColumnColor);
+      const wipLimitNum = newColumnWipLimit ? parseInt(newColumnWipLimit, 10) : undefined;
+      addColumn(newColumnTitle.trim(), newColumnColor, wipLimitNum);
       setNewColumnTitle("");
       setNewColumnColor("#6366f1");
+      setNewColumnWipLimit("");
       setShowAddColumn(false);
     }
   };
 
-  const handleUpdateColumn = (id: string, title: string, color: string) => {
-    updateColumn(id, { title, color });
+  const handleUpdateColumn = (id: string, title: string, color: string, wipLimit?: number) => {
+    updateColumn(id, { title, color, wipLimit });
   };
 
   const handleDeleteColumn = (columnId: string) => {
@@ -266,6 +294,7 @@ export function ColumnManagementModal({
                     title={column.title}
                     color={column.color}
                     taskCount={column.taskIds.length}
+                    wipLimit={column.wipLimit}
                     onUpdate={handleUpdateColumn}
                     onDelete={handleDeleteColumn}
                   />
@@ -308,6 +337,20 @@ export function ColumnManagementModal({
                   />
                 </div>
               </div>
+              <div>
+                <Label htmlFor="new-column-wip" className="text-xs">
+                  WIP Limit (optional)
+                </Label>
+                <Input
+                  id="new-column-wip"
+                  type="number"
+                  min="0"
+                  value={newColumnWipLimit}
+                  onChange={(e) => setNewColumnWipLimit(e.target.value)}
+                  placeholder="No limit"
+                  className="mt-1"
+                />
+              </div>
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleAddColumn}>
                   Add
@@ -319,6 +362,7 @@ export function ColumnManagementModal({
                     setShowAddColumn(false);
                     setNewColumnTitle("");
                     setNewColumnColor("#6366f1");
+                    setNewColumnWipLimit("");
                   }}
                 >
                   Cancel
