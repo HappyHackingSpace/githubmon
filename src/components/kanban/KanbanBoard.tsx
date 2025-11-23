@@ -32,7 +32,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Plus, ExternalLink, GripVertical, Trash2, Eye, RefreshCw, Settings, AlertTriangle, Keyboard } from "lucide-react";
 import { useKanbanStore, KanbanTask } from "@/stores/kanban";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { TaskDetailModal } from "./TaskDetailModal";
 import { AddTaskModal } from "./AddTaskModal";
 import { ColumnManagementModal } from "./ColumnManagementModal";
@@ -252,6 +252,7 @@ export function KanbanBoard() {
     filterPriority,
     filterType,
     autoArchiveOldTasks,
+    deduplicateAllColumns,
   } = useKanbanStore();
   const { orgData } = useAuthStore();
   const [activeTask, setActiveTask] = useState<KanbanTask | null>(null);
@@ -295,6 +296,10 @@ export function KanbanBoard() {
     },
     onHelp: showKeyboardShortcutsHelp,
   });
+
+  useEffect(() => {
+    deduplicateAllColumns();
+  }, [deduplicateAllColumns]);
 
   const filteredTasks = useMemo(() => {
     const taskList = Object.values(tasks);
