@@ -198,8 +198,8 @@ export function DetailPanel({ issue, isOpen, onClose }: DetailPanelProps) {
     setIsClosing(true);
 
     try {
-      const itemType = issue.type === "pullRequest" ? "stale" : "assigned";
-      await markAsRead(itemType as any, issue.id.toString());
+      const itemType: "assigned" | "mentions" | "stale" = issue.type === "pullRequest" ? "stale" : "assigned";
+      await markAsRead(itemType, issue.id.toString());
       setActionMessage({ type: "success", text: `${issue.type === "pullRequest" ? "PR" : "Issue"} closed` });
       setTimeout(() => {
         setActionMessage(null);
