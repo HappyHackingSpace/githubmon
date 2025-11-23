@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useAuthStore, useActionItemsStore } from "@/stores";
 import { useQuickWinsStore } from "@/stores/quickWins";
+import { githubAPIClient } from "@/lib/api/github-api-client";
 
 export function DataInitializer() {
   const { isConnected, orgData, isTokenValid } = useAuthStore();
@@ -11,16 +12,28 @@ export function DataInitializer() {
 
   const initializedRef = useRef(false);
   const tokenValid = isTokenValid();
+
   useEffect(() => {
-    if (!initializedRef.current && isConnected && orgData && tokenValid) {
-      initializedRef.current = true;
-      refreshData();
-      fetchGoodIssues();
-      fetchEasyFixes();
+    if (isConnected && orgData?.token && tokenValid) {
+      try {
+        githubAPIClient.setUserToken(orgData.token);
+      } catch (error) {
+        console.error("Failed to set GitHub API token:", error);
+      }
+
+      if (!initializedRef.current) {
+        initializedRef.current = true;
+        refreshData();
+        fetchGoodIssues();
+        fetchEasyFixes();
+      }
+    } else if (!isConnected || !orgData?.token) {
+      githubAPIClient.clearToken();
+      initializedRef.current = false;
     }
   }, [
     isConnected,
-    orgData,
+    orgData?.token,
     tokenValid,
     refreshData,
     fetchGoodIssues,

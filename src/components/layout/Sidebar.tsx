@@ -12,11 +12,9 @@ import {
   usePreferencesStore,
 } from "@/stores";
 import { useQuickWinsStore } from "@/stores/quickWins";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
   ChevronRight,
   Clock,
-  LogOut,
   MessageSquare,
   Star,
   Target,
@@ -25,16 +23,17 @@ import {
   UserCheck,
   Lightbulb,
   Wrench,
-  Loader2,
   PanelLeftClose,
   PanelLeftOpen,
-
   GitBranch,
   Pin,
-  Settings,
-  User,
 } from "lucide-react";
 import { Badge } from "../ui/badge";
+import { AnimatedLogo } from "./AnimatedLogo";
+import { SidebarItem } from "./SidebarItem";
+import { SidebarGroup } from "./SidebarGroup";
+import { UserProfileMenu } from "./UserProfileMenu";
+
 export function Sidebar() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -56,14 +55,11 @@ export function Sidebar() {
 
   const [actionRequiredOpen, setActionRequiredOpen] = useState(false);
   const [quickWinsOpen, setQuickWinsOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Set accordion state based on current pathname
   useEffect(() => {
     const isActionRequiredPage = pathname === "/action-required";
     const isQuickWinsPage = pathname === "/quick-wins";
 
-    // Only open accordions for current page, don't close others
     if (isActionRequiredPage) {
       setActionRequiredOpen(true);
     }
@@ -82,7 +78,6 @@ export function Sidebar() {
     }
   }, [pathname]);
 
-  // Accordion toggle handlers
   const handleActionRequiredToggle = (open: boolean) => {
     if (!open && pathname === "/action-required") {
       return;
@@ -142,23 +137,8 @@ export function Sidebar() {
   const isQuickWinsTab = pathname === "/quick-wins";
   const isActionRequiredTab = pathname === "/action-required";
 
-  const handleLogout = async () => {
-    if (isLoggingOut) return;
-
-    setIsLoggingOut(true);
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Logout error:", error);
-      window.location.replace("/");
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
   return (
     <>
-      {/* Overlay for mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
@@ -168,18 +148,26 @@ export function Sidebar() {
 
       <aside
         className={`
-        fixed top-0 left-0 bg-sidebar border-r border-sidebar-border z-50 transform transition-all duration-300 ease-in-out
-        ${sidebarCollapsed ? "lg:w-16 w-64" : "w-64"}
+        fixed top-0 left-0 bg-muted/40 border-r border-sidebar-border z-50 transform transition-all duration-300 ease-in-out
+        ${sidebarCollapsed ? "lg:w-[70px] w-64" : "w-64"}
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0
         flex flex-col
-
         h-screen
       `}
       >
-        <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
+        <div className="flex items-center justify-between p-4 border-b border-sidebar-border shrink-0">
           {!sidebarCollapsed ? (
             <>
+              <div className="flex items-center gap-3">
+                <AnimatedLogo size={32} />
+                <div>
+                  <h2 className="text-lg font-bold text-sidebar-foreground">
+                    GitHubMon
+                  </h2>
+                  <p className="text-xs text-muted-foreground">OSS Analytics</p>
+                </div>
+              </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -190,19 +178,13 @@ export function Sidebar() {
                 >
                   <PanelLeftClose className="h-4 w-4" />
                 </Button>
-                <div>
-                  <h2 className="text-lg font-bold text-sidebar-foreground">
-                    GitHubMon
-                  </h2>
-                  <p className="text-xs text-muted-foreground">OSS Analytics</p>
-                </div>
+                <button
+                  onClick={() => setOpen(false)}
+                  className="lg:hidden text-muted-foreground hover:text-sidebar-foreground transition-colors h-8 w-8 flex items-center justify-center"
+                >
+                  ✕
+                </button>
               </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="lg:hidden text-muted-foreground hover:text-sidebar-foreground transition-colors"
-              >
-                ✕
-              </button>
             </>
           ) : (
             <div className="w-full flex justify-center">
@@ -220,133 +202,118 @@ export function Sidebar() {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {/* Navigation Menu */}
           <div className="p-3">
-            <nav className="space-y-2">
-              <Link
+            <nav className="space-y-1">
+              <SidebarGroup
+                title="ANALYTICS"
+                isCollapsed={sidebarCollapsed}
+                className="mt-2"
+              />
+
+              <SidebarItem
+                icon={Home}
+                text="Dashboard"
                 href="/dashboard"
-                className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors
-                  ${
-                    pathname === "/dashboard"
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  }`}
-                aria-label="Dashboard"
-              >
-                <Home className="w-5 h-5" aria-hidden="true" />
-                {!sidebarCollapsed && <span>Dashboard</span>}
-                {sidebarCollapsed && <span className="sr-only">Dashboard</span>}
-              </Link>
+                isActive={pathname === "/dashboard"}
+                isCollapsed={sidebarCollapsed}
+              />
 
               <div>
                 {sidebarCollapsed ? (
-                  <Link
+                  <SidebarItem
+                    icon={Zap}
+                    text="Action Required"
                     href="/action-required"
-                    className={`flex items-center justify-center px-3 py-2 rounded-lg transition-colors
-                      ${
-                        isActionRequiredTab
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                      }`}
-                    aria-label="Action Required"
-                  >
-                    <Zap className="w-5 h-5" aria-hidden="true" />
-                    <span className="sr-only">Action Required</span>
-                  </Link>
+                    isActive={isActionRequiredTab}
+                    isCollapsed={sidebarCollapsed}
+                  />
                 ) : (
                   <>
-                    <button
+                    <SidebarItem
+                      icon={Zap}
+                      text="Action Required"
+                      isActive={isActionRequiredTab}
+                      isCollapsed={false}
                       onClick={() =>
                         handleActionRequiredToggle(!actionRequiredOpen)
                       }
-                      className={`
-                        flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors cursor-pointer text-left
-                        ${
-                          isActionRequiredTab
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                            : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                        }
-                      `}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Zap className="w-5 h-5" />
-                        <span>Action Required</span>
-                      </div>
-                      <div className="flex items-center gap-1">
+                      badge={
                         <Badge
                           variant="outline"
                           className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20"
                         >
                           {getActionRequiredTotal}
                         </Badge>
+                      }
+                      chevron={
                         <ChevronRight
-                          className={`w-4 h-4 transition-transform ${
+                          className={`w-4 h-4 transition-transform duration-200 ${
                             actionRequiredOpen ? "rotate-90" : ""
                           }`}
                         />
-                      </div>
-                    </button>
+                      }
+                    />
 
                     {actionRequiredOpen && (
-                  <div className="pl-8 space-y-1 mt-1">
-                    <Link
-                      href="/action-required?tab=assigned"
-                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                        ${
-                          pathname === "/action-required" &&
-                          currentTab === "assigned"
-                            ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800"
-                        }`}
-                    >
-                      <UserCheck className="w-4 h-4" />
-                      Assigned
-                      <Badge
-                        variant="outline"
-                        className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
-                      >
-                        {getBadgeContent("assigned")}
-                      </Badge>
-                    </Link>
-                    <Link
-                      href="/action-required?tab=mentions"
-                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                        ${
-                          pathname === "/action-required" &&
-                          currentTab === "mentions"
-                            ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800"
-                        }`}
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      Mentions
-                      <Badge
-                        variant="outline"
-                        className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
-                      >
-                        {getBadgeContent("mentions")}
-                      </Badge>
-                    </Link>
-                    <Link
-                      href="/action-required?tab=stale"
-                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                        ${
-                          pathname === "/action-required" &&
-                          currentTab === "stale"
-                            ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800"
-                        }`}
-                    >
-                      <Clock className="w-4 h-4" />
-                      Stale PRs
-                      <Badge
-                        variant="outline"
-                        className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
-                      >
-                        {getBadgeContent("stale")}
-                      </Badge>
-                    </Link>
-                  </div>
+                      <div className="ml-4 pl-4 space-y-1 mt-1 border-l-2 border-muted">
+                        <Link
+                          href="/action-required?tab=assigned"
+                          className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors font-medium
+                            ${
+                              pathname === "/action-required" &&
+                              currentTab === "assigned"
+                                ? "bg-accent text-foreground"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            }`}
+                        >
+                          <UserCheck className="w-4 h-4 shrink-0" />
+                          <span className="flex-1">Assigned</span>
+                          <Badge
+                            variant="outline"
+                            className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
+                          >
+                            {getBadgeContent("assigned")}
+                          </Badge>
+                        </Link>
+                        <Link
+                          href="/action-required?tab=mentions"
+                          className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors font-medium
+                            ${
+                              pathname === "/action-required" &&
+                              currentTab === "mentions"
+                                ? "bg-accent text-foreground"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            }`}
+                        >
+                          <MessageSquare className="w-4 h-4 shrink-0" />
+                          <span className="flex-1">Mentions</span>
+                          <Badge
+                            variant="outline"
+                            className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
+                          >
+                            {getBadgeContent("mentions")}
+                          </Badge>
+                        </Link>
+                        <Link
+                          href="/action-required?tab=stale"
+                          className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors font-medium
+                            ${
+                              pathname === "/action-required" &&
+                              currentTab === "stale"
+                                ? "bg-accent text-foreground"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            }`}
+                        >
+                          <Clock className="w-4 h-4 shrink-0" />
+                          <span className="flex-1">Stale PRs</span>
+                          <Badge
+                            variant="outline"
+                            className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
+                          >
+                            {getBadgeContent("stale")}
+                          </Badge>
+                        </Link>
+                      </div>
                     )}
                   </>
                 )}
@@ -354,188 +321,135 @@ export function Sidebar() {
 
               <div>
                 {sidebarCollapsed ? (
-                  <Link
+                  <SidebarItem
+                    icon={Target}
+                    text="Quick Wins"
                     href="/quick-wins"
-                    className={`flex items-center justify-center px-3 py-2 rounded-lg transition-colors
-                      ${
-                        isQuickWinsTab
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                      }`}
-                    aria-label="Quick Wins"
-                  >
-                    <Target className="w-5 h-5" aria-hidden="true" />
-                    <span className="sr-only">Quick Wins</span>
-                  </Link>
+                    isActive={isQuickWinsTab}
+                    isCollapsed={sidebarCollapsed}
+                  />
                 ) : (
                   <>
-                    <button
+                    <SidebarItem
+                      icon={Target}
+                      text="Quick Wins"
+                      isActive={isQuickWinsTab}
+                      isCollapsed={false}
                       onClick={() => handleQuickWinsToggle(!quickWinsOpen)}
-                      className={`
-                        flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors cursor-pointer text-left
-                        ${
-                          isQuickWinsTab
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                            : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                        }
-                      `}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Target className="w-5 h-5" />
-                        <span>Quick Wins</span>
-                      </div>
-                      <div className="flex items-center gap-1">
+                      badge={
                         <Badge
                           variant="outline"
                           className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20"
                         >
                           {getQuickWinsTotal}
                         </Badge>
+                      }
+                      chevron={
                         <ChevronRight
-                          className={`w-4 h-4 transition-transform ${
+                          className={`w-4 h-4 transition-transform duration-200 ${
                             quickWinsOpen ? "rotate-90" : ""
                           }`}
                         />
-                      </div>
-                    </button>
+                      }
+                    />
 
                     {quickWinsOpen && (
-                  <div className="pl-8 space-y-1 mt-1">
-                    <Link
-                      href="/quick-wins?tab=good-issues"
-                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                        ${
-                          pathname === "/quick-wins" &&
-                          currentTab === "good-issues"
-                            ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800"
-                        }`}
-                    >
-                      <Lightbulb className="w-4 h-4" />
-                      <span className="font-medium">Good First Issues</span>
-                      <Badge
-                        variant="outline"
-                        className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
-                      >
-                        {getBadgeContent("goodFirstIssues")}
-                      </Badge>
-                    </Link>
-                    <Link
-                      href="/quick-wins?tab=easy-fixes"
-                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors
-                        ${
-                          pathname === "/quick-wins" &&
-                          currentTab === "easy-fixes"
-                            ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800"
-                        }`}
-                    >
-                      <Wrench className="w-4 h-4" />
-                      <span className="font-medium">Easy Fixes</span>
-                      <Badge
-                        variant="outline"
-                        className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
-                      >
-                        {getBadgeContent("easyFixes")}
-                      </Badge>
-                    </Link>
-                  </div>
+                      <div className="ml-4 pl-4 space-y-1 mt-1 border-l-2 border-muted">
+                        <Link
+                          href="/quick-wins?tab=good-issues"
+                          className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors font-medium
+                            ${
+                              pathname === "/quick-wins" &&
+                              currentTab === "good-issues"
+                                ? "bg-accent text-foreground"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            }`}
+                        >
+                          <Lightbulb className="w-4 h-4 shrink-0" />
+                          <span className="flex-1">Good First Issues</span>
+                          <Badge
+                            variant="outline"
+                            className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
+                          >
+                            {getBadgeContent("goodFirstIssues")}
+                          </Badge>
+                        </Link>
+                        <Link
+                          href="/quick-wins?tab=easy-fixes"
+                          className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors font-medium
+                            ${
+                              pathname === "/quick-wins" &&
+                              currentTab === "easy-fixes"
+                                ? "bg-accent text-foreground"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            }`}
+                        >
+                          <Wrench className="w-4 h-4 shrink-0" />
+                          <span className="flex-1">Easy Fixes</span>
+                          <Badge
+                            variant="outline"
+                            className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
+                          >
+                            {getBadgeContent("easyFixes")}
+                          </Badge>
+                        </Link>
+                      </div>
                     )}
                   </>
                 )}
               </div>
 
-                <Link
-                  href="/favorites"
-                  className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors
-                    ${
-                      pathname === "/favorites"
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                    }`}
-                  aria-label="Favorites"
-                >
-                  <Star className="w-5 h-5" aria-hidden="true" />
-                  {!sidebarCollapsed && <span>Favorites</span>}
-                  {sidebarCollapsed && <span className="sr-only">Favorites</span>}
-                </Link>
-              
+              <SidebarGroup
+                title="WORKSPACE"
+                isCollapsed={sidebarCollapsed}
+                className="mt-6"
+              />
 
-            
+              <SidebarItem
+                icon={Star}
+                text="Favorites"
+                href="/favorites"
+                isActive={pathname === "/favorites"}
+                isCollapsed={sidebarCollapsed}
+              />
 
-              {/* Pinned Repositories */}
               {hasHydrated && pinnedRepos.length > 0 && (
-                <div className="mt-6">
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                    <Pin className="w-3 h-3" />
-                    Pinned Repos
-                  </div>
-                  <div className="space-y-1">
-                    {pinnedRepos.slice(0, 5).map((repo) => (
-                      <a
-                        key={repo}
-                        href={`https://github.com/${repo}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-sidebar-accent/50 transition-colors"
-                      >
-                        <GitBranch className="w-4 h-4 text-muted-foreground" />
-                        <span className="truncate">{repo}</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
+                <>
+                  <SidebarGroup
+                    icon={Pin}
+                    title="Pinned Repos"
+                    isCollapsed={sidebarCollapsed}
+                    className="mt-6"
+                  />
+                  {!sidebarCollapsed && (
+                    <div className="space-y-1">
+                      {pinnedRepos.slice(0, 5).map((repo) => (
+                        <a
+                          key={repo}
+                          href={`https://github.com/${repo}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent/50 transition-colors font-medium text-muted-foreground hover:text-foreground"
+                        >
+                          <GitBranch className="w-4 h-4 shrink-0" />
+                          <span className="truncate flex-1">{repo}</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </nav>
           </div>
         </div>
 
-        <div className="p-4 border-t border-sidebar-border flex-shrink-0 space-y-2">
-
-        </div>
-        {/* Footer - Modern User Profile Bar */}
         {hasHydrated && isConnected && orgData && (
-          <div className="p-3 border-t border-sidebar-border flex-shrink-0 space-y-2">
-            <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-sidebar-accent/30">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                {orgData.username?.charAt(0).toUpperCase() || <User className="w-4 h-4" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">
-                  {orgData.username}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {orgData.orgName || "GitHub User"}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link href="/settings" className="flex-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-sm"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </Button>
-              </Link>
-              <ThemeToggle />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                title="Logout"
-              >
-                {isLoggingOut ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <LogOut className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-          </div>
+          <UserProfileMenu
+            username={orgData.username}
+            orgName={orgData.orgName}
+            isCollapsed={sidebarCollapsed}
+            onLogout={logout}
+          />
         )}
       </aside>
     </>

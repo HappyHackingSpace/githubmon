@@ -11,7 +11,7 @@ interface AuthState {
   setOrgData: (data: OrgData | null) => void;
   setConnected: (connected: boolean) => void;
   setTokenExpiry: (expiry: string | null) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   isTokenValid: () => boolean;
   hydrate: () => void;
   persistToCookie: () => void;

@@ -9,6 +9,16 @@ import type {
   StalePR,
 } from "./actionItems";
 
+export interface TaskActivity {
+  id: string;
+  timestamp: Date;
+  action: "created" | "updated" | "moved" | "archived" | "restored" | "deleted";
+  userId?: string;
+  details: string;
+  fromColumn?: string;
+  toColumn?: string;
+}
+
 export interface KanbanTask {
   id: string;
   title: string;
@@ -23,12 +33,24 @@ export interface KanbanTask {
   createdAt: Date;
   updatedAt: Date;
   sourceActionItemId?: string;
+  archived?: boolean;
+  archivedAt?: Date;
+  activities?: TaskActivity[];
+  timeEstimate?: number;
+  timeSpent?: number;
+  lastViewedAt?: Date;
 }
 
-type SerializedKanbanTask = Omit<KanbanTask, "createdAt" | "updatedAt" | "dueDate"> & {
+type SerializedKanbanTask = Omit<
+  KanbanTask,
+  "createdAt" | "updatedAt" | "dueDate" | "archivedAt" | "lastViewedAt" | "activities"
+> & {
   createdAt: string | Date;
   updatedAt: string | Date;
   dueDate?: string | Date;
+  archivedAt?: string | Date;
+  lastViewedAt?: string | Date;
+  activities?: Array<Omit<TaskActivity, "timestamp"> & { timestamp: string | Date }>;
 };
 
 interface GitHubItemWithExtras {
@@ -56,6 +78,17 @@ export interface KanbanColumn {
   title: string;
   color: string;
   taskIds: string[];
+  wipLimit?: number;
+  collapsed?: boolean;
+}
+
+export interface ColumnSuggestion {
+  id: string;
+  title: string;
+  color: string;
+  priority: number;
+  confidence: number;
+  reason: string;
 }
 
 interface KanbanState {
@@ -63,13 +96,19 @@ interface KanbanState {
   columns: Record<string, KanbanColumn>;
   columnOrder: string[];
   addedActionItemIds: Set<string>;
+  archivedTasks: Record<string, KanbanTask>;
+  columnSuggestions: ColumnSuggestion[];
+  searchQuery: string;
+  filterPriority: string;
+  filterType: string;
+  showArchived: boolean;
 
-  syncFromGitHub: () => Promise<number>;
+  syncFromGitHub: () => Promise<{ success: boolean; count?: number; error?: string }>;
   addTask: (
     task: Omit<KanbanTask, "id" | "createdAt" | "updatedAt"> & {
       columnId?: string;
     }
-  ) => void;
+  ) => string;
   addTaskFromActionItem: (
     item: ActionItem | AssignedItem | MentionItem | StalePR,
     notes?: string,
@@ -85,11 +124,25 @@ interface KanbanState {
     newIndex: number
   ) => void;
   deleteTask: (taskId: string) => void;
+  archiveTask: (taskId: string) => void;
+  restoreTask: (taskId: string) => void;
+  deleteArchivedTask: (taskId: string) => void;
+  clearArchive: () => void;
   clearGitHubTasks: () => void;
-  addColumn: (title: string, color: string) => void;
+  addColumn: (title: string, color: string, wipLimit?: number) => void;
   updateColumn: (id: string, updates: Partial<KanbanColumn>) => void;
   deleteColumn: (id: string) => void;
   reorderColumns: (newOrder: string[]) => void;
+  addActivity: (taskId: string, activity: Omit<TaskActivity, "id" | "timestamp">) => void;
+  setSearchQuery: (query: string) => void;
+  setFilterPriority: (priority: string) => void;
+  setFilterType: (type: string) => void;
+  toggleShowArchived: () => void;
+  bulkArchive: (taskIds: string[]) => void;
+  bulkDelete: (taskIds: string[]) => void;
+  bulkMove: (taskIds: string[], toColumnId: string) => void;
+  bulkUpdatePriority: (taskIds: string[], priority: KanbanTask["priority"]) => void;
+  autoArchiveOldTasks: () => number;
 }
 
 const defaultColumns: Record<string, KanbanColumn> = {
@@ -119,8 +172,8 @@ const defaultColumns: Record<string, KanbanColumn> = {
   },
 };
 
-const analyzeContext = (context: GitHubDataContext) => {
-  const suggestions = [];
+const analyzeContext = (context: GitHubDataContext): ColumnSuggestion[] => {
+  const suggestions: ColumnSuggestion[] = [];
 
   const reviewCount = context.mentionItems.filter(
     (item) => "mentionType" in item && item.mentionType === "review_request"
@@ -133,6 +186,7 @@ const analyzeContext = (context: GitHubDataContext) => {
       color: "#dc2626",
       priority: 1,
       confidence: Math.min(reviewCount * 0.2, 1),
+      reason: `You have ${reviewCount} pending code reviews`,
     });
   }
 
@@ -150,6 +204,7 @@ const analyzeContext = (context: GitHubDataContext) => {
       color: "#7c3aed",
       priority: 2,
       confidence: 0.8,
+      reason: `${weekendMentions.length} items from the weekend need attention`,
     });
   }
 
@@ -160,6 +215,7 @@ const analyzeContext = (context: GitHubDataContext) => {
       color: "#2563eb",
       priority: 3,
       confidence: 0.7,
+      reason: `${context.mentionItems.length} items where you're mentioned`,
     });
   }
 
@@ -170,6 +226,7 @@ const analyzeContext = (context: GitHubDataContext) => {
       color: "#ea580c",
       priority: 4,
       confidence: 0.6,
+      reason: `${context.staleItems.length} stale PRs need follow-up`,
     });
   }
 
@@ -206,11 +263,16 @@ const analyzeContext = (context: GitHubDataContext) => {
       color: "#dc2626",
       priority: 0,
       confidence: 1.0,
+      reason: `${urgentItems.length} critical/urgent items detected`,
     });
   }
 
   return suggestions.sort((a, b) => a.priority - b.priority);
 };
+
+const MAX_COLUMNS = 8;
+const MAX_TASKS_PER_BOARD = 500;
+const AUTO_ARCHIVE_DAYS = 30;
 
 export const useKanbanStore = create<KanbanState>()(
   persist(
@@ -219,114 +281,138 @@ export const useKanbanStore = create<KanbanState>()(
       columns: defaultColumns,
       columnOrder: ["todo", "in-progress", "review", "done"],
       addedActionItemIds: new Set<string>(),
+      archivedTasks: {},
+      columnSuggestions: [],
+      searchQuery: "",
+      filterPriority: "all",
+      filterType: "all",
+      showArchived: false,
 
       syncFromGitHub: async () => {
-        const { githubSettings } = useSettingsStore.getState();
-        const { assignedItems, mentionItems, staleItems } =
-          useActionItemsStore.getState();
+        try {
+          const { githubSettings } = useSettingsStore.getState();
+          const { assignedItems, mentionItems, staleItems } =
+            useActionItemsStore.getState();
 
-        const selectedItems: ActionItem[] = [];
+          const selectedItems: ActionItem[] = [];
 
-        if (githubSettings.assignedToMe) {
-          selectedItems.push(...assignedItems);
-        }
+          if (githubSettings.assignedToMe) {
+            selectedItems.push(...assignedItems);
+          }
 
-        if (githubSettings.mentionsMe) {
-          selectedItems.push(...mentionItems);
-        }
+          if (githubSettings.mentionsMe) {
+            selectedItems.push(...mentionItems);
+          }
 
-        const uniqueSelected = Array.from(
-          new Map(selectedItems.map((i) => [i.id, i])).values()
-        );
-        console.log(
-          `📋 Total ${uniqueSelected.length} unique action items found`
-        );
-        if (uniqueSelected.length === 0) {
-          console.log("⚠️ No action items found!");
-          return 0;
-        }
+          const uniqueSelected = Array.from(
+            new Map(selectedItems.map((i) => [i.id, i])).values()
+          );
 
-        const contextData: GitHubDataContext = {
-          assignedItems,
-          mentionItems,
-          staleItems,
-          currentTime: new Date(),
-          userSettings: githubSettings,
-        };
+          if (uniqueSelected.length === 0) {
+            return { success: true, count: 0 };
+          }
 
-        const contextSuggestions = analyzeContext(contextData);
-        console.log("🧠 Context suggestions:", contextSuggestions);
+          const state = get();
+          const alreadyAddedIds = state.addedActionItemIds;
 
-        const newTasks: KanbanTask[] = uniqueSelected.map((item) => {
-          const isReviewRequest =
-            "mentionType" in item && item.mentionType === "review_request";
-          const itemWithExtras = item as unknown as GitHubItemWithExtras;
+          const newItems = uniqueSelected.filter(
+            (item) => !alreadyAddedIds.has(item.id.toString())
+          );
 
-          return {
-            id: `action-${item.id}`,
-            title: item.title,
-            description: itemWithExtras.description?.substring(0, 200),
-            type: item.type === "issue" ? "github-issue" : "github-pr",
-            priority: isReviewRequest ? "high" : "medium",
-            githubUrl: item.url,
-            labels:
-              itemWithExtras.labels?.map((l: { name: string }) => l.name) || [],
-            createdAt: new Date(item.createdAt),
-            updatedAt: new Date(item.updatedAt || item.createdAt),
+          if (newItems.length === 0) {
+            return { success: true, count: 0 };
+          }
+
+          const contextData: GitHubDataContext = {
+            assignedItems,
+            mentionItems,
+            staleItems,
+            currentTime: new Date(),
+            userSettings: githubSettings,
           };
-        });
 
-        set((state) => {
-          const existingTasks = { ...state.tasks };
-          const updatedColumns = { ...state.columns };
-          const newColumnOrder = [...state.columnOrder];
+          const contextSuggestions = analyzeContext(contextData);
 
-          Object.keys(existingTasks).forEach((taskId) => {
-            if (taskId.startsWith("action-")) {
-              delete existingTasks[taskId];
-              Object.keys(updatedColumns).forEach((columnId) => {
-                updatedColumns[columnId] = {
-                  ...updatedColumns[columnId],
-                  taskIds: updatedColumns[columnId].taskIds.filter(
-                    (id) => id !== taskId
-                  ),
-                };
-              });
-            }
-          });
+          const newTasks: KanbanTask[] = newItems.map((item) => {
+            const isReviewRequest =
+              "mentionType" in item && item.mentionType === "review_request";
+            const itemWithExtras = item as unknown as GitHubItemWithExtras;
 
-          newTasks.forEach((task) => {
-            existingTasks[task.id] = task;
-
-            let targetColumn = "todo";
-
-            if (task.type === "github-pr" && task.priority === "high") {
-              targetColumn = "review";
-            } else if (task.priority === "urgent") {
-              targetColumn = "in-progress";
-            } else if (task.priority === "high") {
-              targetColumn = "todo";
-            } else {
-              targetColumn = "todo";
-            }
-
-            updatedColumns[targetColumn] = {
-              ...updatedColumns[targetColumn],
-              taskIds: [...updatedColumns[targetColumn].taskIds, task.id],
+            return {
+              id: `action-${item.id}`,
+              title: item.title,
+              description: itemWithExtras.description?.substring(0, 200),
+              type: item.type === "issue" ? "github-issue" : "github-pr",
+              priority: isReviewRequest ? "high" : "medium",
+              githubUrl: item.url,
+              labels:
+                itemWithExtras.labels?.map((l: { name: string }) => l.name) ||
+                [],
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt || item.createdAt),
+              sourceActionItemId: item.id.toString(),
+              activities: [
+                {
+                  id: `activity-${Date.now()}-${Math.random()}`,
+                  timestamp: new Date(),
+                  action: "created",
+                  details: "Synced from GitHub",
+                },
+              ],
             };
           });
 
-          return {
-            tasks: existingTasks,
-            columns: updatedColumns,
-            columnOrder: newColumnOrder,
-          };
-        });
+          set((state) => {
+            const existingTasks = { ...state.tasks };
+            const updatedColumns = { ...state.columns };
+            const newAddedIds = new Set(state.addedActionItemIds);
 
-        return newTasks.length;
+            newTasks.forEach((task) => {
+              existingTasks[task.id] = task;
+              newAddedIds.add(task.sourceActionItemId!);
+
+              let targetColumn = "todo";
+
+              if (task.type === "github-pr" && task.priority === "high") {
+                targetColumn = "review";
+              } else if (task.priority === "urgent") {
+                targetColumn = "in-progress";
+              }
+
+              if (updatedColumns[targetColumn]) {
+                updatedColumns[targetColumn] = {
+                  ...updatedColumns[targetColumn],
+                  taskIds: [...updatedColumns[targetColumn].taskIds, task.id],
+                };
+              }
+            });
+
+            return {
+              tasks: existingTasks,
+              columns: updatedColumns,
+              addedActionItemIds: newAddedIds,
+              columnSuggestions: contextSuggestions,
+            };
+          });
+
+          return { success: true, count: newTasks.length };
+        } catch (error) {
+          console.error("Sync failed:", error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          };
+        }
       },
 
       addTask: (taskData) => {
+        const state = get();
+        const totalTasks = Object.keys(state.tasks).length;
+
+        if (totalTasks >= MAX_TASKS_PER_BOARD) {
+          throw new Error(`Maximum ${MAX_TASKS_PER_BOARD} tasks allowed. Please archive old tasks.`);
+        }
+
         const { columnId, ...rest } = taskData;
         const id = `task-${Date.now()}-${Math.random()
           .toString(36)
@@ -336,7 +422,16 @@ export const useKanbanStore = create<KanbanState>()(
           id,
           createdAt: new Date(),
           updatedAt: new Date(),
+          activities: [
+            {
+              id: `activity-${Date.now()}`,
+              timestamp: new Date(),
+              action: "created",
+              details: "Task created manually",
+            },
+          ],
         };
+
         set((state) => ({
           tasks: { ...state.tasks, [id]: task },
           columns: {
@@ -347,6 +442,8 @@ export const useKanbanStore = create<KanbanState>()(
             },
           },
         }));
+
+        return id;
       },
 
       addTaskFromActionItem: (item, notes, columnId = "todo") => {
@@ -365,7 +462,16 @@ export const useKanbanStore = create<KanbanState>()(
           createdAt: new Date(),
           updatedAt: new Date(),
           sourceActionItemId: item.id.toString(),
+          activities: [
+            {
+              id: `activity-${Date.now()}`,
+              timestamp: new Date(),
+              action: "created",
+              details: `Added from action items (${item.repo})`,
+            },
+          ],
         };
+
         set((state) => {
           const newAddedIds = new Set(state.addedActionItemIds);
           newAddedIds.add(item.id.toString());
@@ -425,15 +531,41 @@ export const useKanbanStore = create<KanbanState>()(
           const fromColumn = state.columns[fromColumnId];
           const toColumn = state.columns[toColumnId];
           if (!fromColumn || !toColumn) return state;
+
+          const task = state.tasks[taskId];
+          if (!task) return state;
+
           const fromTaskIds = [...fromColumn.taskIds];
           const toTaskIds =
             fromColumnId === toColumnId ? fromTaskIds : [...toColumn.taskIds];
           const taskIndex = fromTaskIds.indexOf(taskId);
           if (taskIndex < 0) return state;
+
           fromTaskIds.splice(taskIndex, 1);
           const insertAt = Math.max(0, Math.min(newIndex, toTaskIds.length));
           toTaskIds.splice(insertAt, 0, taskId);
+
+          const updatedTask = {
+            ...task,
+            updatedAt: new Date(),
+            activities: [
+              ...(task.activities || []),
+              {
+                id: `activity-${Date.now()}`,
+                timestamp: new Date(),
+                action: "moved" as const,
+                details: `Moved from ${fromColumn.title} to ${toColumn.title}`,
+                fromColumn: fromColumnId,
+                toColumn: toColumnId,
+              },
+            ],
+          };
+
           return {
+            tasks: {
+              ...state.tasks,
+              [taskId]: updatedTask,
+            },
             columns: {
               ...state.columns,
               [fromColumnId]: {
@@ -450,16 +582,30 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       updateTask: (id, updates) => {
-        set((state) => ({
-          tasks: {
-            ...state.tasks,
-            [id]: {
-              ...state.tasks[id],
-              ...updates,
-              updatedAt: new Date(),
+        set((state) => {
+          const task = state.tasks[id];
+          if (!task) return state;
+
+          return {
+            tasks: {
+              ...state.tasks,
+              [id]: {
+                ...task,
+                ...updates,
+                updatedAt: new Date(),
+                activities: [
+                  ...(task.activities || []),
+                  {
+                    id: `activity-${Date.now()}`,
+                    timestamp: new Date(),
+                    action: "updated",
+                    details: "Task updated",
+                  },
+                ],
+              },
             },
-          },
-        }));
+          };
+        });
       },
 
       deleteTask: (taskId) => {
@@ -489,6 +635,102 @@ export const useKanbanStore = create<KanbanState>()(
             addedActionItemIds: newAddedIds,
           };
         });
+      },
+
+      archiveTask: (taskId) => {
+        set((state) => {
+          const task = state.tasks[taskId];
+          if (!task) return state;
+
+          const archivedTask: KanbanTask = {
+            ...task,
+            archived: true,
+            archivedAt: new Date(),
+            activities: [
+              ...(task.activities || []),
+              {
+                id: `activity-${Date.now()}`,
+                timestamp: new Date(),
+                action: "archived",
+                details: "Task archived",
+              },
+            ],
+          };
+
+          const newTasks = { ...state.tasks };
+          delete newTasks[taskId];
+
+          const newColumns = { ...state.columns };
+          Object.keys(newColumns).forEach((columnId) => {
+            newColumns[columnId] = {
+              ...newColumns[columnId],
+              taskIds: newColumns[columnId].taskIds.filter(
+                (id) => id !== taskId
+              ),
+            };
+          });
+
+          return {
+            tasks: newTasks,
+            columns: newColumns,
+            archivedTasks: {
+              ...state.archivedTasks,
+              [taskId]: archivedTask,
+            },
+          };
+        });
+      },
+
+      restoreTask: (taskId) => {
+        set((state) => {
+          const task = state.archivedTasks[taskId];
+          if (!task) return state;
+
+          const restoredTask: KanbanTask = {
+            ...task,
+            archived: false,
+            archivedAt: undefined,
+            activities: [
+              ...(task.activities || []),
+              {
+                id: `activity-${Date.now()}`,
+                timestamp: new Date(),
+                action: "restored",
+                details: "Task restored from archive",
+              },
+            ],
+          };
+
+          const newArchivedTasks = { ...state.archivedTasks };
+          delete newArchivedTasks[taskId];
+
+          return {
+            tasks: {
+              ...state.tasks,
+              [taskId]: restoredTask,
+            },
+            columns: {
+              ...state.columns,
+              todo: {
+                ...state.columns.todo,
+                taskIds: [...state.columns.todo.taskIds, taskId],
+              },
+            },
+            archivedTasks: newArchivedTasks,
+          };
+        });
+      },
+
+      deleteArchivedTask: (taskId) => {
+        set((state) => {
+          const newArchivedTasks = { ...state.archivedTasks };
+          delete newArchivedTasks[taskId];
+          return { archivedTasks: newArchivedTasks };
+        });
+      },
+
+      clearArchive: () => {
+        set({ archivedTasks: {} });
       },
 
       clearGitHubTasks: () => {
@@ -523,7 +765,12 @@ export const useKanbanStore = create<KanbanState>()(
         });
       },
 
-      addColumn: (title, color) => {
+      addColumn: (title, color, wipLimit) => {
+        const state = get();
+        if (Object.keys(state.columns).length >= MAX_COLUMNS) {
+          throw new Error(`Maximum ${MAX_COLUMNS} columns allowed`);
+        }
+
         const id = `column-${Date.now()}`;
         set((state) => ({
           columns: {
@@ -533,6 +780,7 @@ export const useKanbanStore = create<KanbanState>()(
               title,
               color,
               taskIds: [],
+              wipLimit,
             },
           },
           columnOrder: [...state.columnOrder, id],
@@ -583,6 +831,152 @@ export const useKanbanStore = create<KanbanState>()(
       reorderColumns: (newOrder) => {
         set({ columnOrder: newOrder });
       },
+
+      addActivity: (taskId, activity) => {
+        set((state) => {
+          const task = state.tasks[taskId];
+          if (!task) return state;
+
+          const newActivity: TaskActivity = {
+            ...activity,
+            id: `activity-${Date.now()}-${Math.random()}`,
+            timestamp: new Date(),
+          };
+
+          return {
+            tasks: {
+              ...state.tasks,
+              [taskId]: {
+                ...task,
+                activities: [...(task.activities || []), newActivity],
+              },
+            },
+          };
+        });
+      },
+
+      setSearchQuery: (query) => {
+        set({ searchQuery: query });
+      },
+
+      setFilterPriority: (priority) => {
+        set({ filterPriority: priority });
+      },
+
+      setFilterType: (type) => {
+        set({ filterType: type });
+      },
+
+      toggleShowArchived: () => {
+        set((state) => ({ showArchived: !state.showArchived }));
+      },
+
+      bulkArchive: (taskIds) => {
+        taskIds.forEach((taskId) => get().archiveTask(taskId));
+      },
+
+      bulkDelete: (taskIds) => {
+        taskIds.forEach((taskId) => get().deleteTask(taskId));
+      },
+
+      bulkMove: (taskIds, toColumnId) => {
+        set((state) => {
+          const newTasks = { ...state.tasks };
+          const newColumns = { ...state.columns };
+
+          let fromColumnId = "";
+          for (const columnId of Object.keys(newColumns)) {
+            if (newColumns[columnId].taskIds.some((id) => taskIds.includes(id))) {
+              fromColumnId = columnId;
+              newColumns[columnId] = {
+                ...newColumns[columnId],
+                taskIds: newColumns[columnId].taskIds.filter(
+                  (id) => !taskIds.includes(id)
+                ),
+              };
+            }
+          }
+
+          if (newColumns[toColumnId]) {
+            newColumns[toColumnId] = {
+              ...newColumns[toColumnId],
+              taskIds: [...newColumns[toColumnId].taskIds, ...taskIds],
+            };
+          }
+
+          taskIds.forEach((taskId) => {
+            const task = newTasks[taskId];
+            if (task) {
+              newTasks[taskId] = {
+                ...task,
+                updatedAt: new Date(),
+                activities: [
+                  ...(task.activities || []),
+                  {
+                    id: `activity-${Date.now()}-${taskId}`,
+                    timestamp: new Date(),
+                    action: "moved",
+                    details: `Bulk moved to ${newColumns[toColumnId]?.title}`,
+                    fromColumn: fromColumnId,
+                    toColumn: toColumnId,
+                  },
+                ],
+              };
+            }
+          });
+
+          return { tasks: newTasks, columns: newColumns };
+        });
+      },
+
+      bulkUpdatePriority: (taskIds, priority) => {
+        set((state) => {
+          const newTasks = { ...state.tasks };
+          taskIds.forEach((taskId) => {
+            const task = newTasks[taskId];
+            if (task) {
+              newTasks[taskId] = {
+                ...task,
+                priority,
+                updatedAt: new Date(),
+                activities: [
+                  ...(task.activities || []),
+                  {
+                    id: `activity-${Date.now()}-${taskId}`,
+                    timestamp: new Date(),
+                    action: "updated",
+                    details: `Priority changed to ${priority}`,
+                  },
+                ],
+              };
+            }
+          });
+          return { tasks: newTasks };
+        });
+      },
+
+      autoArchiveOldTasks: () => {
+        const state = get();
+        const now = new Date();
+        const doneColumn = state.columns.done;
+        if (!doneColumn) return 0;
+
+        let archived = 0;
+        doneColumn.taskIds.forEach((taskId) => {
+          const task = state.tasks[taskId];
+          if (task) {
+            const daysSinceUpdate = Math.floor(
+              (now.getTime() - task.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+            );
+            if (daysSinceUpdate >= AUTO_ARCHIVE_DAYS) {
+              get().archiveTask(taskId);
+              archived++;
+            }
+          }
+        });
+
+        return archived;
+      },
     }),
     {
       name: "githubmon-kanban",
@@ -594,13 +988,39 @@ export const useKanbanStore = create<KanbanState>()(
             removeItem: () => {},
           };
         }
-        return localStorage;
+        return {
+          getItem: (name: string) => {
+            try {
+              const item = localStorage.getItem(name);
+              return item;
+            } catch (error) {
+              console.error("localStorage getItem error:", error);
+              return null;
+            }
+          },
+          setItem: (name: string, value: string) => {
+            try {
+              localStorage.setItem(name, value);
+            } catch (error) {
+              console.error("localStorage setItem error (quota exceeded?):", error);
+            }
+          },
+          removeItem: (name: string) => {
+            try {
+              localStorage.removeItem(name);
+            } catch (error) {
+              console.error("localStorage removeItem error:", error);
+            }
+          },
+        };
       }),
       partialize: (state) => ({
         tasks: state.tasks,
         columns: state.columns,
         columnOrder: state.columnOrder,
         addedActionItemIds: Array.from(state.addedActionItemIds),
+        archivedTasks: state.archivedTasks,
+        columnSuggestions: state.columnSuggestions,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
@@ -614,6 +1034,42 @@ export const useKanbanStore = create<KanbanState>()(
               t.updatedAt = new Date(t.updatedAt);
             if (t?.dueDate && typeof t.dueDate === "string")
               t.dueDate = new Date(t.dueDate);
+            if (t?.archivedAt && typeof t.archivedAt === "string")
+              t.archivedAt = new Date(t.archivedAt);
+            if (t?.lastViewedAt && typeof t.lastViewedAt === "string")
+              t.lastViewedAt = new Date(t.lastViewedAt);
+            if (t?.activities) {
+              t.activities = t.activities.map((a) => ({
+                ...a,
+                timestamp:
+                  typeof a.timestamp === "string"
+                    ? new Date(a.timestamp)
+                    : a.timestamp,
+              })) as TaskActivity[];
+            }
+          }
+        }
+
+        if (state.archivedTasks) {
+          for (const id of Object.keys(state.archivedTasks)) {
+            const t = state.archivedTasks[id] as SerializedKanbanTask;
+            if (t?.createdAt && typeof t.createdAt === "string")
+              t.createdAt = new Date(t.createdAt);
+            if (t?.updatedAt && typeof t.updatedAt === "string")
+              t.updatedAt = new Date(t.updatedAt);
+            if (t?.dueDate && typeof t.dueDate === "string")
+              t.dueDate = new Date(t.dueDate);
+            if (t?.archivedAt && typeof t.archivedAt === "string")
+              t.archivedAt = new Date(t.archivedAt);
+            if (t?.activities) {
+              t.activities = t.activities.map((a) => ({
+                ...a,
+                timestamp:
+                  typeof a.timestamp === "string"
+                    ? new Date(a.timestamp)
+                    : a.timestamp,
+              })) as TaskActivity[];
+            }
           }
         }
 

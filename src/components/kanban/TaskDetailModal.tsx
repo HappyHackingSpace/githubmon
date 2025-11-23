@@ -20,6 +20,8 @@ import { Separator } from "@/components/ui/separator";
 import { ExternalLink, Edit, Save, Trash2, X } from "lucide-react";
 import { KanbanTask, useKanbanStore } from "@/stores/kanban";
 import { useCallback, useState, useEffect } from "react";
+import { sanitizeText } from "@/lib/sanitize";
+import { toast } from "sonner";
 
 interface TaskDetailModalProps {
   task: KanbanTask | null;
@@ -41,6 +43,8 @@ export function TaskDetailModal({
     notes: "",
     dueDate: "",
     tags: [] as string[],
+    timeEstimate: "",
+    timeSpent: "",
   });
   const [tagInput, setTagInput] = useState("");
 
@@ -61,6 +65,8 @@ export function TaskDetailModal({
           ? new Date(task.dueDate).toISOString().split("T")[0]
           : "",
         tags: task.tags || [],
+        timeEstimate: task.timeEstimate?.toString() || "",
+        timeSpent: task.timeSpent?.toString() || "",
       });
       setIsEditing(false);
       setTagInput("");
@@ -91,7 +97,10 @@ export function TaskDetailModal({
         notes: editData.notes || undefined,
         dueDate: editData.dueDate ? new Date(editData.dueDate) : undefined,
         tags: editData.tags.length > 0 ? editData.tags : undefined,
+        timeEstimate: editData.timeEstimate ? parseFloat(editData.timeEstimate) : undefined,
+        timeSpent: editData.timeSpent ? parseFloat(editData.timeSpent) : undefined,
       });
+      toast.success("Task updated");
       setIsEditing(false);
     }
   };
@@ -107,6 +116,8 @@ export function TaskDetailModal({
           ? new Date(task.dueDate).toISOString().split("T")[0]
           : "",
         tags: task.tags || [],
+        timeEstimate: task.timeEstimate?.toString() || "",
+        timeSpent: task.timeSpent?.toString() || "",
       });
       setTagInput("");
     }
@@ -114,8 +125,9 @@ export function TaskDetailModal({
   }, [task]);
 
   const handleDelete = () => {
-    if (task && confirm("Bu task'ı silmek istediğinizden emin misiniz?")) {
+    if (task && confirm("Delete this task?")) {
       deleteTask(task.id);
+      toast.success("Task deleted");
       handleClose();
     }
   };
@@ -170,7 +182,7 @@ export function TaskDetailModal({
                   className="text-xl font-semibold"
                 />
               ) : (
-                <span className="text-xl font-semibold">{task.title}</span>
+                <span className="text-xl font-semibold">{sanitizeText(task.title)}</span>
               )}
             </DialogTitle>
             <div className="flex items-center gap-2">

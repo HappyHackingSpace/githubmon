@@ -30,20 +30,28 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Plus, ExternalLink, GripVertical, Trash2, Eye, X } from "lucide-react";
+import { Plus, ExternalLink, GripVertical, Trash2, Eye, RefreshCw, Settings, AlertTriangle, Keyboard } from "lucide-react";
 import { useKanbanStore, KanbanTask } from "@/stores/kanban";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { TaskDetailModal } from "./TaskDetailModal";
 import { AddTaskModal } from "./AddTaskModal";
 import { ColumnManagementModal } from "./ColumnManagementModal";
+import { KanbanFilters } from "./KanbanFilters";
+import { BulkActionsToolbar } from "./BulkActionsToolbar";
+import { ArchiveView } from "./ArchiveView";
 import { githubAPIClient } from "@/lib/api/github-api-client";
 import { useAuthStore } from "@/stores/auth";
+import { toast } from "sonner";
+import { sanitizeText } from "@/lib/sanitize";
+import { useKanbanShortcuts, showKeyboardShortcutsHelp } from "@/hooks/useKanbanShortcuts";
 
 interface SortableTaskItemProps {
   task: KanbanTask;
   isDragging?: boolean;
   onDelete?: (taskId: string) => void;
   onView?: (task: KanbanTask) => void;
+  onSelect?: (taskId: string) => void;
+  isSelected?: boolean;
 }
 
 function SortableTaskItem({
@@ -51,6 +59,8 @@ function SortableTaskItem({
   isDragging = false,
   onDelete,
   onView,
+  onSelect,
+  isSelected,
 }: SortableTaskItemProps) {
   const {
     attributes,
@@ -91,22 +101,32 @@ function SortableTaskItem({
           : "hover:shadow-md hover:border-primary/30"
       } ${dueDateStatus?.status === "overdue" ? "border-red-500/50" : ""} ${
         dueDateStatus?.status === "today" ? "border-orange-500/50" : ""
-      }`}
+      } ${isSelected ? "ring-2 ring-primary" : ""}`}
       {...attributes}
-      onClick={() => onView && onView(task)}
+      onClick={(e) => {
+        if (!(e.target as HTMLElement).closest('button, a, input')) {
+          onView?.(task);
+        }
+      }}
     >
       <div className="flex items-start justify-between mb-1">
         <div className="flex items-start gap-1 flex-1 min-w-0">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onSelect?.(task.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-0.5"
+          />
           <div
             {...listeners}
             className="cursor-grab active:cursor-grabbing"
             onClick={(e) => e.stopPropagation()}
-            title="Sürükle"
+            title="Drag to move"
           >
             <GripVertical className="w-3 h-3 text-muted-foreground" />
           </div>
           <h4 className="text-xs font-medium leading-tight flex-1 truncate">
-            {task.title}
+            {sanitizeText(task.title)}
           </h4>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -117,7 +137,7 @@ function SortableTaskItem({
                 onView(task);
               }}
               className="text-muted-foreground hover:text-blue-600 p-0.5 transition-colors"
-              title="Detayları görüntüle"
+              title="View details"
             >
               <Eye className="w-3 h-3" />
             </button>
@@ -129,7 +149,7 @@ function SortableTaskItem({
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-blue-600 p-0.5 transition-colors"
               onClick={(e) => e.stopPropagation()}
-              title="GitHub'da aç"
+              title="Open on GitHub"
             >
               <ExternalLink className="w-3 h-3" />
             </a>
@@ -138,12 +158,13 @@ function SortableTaskItem({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm("Bu task'ı silmek istediğinizden emin misiniz?")) {
+                if (confirm("Delete this task?")) {
                   onDelete(task.id);
+                  toast.success("Task deleted");
                 }
               }}
               className="text-muted-foreground hover:text-red-600 p-0.5 transition-colors"
-              title="Sil"
+              title="Delete"
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -153,7 +174,7 @@ function SortableTaskItem({
 
       {task.description && (
         <p className="text-xs text-muted-foreground mb-1 ml-4 line-clamp-1">
-          {task.description}
+          {sanitizeText(task.description)}
         </p>
       )}
 
@@ -161,7 +182,7 @@ function SortableTaskItem({
         <div className="flex flex-wrap gap-1 ml-4 mb-1">
           {task.tags.slice(0, 3).map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs px-1 py-0">
-              {tag}
+              {sanitizeText(tag)}
             </Badge>
           ))}
           {task.tags.length > 3 && (
@@ -226,7 +247,11 @@ export function KanbanBoard() {
     moveTask,
     syncFromGitHub,
     deleteTask,
-    clearGitHubTasks,
+    showArchived,
+    searchQuery,
+    filterPriority,
+    filterType,
+    autoArchiveOldTasks,
   } = useKanbanStore();
   const { orgData } = useAuthStore();
   const [activeTask, setActiveTask] = useState<KanbanTask | null>(null);
@@ -234,7 +259,6 @@ export function KanbanBoard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [addTaskColumnId, setAddTaskColumnId] = useState<string | null>(null);
-  const [isClearing, setIsClearing] = useState(false);
   const [showColumnManagement, setShowColumnManagement] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [closeOnGitHub, setCloseOnGitHub] = useState(false);
@@ -245,6 +269,8 @@ export function KanbanBoard() {
     newIndex: number;
   } | null>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -254,42 +280,85 @@ export function KanbanBoard() {
     })
   );
 
-  const handleClearGitHubTasks = async () => {
-    if (
-      confirm("GitHub tasks will be cleared. Only personal tasks will remain.")
-    ) {
-      setIsClearing(true);
+  useKanbanShortcuts({
+    onNewTask: () => {
+      setAddTaskColumnId("todo");
+      setShowAddTaskModal(true);
+    },
+    onSync: handleSyncFromGitHub,
+    onSearch: () => {
+      const searchInput = document.querySelector<HTMLInputElement>('input[placeholder="Search tasks..."]');
+      searchInput?.focus();
+    },
+    onArchive: () => {
+      useKanbanStore.getState().toggleShowArchived();
+    },
+    onHelp: showKeyboardShortcutsHelp,
+  });
 
-      try {
-        clearGitHubTasks();
-
-        setTimeout(async () => {
-          if (
-            confirm(
-              "🔄 Fresh GitHub data is available. Sync now with context analysis?"
-            )
-          ) {
-            try {
-              const taskCount = await syncFromGitHub();
-              alert(
-                `✅ Sync complete! ${taskCount} tasks added with smart column organization.`
-              );
-            } catch (error) {
-              console.error("Auto-sync failed:", error);
-              alert(
-                "❌ Auto-sync failed. You can manually sync using the Sync button."
-              );
-            } finally {
-              setIsClearing(false);
-            }
-          } else {
-            setIsClearing(false);
-          }
-        }, 800);
-      } catch (error) {
-        console.error("Clear operation failed:", error);
-        setIsClearing(false);
+  const filteredTasks = useMemo(() => {
+    const taskList = Object.values(tasks);
+    return taskList.filter((task) => {
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesTitle = task.title.toLowerCase().includes(query);
+        const matchesDescription = task.description?.toLowerCase().includes(query);
+        const matchesTags = task.tags?.some((tag) => tag.toLowerCase().includes(query));
+        const matchesLabels = task.labels.some((label) => label.toLowerCase().includes(query));
+        if (!matchesTitle && !matchesDescription && !matchesTags && !matchesLabels) {
+          return false;
+        }
       }
+
+      if (filterPriority !== "all" && task.priority !== filterPriority) {
+        return false;
+      }
+
+      if (filterType !== "all" && task.type !== filterType) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [tasks, searchQuery, filterPriority, filterType]);
+
+  const filteredTaskIds = useMemo(
+    () => new Set(filteredTasks.map((t) => t.id)),
+    [filteredTasks]
+  );
+
+  async function handleSyncFromGitHub() {
+    setIsSyncing(true);
+    try {
+      const result = await syncFromGitHub();
+      if (result.success) {
+        if (result.count === 0) {
+          toast.info("Already up to date", {
+            description: "All GitHub items are already synced",
+          });
+        } else {
+          toast.success(`Synced ${result.count} new tasks from GitHub`);
+        }
+      } else {
+        toast.error("Sync failed", {
+          description: result.error || "Unknown error",
+        });
+      }
+    } catch (error) {
+      toast.error("Sync failed", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
+  const handleAutoArchive = () => {
+    const archived = autoArchiveOldTasks();
+    if (archived > 0) {
+      toast.success(`Auto-archived ${archived} old tasks from Done column`);
+    } else {
+      toast.info("No tasks to auto-archive");
     }
   };
 
@@ -300,6 +369,18 @@ export function KanbanBoard() {
 
   const handleTaskDelete = (taskId: string) => {
     deleteTask(taskId);
+  };
+
+  const handleTaskSelect = (taskId: string) => {
+    setSelectedTaskIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -353,6 +434,15 @@ export function KanbanBoard() {
     if (!destinationColumnId) return;
 
     const task = tasks[activeId];
+    const destColumn = columns[destinationColumnId];
+
+    if (destColumn.wipLimit && destColumn.taskIds.length >= destColumn.wipLimit) {
+      toast.warning("WIP Limit Reached", {
+        description: `${destColumn.title} has reached its WIP limit of ${destColumn.wipLimit}`,
+      });
+      return;
+    }
+
     if (
       destinationColumnId === "done" &&
       task &&
@@ -368,6 +458,7 @@ export function KanbanBoard() {
       setShowCloseConfirm(true);
     } else {
       moveTask(activeId, sourceColumnId, destinationColumnId, destinationIndex);
+      toast.success(`Moved to ${destColumn.title}`);
     }
   };
 
@@ -399,14 +490,12 @@ export function KanbanBoard() {
               : await githubAPIClient.closePullRequest(owner, repo, number);
 
           if (result.success) {
-            console.log("Successfully closed on GitHub");
+            toast.success("Closed on GitHub");
           } else {
-            console.error("Failed to close on GitHub:", result.error);
-            alert(`Failed to close on GitHub: ${result.error}`);
+            toast.error(`Failed to close on GitHub: ${result.error}`);
           }
         } catch (error) {
-          console.error("Error closing on GitHub:", error);
-          alert("Error closing on GitHub");
+          toast.error("Error closing on GitHub");
         } finally {
           setIsClosing(false);
         }
@@ -424,29 +513,61 @@ export function KanbanBoard() {
     setCloseOnGitHub(false);
   };
 
+  if (showArchived) {
+    return (
+      <div className="space-y-4">
+        <ArchiveView />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">Development Tasks</h2>
         <div className="flex items-center gap-2">
           <Button
+            onClick={showKeyboardShortcutsHelp}
+            variant="ghost"
+            size="sm"
+            title="Keyboard shortcuts (?)"
+          >
+            <Keyboard className="w-4 h-4" />
+          </Button>
+          <Button
+            onClick={handleAutoArchive}
+            variant="outline"
+            size="sm"
+            title="Auto-archive old tasks in Done column"
+          >
+            Auto-Archive
+          </Button>
+          <Button
             onClick={() => setShowColumnManagement(true)}
             variant="outline"
             size="sm"
           >
-            Manage Columns
+            <Settings className="w-4 h-4 mr-2" />
+            Columns
           </Button>
           <Button
-            onClick={handleClearGitHubTasks}
-            variant="outline"
+            onClick={handleSyncFromGitHub}
+            variant="default"
             size="sm"
-            disabled={isClearing}
+            disabled={isSyncing}
           >
-            <X className={`w-4 h-4 mr-2 ${isClearing ? "animate-spin" : ""}`} />
-            {isClearing ? "Clearing..." : "Clear"}
+            <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
+            {isSyncing ? "Syncing..." : "Sync"}
           </Button>
         </div>
       </div>
+
+      <KanbanFilters />
+
+      <BulkActionsToolbar
+        selectedTaskIds={selectedTaskIds}
+        onClearSelection={() => setSelectedTaskIds(new Set())}
+      />
 
       <DndContext
         sensors={sensors}
@@ -459,7 +580,10 @@ export function KanbanBoard() {
             const column = columns[columnId];
             const columnTasks = column.taskIds
               .map((taskId) => tasks[taskId])
-              .filter(Boolean);
+              .filter(Boolean)
+              .filter((task) => filteredTaskIds.has(task.id));
+
+            const wipWarning = column.wipLimit && columnTasks.length >= column.wipLimit;
 
             return (
               <Card key={columnId} className="w-full">
@@ -473,11 +597,21 @@ export function KanbanBoard() {
                     <Badge variant="outline" className="ml-auto text-xs">
                       {columnTasks.length}
                     </Badge>
+                    {column.wipLimit && (
+                      <Badge
+                        variant={wipWarning ? "destructive" : "secondary"}
+                        className="text-xs"
+                        title={`WIP Limit: ${column.wipLimit}`}
+                      >
+                        {wipWarning && <AlertTriangle className="w-3 h-3 mr-1" />}
+                        {columnTasks.length}/{column.wipLimit}
+                      </Badge>
+                    )}
                   </CardTitle>
                 </CardHeader>
 
                 <SortableContext
-                  items={column.taskIds}
+                  items={column.taskIds.filter((id) => filteredTaskIds.has(id))}
                   strategy={verticalListSortingStrategy}
                 >
                   <DroppableColumn columnId={columnId}>
@@ -495,6 +629,8 @@ export function KanbanBoard() {
                           isDragging={activeTask?.id === task.id}
                           onView={handleTaskView}
                           onDelete={handleTaskDelete}
+                          onSelect={handleTaskSelect}
+                          isSelected={selectedTaskIds.has(task.id)}
                         />
                       ))}
 
@@ -522,7 +658,7 @@ export function KanbanBoard() {
                 <div className="flex items-start gap-1 flex-1 min-w-0">
                   <GripVertical className="w-3 h-3 text-muted-foreground" />
                   <h4 className="text-xs font-medium leading-tight flex-1 truncate">
-                    {activeTask.title}
+                    {sanitizeText(activeTask.title)}
                   </h4>
                 </div>
                 {activeTask.githubUrl && (
@@ -531,7 +667,7 @@ export function KanbanBoard() {
               </div>
               {activeTask.description && (
                 <p className="text-xs text-muted-foreground mb-1 ml-4 line-clamp-1">
-                  {activeTask.description}
+                  {sanitizeText(activeTask.description)}
                 </p>
               )}
               <div className="flex items-center justify-between ml-4">

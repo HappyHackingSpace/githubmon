@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
@@ -9,16 +8,7 @@ import { NotificationProvider } from "@/components/common/NotificationProvider";
 import { DataInitializer } from "@/components/providers/DataInitializer";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { PageTracker } from "@/components/providers/PageTracker";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { ToasterProvider } from "@/components/providers/ToasterProvider";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -32,15 +22,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="antialiased">
         <AuthProvider>
           <ThemeProvider defaultTheme="system" storageKey="githubmon-theme">
             <OAuthSessionSync />
             <DataInitializer />
             <PageTracker />
             <CommandPalette />
+            <ToasterProvider />
             {children}
             <NotificationProvider />
           </ThemeProvider>
