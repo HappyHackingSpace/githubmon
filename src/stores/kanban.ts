@@ -380,10 +380,13 @@ export const useKanbanStore = create<KanbanState>()(
               }
 
               if (updatedColumns[targetColumn]) {
-                updatedColumns[targetColumn] = {
-                  ...updatedColumns[targetColumn],
-                  taskIds: [...updatedColumns[targetColumn].taskIds, task.id],
-                };
+                const currentTaskIds = updatedColumns[targetColumn].taskIds;
+                if (!currentTaskIds.includes(task.id)) {
+                  updatedColumns[targetColumn] = {
+                    ...updatedColumns[targetColumn],
+                    taskIds: [...currentTaskIds, task.id],
+                  };
+                }
               }
             });
 
@@ -432,16 +435,23 @@ export const useKanbanStore = create<KanbanState>()(
           ],
         };
 
-        set((state) => ({
-          tasks: { ...state.tasks, [id]: task },
-          columns: {
-            ...state.columns,
-            [columnId || "todo"]: {
-              ...state.columns[columnId || "todo"],
-              taskIds: [...state.columns[columnId || "todo"].taskIds, id],
+        set((state) => {
+          const targetColumn = columnId || "todo";
+          const currentTaskIds = state.columns[targetColumn].taskIds;
+          const updatedTaskIds = currentTaskIds.includes(id)
+            ? currentTaskIds
+            : [...currentTaskIds, id];
+          return {
+            tasks: { ...state.tasks, [id]: task },
+            columns: {
+              ...state.columns,
+              [targetColumn]: {
+                ...state.columns[targetColumn],
+                taskIds: updatedTaskIds,
+              },
             },
-          },
-        }));
+          };
+        });
 
         return id;
       },
@@ -475,13 +485,17 @@ export const useKanbanStore = create<KanbanState>()(
         set((state) => {
           const newAddedIds = new Set(state.addedActionItemIds);
           newAddedIds.add(item.id.toString());
+          const currentTaskIds = state.columns[columnId].taskIds;
+          const updatedTaskIds = currentTaskIds.includes(id)
+            ? currentTaskIds
+            : [...currentTaskIds, id];
           return {
             tasks: { ...state.tasks, [id]: task },
             columns: {
               ...state.columns,
               [columnId]: {
                 ...state.columns[columnId],
-                taskIds: [...state.columns[columnId].taskIds, id],
+                taskIds: updatedTaskIds,
               },
             },
             addedActionItemIds: newAddedIds,
@@ -704,6 +718,11 @@ export const useKanbanStore = create<KanbanState>()(
           const newArchivedTasks = { ...state.archivedTasks };
           delete newArchivedTasks[taskId];
 
+          const currentTodoTaskIds = state.columns.todo.taskIds;
+          const updatedTodoTaskIds = currentTodoTaskIds.includes(taskId)
+            ? currentTodoTaskIds
+            : [...currentTodoTaskIds, taskId];
+
           return {
             tasks: {
               ...state.tasks,
@@ -713,7 +732,7 @@ export const useKanbanStore = create<KanbanState>()(
               ...state.columns,
               todo: {
                 ...state.columns.todo,
-                taskIds: [...state.columns.todo.taskIds, taskId],
+                taskIds: updatedTodoTaskIds,
               },
             },
             archivedTasks: newArchivedTasks,
@@ -898,9 +917,11 @@ export const useKanbanStore = create<KanbanState>()(
           }
 
           if (newColumns[toColumnId]) {
+            const currentTaskIds = newColumns[toColumnId].taskIds;
+            const newTaskIds = taskIds.filter((id) => !currentTaskIds.includes(id));
             newColumns[toColumnId] = {
               ...newColumns[toColumnId],
-              taskIds: [...newColumns[toColumnId].taskIds, ...taskIds],
+              taskIds: [...currentTaskIds, ...newTaskIds],
             };
           }
 
@@ -1077,6 +1098,19 @@ export const useKanbanStore = create<KanbanState>()(
           state.addedActionItemIds = new Set(state.addedActionItemIds);
         } else if (!state.addedActionItemIds) {
           state.addedActionItemIds = new Set();
+        }
+
+        if (state.columns) {
+          Object.keys(state.columns).forEach((columnId) => {
+            const column = state.columns[columnId];
+            if (column?.taskIds) {
+              const uniqueTaskIds = [...new Set(column.taskIds)];
+              if (uniqueTaskIds.length !== column.taskIds.length) {
+                console.warn(`Deduplicating column ${columnId}: ${column.taskIds.length} -> ${uniqueTaskIds.length}`);
+                column.taskIds = uniqueTaskIds;
+              }
+            }
+          });
         }
       },
     }
