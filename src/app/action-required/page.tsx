@@ -133,9 +133,17 @@ function ActionRequiredContent() {
   const STALE_THRESHOLD = 5 * 60 * 1000;
 
   const refreshActiveTab = useCallback((tabType: ValidTab) => {
-    refreshData(tabType).catch((error) => {
-      console.error(`Failed to refresh ${tabType} items:`, error);
-    });
+    if (tabType === "all") {
+      ["assigned", "mentions", "stale"].forEach((type) => {
+        refreshData(type as "assigned" | "mentions" | "stale").catch((error) => {
+          console.error(`Failed to refresh ${type} items:`, error);
+        });
+      });
+    } else {
+      refreshData(tabType).catch((error) => {
+        console.error(`Failed to refresh ${tabType} items:`, error);
+      });
+    }
   }, [refreshData]);
 
   useEffect(() => {
@@ -392,7 +400,19 @@ function ActionRequiredContent() {
             variant="outline"
             size="sm"
             className="mt-3"
-            onClick={() => refreshData(type)}
+            onClick={() => {
+              if (type === "all") {
+                ["assigned", "mentions", "stale"].forEach((t) => {
+                  refreshData(t as "assigned" | "mentions" | "stale").catch((error) => {
+                    console.error(`Failed to refresh ${t} items:`, error);
+                  });
+                });
+              } else {
+                refreshData(type).catch((error) => {
+                  console.error(`Failed to refresh ${type} items:`, error);
+                });
+              }
+            }}
             disabled={isLoading}
           >
             <RefreshCw
