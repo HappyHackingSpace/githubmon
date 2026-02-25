@@ -4,14 +4,9 @@ import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  useSidebarState,
-  useAuthStore,
-  useStoreHydration,
-  useActionItemsStore,
-  usePreferencesStore,
-} from "@/stores";
+import { useSidebarState, useAuthStore, useStoreHydration, useActionItemsStore, usePreferencesStore } from "@/stores";
 import { useQuickWinsStore } from "@/stores/quickWins";
+import { cn } from "@/lib/utils";
 import {
   ChevronRight,
   Clock,
@@ -148,63 +143,63 @@ export function Sidebar() {
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-all duration-300"
           onClick={() => setOpen(false)}
         />
       )}
 
       <aside
-        className={`
-        fixed top-0 left-0 bg-slate-900 border-r border-slate-700 z-50 transform transition-all duration-300 ease-in-out
-        ${sidebarCollapsed ? "lg:w-[70px] w-64" : "w-64"}
-        ${isOpen ? "translate-x-0" : "-translate-x-full"}
-        lg:translate-x-0
-        flex flex-col
-        h-screen
-      `}
+        className={cn(
+          "fixed top-0 left-0 z-50 transform transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+          "bg-slate-900/90 backdrop-blur-xl border-r border-slate-800/50 shadow-2xl overflow-hidden",
+          "before:absolute before:inset-0 before:bg-gradient-to-b before:from-primary/5 before:to-transparent before:pointer-events-none",
+          sidebarCollapsed ? "lg:w-[76px] w-64" : "w-64",
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          "flex flex-col h-screen"
+        )}
       >
-        <div className="flex items-center justify-between p-4 border-b border-slate-700 shrink-0">
+        <div className="flex items-center justify-between px-4 py-6 mb-2 shrink-0">
           {!sidebarCollapsed ? (
             <>
               <div className="flex items-center gap-3">
-                <AnimatedLogo size={32} />
+                <div className="p-2 rounded-xl bg-primary/20 shadow-inner">
+                  <AnimatedLogo size={28} />
+                </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-100">
+                  <h2 className="text-sm font-bold text-slate-100 tracking-tight">
                     GitHubMon
                   </h2>
-                  <p className="text-xs text-slate-400">OSS Analytics</p>
+                  <p className="text-[10px] text-slate-500 font-medium uppercase tracking-widest">Analytics</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSidebarCollapsed(true)}
-                  className="hidden lg:flex h-8 w-8 p-0"
+                  className="hidden lg:flex h-8 w-8 p-0 text-slate-500 hover:text-slate-100 hover:bg-slate-800/50 rounded-lg"
                   title="Collapse sidebar"
                 >
                   <PanelLeftClose className="h-4 w-4" />
                 </Button>
                 <button
                   onClick={() => setOpen(false)}
-                  className="lg:hidden text-slate-400 hover:text-slate-100 transition-colors h-8 w-8 flex items-center justify-center"
+                  className="lg:hidden text-slate-500 hover:text-slate-100 transition-colors h-8 w-8 flex items-center justify-center p-0 rounded-lg hover:bg-slate-800/50"
                 >
                   ✕
                 </button>
               </div>
             </>
           ) : (
-            <div className="w-full flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                {hasHydrated && orgData?.username
-                  ? orgData.username.charAt(0).toUpperCase()
-                  : "G"}
+            <div className="w-full flex flex-col items-center gap-6">
+              <div className="p-2 rounded-xl bg-primary/20 shadow-inner">
+                <AnimatedLogo size={28} />
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSidebarCollapsed(false)}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-slate-500 hover:text-slate-100 hover:bg-slate-800/50 rounded-lg"
                 title="Expand sidebar"
               >
                 <PanelLeftOpen className="h-4 w-4" />
@@ -213,13 +208,12 @@ export function Sidebar() {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto overflow-x-visible">
-          <div className="p-3">
-            <nav className="space-y-1">
+        <div className="flex-1 overflow-y-auto overflow-x-visible custom-scrollbar">
+          <div className="pb-10">
+            <nav className="space-y-1 px-2">
               <SidebarGroup
-                title="ANALYTICS"
+                title="Monitors"
                 isCollapsed={sidebarCollapsed}
-                className="mt-2"
               />
 
               <SidebarItem
@@ -274,75 +268,82 @@ export function Sidebar() {
                       badge={
                         <Badge
                           variant="outline"
-                          className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20"
+                          className="text-[10px] min-w-[1.25rem] h-4 bg-primary/10 text-primary border-primary/20"
                         >
                           {getActionRequiredTotal}
                         </Badge>
                       }
                       chevron={
                         <ChevronRight
-                          className={`w-4 h-4 transition-transform duration-200 ${
+                          className={cn(
+                            "w-4 h-4 text-slate-500 transition-transform duration-300",
                             actionRequiredOpen ? "rotate-90" : ""
-                          }`}
+                          )}
                         />
                       }
                     />
 
                     {actionRequiredOpen && (
-                      <div className="ml-4 pl-4 space-y-1 mt-1 border-l-2 border-muted">
+                      <div className="ml-5 pl-4 space-y-1 mt-1 border-l border-slate-800/50">
                         <Link
                           href="/action-required?tab=assigned"
-                          className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors font-medium
-                            ${
-                              pathname === "/action-required" &&
-                              currentTab === "assigned"
-                                ? "bg-slate-700 text-slate-100"
-                                : "text-slate-300 hover:text-slate-100 hover:bg-slate-800"
-                            }`}
+                          className={cn(
+                            "group flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all duration-200 font-medium",
+                            pathname === "/action-required" && currentTab === "assigned"
+                              ? "text-primary bg-primary/10"
+                              : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"
+                          )}
                         >
-                          <UserCheck className="w-4 h-4 shrink-0" />
+                          <UserCheck className={cn("w-4 h-4 shrink-0 transition-transform", currentTab !== "assigned" && "group-hover:scale-110")} />
                           <span className="flex-1">Assigned</span>
                           <Badge
                             variant="outline"
-                            className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
+                            className={cn(
+                              "text-[10px] h-4 bg-muted/20 border-muted-foreground/10",
+                              pathname === "/action-required" && currentTab === "assigned" && "bg-primary text-primary-foreground border-transparent"
+                            )}
                           >
                             {getBadgeContent("assigned")}
                           </Badge>
                         </Link>
                         <Link
                           href="/action-required?tab=mentions"
-                          className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors font-medium
-                            ${
-                              pathname === "/action-required" &&
-                              currentTab === "mentions"
-                                ? "bg-slate-700 text-slate-100"
-                                : "text-slate-300 hover:text-slate-100 hover:bg-slate-800"
-                            }`}
+                          className={cn(
+                            "group flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all duration-200 font-medium",
+                            pathname === "/action-required" && currentTab === "mentions"
+                              ? "text-primary bg-primary/10"
+                              : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"
+                          )}
                         >
-                          <MessageSquare className="w-4 h-4 shrink-0" />
+                          <MessageSquare className={cn("w-4 h-4 shrink-0 transition-transform", currentTab !== "mentions" && "group-hover:scale-110")} />
                           <span className="flex-1">Mentions</span>
                           <Badge
                             variant="outline"
-                            className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
+                            className={cn(
+                              "text-[10px] h-4 bg-muted/20 border-muted-foreground/10",
+                              pathname === "/action-required" && currentTab === "mentions" && "bg-primary text-primary-foreground border-transparent"
+                            )}
                           >
                             {getBadgeContent("mentions")}
                           </Badge>
                         </Link>
                         <Link
                           href="/action-required?tab=stale"
-                          className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors font-medium
-                            ${
-                              pathname === "/action-required" &&
-                              currentTab === "stale"
-                                ? "bg-slate-700 text-slate-100"
-                                : "text-slate-300 hover:text-slate-100 hover:bg-slate-800"
-                            }`}
+                          className={cn(
+                            "group flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all duration-200 font-medium",
+                            pathname === "/action-required" && currentTab === "stale"
+                              ? "text-primary bg-primary/10"
+                              : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"
+                          )}
                         >
-                          <Clock className="w-4 h-4 shrink-0" />
+                          <Clock className={cn("w-4 h-4 shrink-0 transition-transform", currentTab !== "stale" && "group-hover:scale-110")} />
                           <span className="flex-1">Stale PRs</span>
                           <Badge
                             variant="outline"
-                            className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
+                            className={cn(
+                              "text-[10px] h-4 bg-muted/20 border-muted-foreground/10",
+                              pathname === "/action-required" && currentTab === "stale" && "bg-primary text-primary-foreground border-transparent"
+                            )}
                           >
                             {getBadgeContent("stale")}
                           </Badge>
@@ -388,56 +389,61 @@ export function Sidebar() {
                       badge={
                         <Badge
                           variant="outline"
-                          className="text-xs min-w-[1.25rem] h-5 bg-muted/30 border-muted-foreground/20"
+                          className="text-[10px] min-w-[1.25rem] h-4 bg-primary/10 text-primary border-primary/20"
                         >
                           {getQuickWinsTotal}
                         </Badge>
                       }
                       chevron={
                         <ChevronRight
-                          className={`w-4 h-4 transition-transform duration-200 ${
+                          className={cn(
+                            "w-4 h-4 text-slate-500 transition-transform duration-300",
                             quickWinsOpen ? "rotate-90" : ""
-                          }`}
+                          )}
                         />
                       }
                     />
 
                     {quickWinsOpen && (
-                      <div className="ml-4 pl-4 space-y-1 mt-1 border-l-2 border-muted">
+                      <div className="ml-5 pl-4 space-y-1 mt-1 border-l border-slate-800/50">
                         <Link
                           href="/quick-wins?tab=good-issues"
-                          className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors font-medium
-                            ${
-                              pathname === "/quick-wins" &&
-                              currentTab === "good-issues"
-                                ? "bg-slate-700 text-slate-100"
-                                : "text-slate-300 hover:text-slate-100 hover:bg-slate-800"
-                            }`}
+                          className={cn(
+                            "group flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all duration-200 font-medium",
+                            pathname === "/quick-wins" && currentTab === "good-issues"
+                              ? "text-primary bg-primary/10"
+                              : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"
+                          )}
                         >
-                          <Lightbulb className="w-4 h-4 shrink-0" />
+                          <Lightbulb className={cn("w-4 h-4 shrink-0 transition-transform", currentTab !== "good-issues" && "group-hover:scale-110")} />
                           <span className="flex-1">Good First Issues</span>
                           <Badge
                             variant="outline"
-                            className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
+                            className={cn(
+                              "text-[10px] h-4 bg-muted/20 border-muted-foreground/10",
+                              pathname === "/quick-wins" && currentTab === "good-issues" && "bg-primary text-primary-foreground border-transparent"
+                            )}
                           >
                             {getBadgeContent("goodFirstIssues")}
                           </Badge>
                         </Link>
                         <Link
                           href="/quick-wins?tab=easy-fixes"
-                          className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors font-medium
-                            ${
-                              pathname === "/quick-wins" &&
-                              currentTab === "easy-fixes"
-                                ? "bg-slate-700 text-slate-100"
-                                : "text-slate-300 hover:text-slate-100 hover:bg-slate-800"
-                            }`}
+                          className={cn(
+                            "group flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all duration-200 font-medium",
+                            pathname === "/quick-wins" && currentTab === "easy-fixes"
+                              ? "text-primary bg-primary/10"
+                              : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"
+                          )}
                         >
-                          <Wrench className="w-4 h-4 shrink-0" />
+                          <Wrench className={cn("w-4 h-4 shrink-0 transition-transform", currentTab !== "easy-fixes" && "group-hover:scale-110")} />
                           <span className="flex-1">Easy Fixes</span>
                           <Badge
                             variant="outline"
-                            className="ml-auto text-xs bg-muted/30 border-muted-foreground/20"
+                            className={cn(
+                              "text-[10px] h-4 bg-muted/20 border-muted-foreground/10",
+                              pathname === "/quick-wins" && currentTab === "easy-fixes" && "bg-primary text-primary-foreground border-transparent"
+                            )}
                           >
                             {getBadgeContent("easyFixes")}
                           </Badge>
@@ -460,9 +466,8 @@ export function Sidebar() {
                 <>
                   <SidebarGroup
                     icon={Pin}
-                    title="Pinned Repos"
+                    title="Pinned"
                     isCollapsed={sidebarCollapsed}
-                    className="mt-6"
                   />
                   <div className="space-y-1">
                     {pinnedRepos.slice(0, 5).map((repo) => {
@@ -471,17 +476,19 @@ export function Sidebar() {
                           <TooltipProvider key={repo} delayDuration={0}>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <a
-                                  href={`https://github.com/${repo}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center justify-center px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-300 hover:text-slate-100"
-                                  aria-label={repo}
-                                >
-                                  <GitBranch className="w-4 h-4 shrink-0" />
-                                </a>
+                                <div className="px-2">
+                                  <a
+                                    href={`https://github.com/${repo}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center px-3 py-2.5 rounded-xl hover:bg-slate-800/50 transition-all duration-200 text-slate-400 hover:text-slate-100 group"
+                                    aria-label={repo}
+                                  >
+                                    <GitBranch className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform" />
+                                  </a>
+                                </div>
                               </TooltipTrigger>
-                              <TooltipContent side="right">
+                              <TooltipContent side="right" className="bg-slate-800 border-slate-700 text-slate-100">
                                 <p>{repo}</p>
                               </TooltipContent>
                             </Tooltip>
@@ -489,16 +496,17 @@ export function Sidebar() {
                         );
                       }
                       return (
-                        <a
-                          key={repo}
-                          href={`https://github.com/${repo}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-slate-800 transition-colors font-medium text-slate-300 hover:text-slate-100"
-                        >
-                          <GitBranch className="w-4 h-4 shrink-0" />
-                          <span className="truncate flex-1">{repo}</span>
-                        </a>
+                        <div key={repo} className="px-2">
+                          <a
+                            href={`https://github.com/${repo}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex items-center gap-3 px-3 py-2 text-sm rounded-xl hover:bg-slate-800/50 transition-all duration-200 font-medium text-slate-400 hover:text-slate-100"
+                          >
+                            <GitBranch className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
+                            <span className="truncate flex-1">{repo}</span>
+                          </a>
+                        </div>
                       );
                     })}
                   </div>
@@ -508,14 +516,16 @@ export function Sidebar() {
           </div>
         </div>
 
-        {hasHydrated && isConnected && orgData && (
-          <UserProfileMenu
-            username={orgData.username}
-            orgName={orgData.orgName}
-            isCollapsed={sidebarCollapsed}
-            onLogout={logout}
-          />
-        )}
+        <div className="mt-auto p-4 border-t border-slate-800/50 bg-slate-900/40">
+          {hasHydrated && isConnected && orgData && (
+            <UserProfileMenu
+              username={orgData.username}
+              orgName={orgData.orgName}
+              isCollapsed={sidebarCollapsed}
+              onLogout={logout}
+            />
+          )}
+        </div>
       </aside>
     </>
   );

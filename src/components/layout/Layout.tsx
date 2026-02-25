@@ -24,7 +24,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const getMarginLeft = () => {
     if (!isLargeScreen) return "0px";
     if (!hasHydrated) return "256px";
-    return sidebarCollapsed ? "70px" : "256px";
+    return sidebarCollapsed ? "76px" : "256px";
   };
 
   return (

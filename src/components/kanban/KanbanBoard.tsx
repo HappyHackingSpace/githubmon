@@ -30,7 +30,15 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Plus, ExternalLink, GripVertical, Trash2, Eye, RefreshCw, Settings, AlertTriangle, Keyboard } from "lucide-react";
+import { Plus, ExternalLink, GripVertical, Trash2, Eye, RefreshCw, Settings, AlertTriangle, Keyboard, Archive } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useKanbanStore, KanbanTask } from "@/stores/kanban";
 import { useState, useMemo, useEffect } from "react";
 import { TaskDetailModal } from "./TaskDetailModal";
@@ -43,7 +51,9 @@ import { githubAPIClient } from "@/lib/api/github-api-client";
 import { useAuthStore } from "@/stores/auth";
 import { toast } from "sonner";
 import { sanitizeText } from "@/lib/sanitize";
+import { cn } from "@/lib/utils";
 import { useKanbanShortcuts, showKeyboardShortcutsHelp } from "@/hooks/useKanbanShortcuts";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SortableTaskItemProps {
   task: KanbanTask;
@@ -83,25 +93,28 @@ function SortableTaskItem({
     const due = new Date(task.dueDate);
     const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (diffDays < 0) return { status: "overdue", color: "text-red-600", text: "Overdue" };
-    if (diffDays === 0) return { status: "today", color: "text-orange-600", text: "Today" };
-    if (diffDays <= 3) return { status: "soon", color: "text-yellow-600", text: `${diffDays}d` };
-    return { status: "normal", color: "text-muted-foreground", text: `${diffDays}d` };
+    if (diffDays < 0) return { status: "overdue", color: "text-red-400", text: "Overdue" };
+    if (diffDays === 0) return { status: "today", color: "text-orange-400", text: "Today" };
+    if (diffDays <= 3) return { status: "soon", color: "text-yellow-400", text: `${diffDays}d` };
+    return { status: "normal", color: "text-slate-400", text: `${diffDays}d` };
   };
 
   const dueDateStatus = getDueDateStatus();
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
-      className={`p-2 border rounded bg-background cursor-pointer transition-all ${
-        isDragging || isSortableDragging
-          ? "shadow-lg"
-          : "hover:shadow-md hover:border-primary/30"
-      } ${dueDateStatus?.status === "overdue" ? "border-red-500/50" : ""} ${
-        dueDateStatus?.status === "today" ? "border-orange-500/50" : ""
-      } ${isSelected ? "ring-2 ring-primary" : ""}`}
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className={cn(
+        "group relative p-3 border border-slate-700/50 rounded-xl bg-slate-800/40 backdrop-blur-sm transition-all duration-300",
+        isDragging || isSortableDragging ? "shadow-2xl ring-2 ring-primary/50 z-10" : "hover:border-primary/30 hover:bg-slate-800/60 shadow-sm",
+        dueDateStatus?.status === "overdue" && "border-red-500/30",
+        isSelected && "ring-2 ring-primary bg-primary/5"
+      )}
       {...attributes}
       onClick={(e) => {
         if (!(e.target as HTMLElement).closest('button, a, input')) {
@@ -109,37 +122,42 @@ function SortableTaskItem({
         }
       }}
     >
-      <div className="flex items-start justify-between mb-1">
-        <div className="flex items-start gap-1 flex-1 min-w-0">
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={() => onSelect?.(task.id)}
-            onClick={(e) => e.stopPropagation()}
-            className="mt-0.5"
-          />
+      <div className="absolute top-3 right-3 z-10">
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => onSelect?.(task.id)}
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "h-4 w-4 rounded border-slate-700 transition-opacity",
+            isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          )}
+        />
+      </div>
+
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-start gap-2 flex-1 min-w-0">
           <div
             {...listeners}
-            className="cursor-grab active:cursor-grabbing"
+            className="cursor-grab active:cursor-grabbing p-1 -ml-1 hover:bg-slate-700/50 rounded transition-colors"
             onClick={(e) => e.stopPropagation()}
-            title="Drag to move"
           >
-            <GripVertical className="w-3 h-3 text-muted-foreground" />
+            <GripVertical className="w-3.5 h-3.5 text-slate-500" />
           </div>
-          <h4 className="text-xs font-medium leading-tight flex-1 truncate">
+          <h4 className="text-sm font-semibold leading-tight flex-1 group-hover:text-primary transition-colors">
             {sanitizeText(task.title)}
           </h4>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pr-6">
           {onView && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onView(task);
               }}
-              className="text-muted-foreground hover:text-blue-600 p-0.5 transition-colors"
+              className="text-slate-400 hover:text-white p-1 hover:bg-slate-700 rounded-md transition-all"
               title="View details"
             >
-              <Eye className="w-3 h-3" />
+              <Eye className="w-3.5 h-3.5" />
             </button>
           )}
           {task.githubUrl && (
@@ -147,11 +165,10 @@ function SortableTaskItem({
               href={task.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-blue-600 p-0.5 transition-colors"
+              className="text-slate-400 hover:text-primary p-1 hover:bg-slate-700 rounded-md transition-all"
               onClick={(e) => e.stopPropagation()}
-              title="Open on GitHub"
             >
-              <ExternalLink className="w-3 h-3" />
+              <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
           {onDelete && (
@@ -163,64 +180,52 @@ function SortableTaskItem({
                   toast.success("Task deleted");
                 }
               }}
-              className="text-muted-foreground hover:text-red-600 p-0.5 transition-colors"
-              title="Delete"
+              className="text-slate-400 hover:text-red-400 p-1 hover:bg-slate-700 rounded-md transition-all"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
       </div>
 
       {task.description && (
-        <p className="text-xs text-muted-foreground mb-1 ml-4 line-clamp-1">
+        <p className="text-xs text-slate-400 mb-3 ml-6 line-clamp-2 leading-relaxed">
           {sanitizeText(task.description)}
         </p>
       )}
 
-      {task.tags && task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 ml-4 mb-1">
-          {task.tags.slice(0, 3).map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-xs px-1 py-0">
-              {sanitizeText(tag)}
-            </Badge>
-          ))}
-          {task.tags.length > 3 && (
-            <Badge variant="secondary" className="text-xs px-1 py-0">
-              +{task.tags.length - 3}
-            </Badge>
-          )}
-        </div>
-      )}
-
-      <div className="flex items-center justify-between ml-4">
-        <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between ml-6">
+        <div className="flex items-center gap-2">
           <Badge
-            variant={
-              task.priority === "urgent"
-                ? "destructive"
-                : task.priority === "high"
-                ? "destructive"
-                : task.priority === "medium"
-                ? "default"
-                : "secondary"
-            }
-            className="text-xs px-1 py-0"
+            className={cn(
+              "text-[10px] px-2 py-0 h-4 font-bold uppercase tracking-wider border",
+              task.priority === "urgent" ? "bg-red-500/10 text-red-400 border-red-500/20" :
+                task.priority === "high" ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
+                  task.priority === "medium" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
+                    "bg-slate-500/10 text-slate-400 border-slate-500/20"
+            )}
           >
             {task.priority}
           </Badge>
           {dueDateStatus && (
-            <span className={`text-xs font-medium ${dueDateStatus.color}`}>
+            <span className={cn("text-[10px] font-bold uppercase", dueDateStatus.color)}>
               {dueDateStatus.text}
             </span>
           )}
         </div>
 
-        <Badge variant="outline" className="text-xs px-1 py-0">
-          {task.type.replace("github-", "")}
-        </Badge>
+        <div className="flex items-center gap-1.5">
+          {task.tags?.slice(0, 1).map(tag => (
+            <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-slate-700 text-slate-500">
+              #{tag}
+            </Badge>
+          ))}
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-slate-900/50 border-slate-800 text-slate-400">
+            {task.type.replace("github-", "")}
+          </Badge>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -527,43 +532,50 @@ export function KanbanBoard() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Development Tasks</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-white tracking-tight">Development Board</h2>
+          <p className="text-sm text-slate-400">Manage your GitHub workflow with ease</p>
+        </div>
         <div className="flex items-center gap-2">
-          <Button
-            onClick={showKeyboardShortcutsHelp}
-            variant="ghost"
-            size="sm"
-            title="Keyboard shortcuts (?)"
-          >
-            <Keyboard className="w-4 h-4" />
-          </Button>
-          <Button
-            onClick={handleAutoArchive}
-            variant="outline"
-            size="sm"
-            title="Auto-archive old tasks in Done column"
-          >
-            Auto-Archive
-          </Button>
-          <Button
-            onClick={() => setShowColumnManagement(true)}
-            variant="outline"
-            size="sm"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Columns
-          </Button>
           <Button
             onClick={handleSyncFromGitHub}
             variant="default"
             size="sm"
             disabled={isSyncing}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all active:scale-95"
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
-            {isSyncing ? "Syncing..." : "Sync"}
+            <RefreshCw className={cn("w-4 h-4 mr-2", isSyncing && "animate-spin")} />
+            {isSyncing ? "Syncing..." : "Sync Now"}
           </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-700">
+                <Settings className="w-4 h-4 mr-2 text-slate-400" />
+                Options
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-slate-900 border-slate-800 backdrop-blur-xl text-slate-100">
+              <DropdownMenuLabel>Board Settings</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-slate-800" />
+              <DropdownMenuItem onClick={() => setShowColumnManagement(true)} className="hover:bg-slate-800 cursor-pointer">
+                <Settings className="w-4 h-4 mr-2 text-slate-400" />
+                Manage Columns
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleAutoArchive} className="hover:bg-slate-800 cursor-pointer">
+                <Archive className="w-4 h-4 mr-2 text-slate-400" />
+                Auto-Archive Done
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-slate-800" />
+              <DropdownMenuItem onClick={showKeyboardShortcutsHelp} className="hover:bg-slate-800 cursor-pointer">
+                <Keyboard className="w-4 h-4 mr-2 text-slate-400" />
+                Keyboard Shortcuts
+                <span className="ml-auto text-[10px] bg-slate-800 px-1.5 py-0.5 rounded">?</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -591,27 +603,29 @@ export function KanbanBoard() {
             const wipWarning = column.wipLimit && columnTasks.length >= column.wipLimit;
 
             return (
-              <Card key={columnId} className="w-full">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-sm">
+              <Card key={columnId} className="w-full bg-slate-900/40 backdrop-blur-md border-slate-800/50 shadow-xl overflow-hidden group/column">
+                <CardHeader className="pb-3 pt-4 px-4 bg-slate-800/30">
+                  <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-tight text-slate-100">
                     <div
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: column.color }}
+                      className="w-2.5 h-2.5 rounded-full shadow-lg"
+                      style={{ backgroundColor: column.color, boxShadow: `0 0 10px ${column.color}40` }}
                     />
                     {column.title}
-                    <Badge variant="outline" className="ml-auto text-xs">
-                      {columnTasks.length}
-                    </Badge>
-                    {column.wipLimit && (
-                      <Badge
-                        variant={wipWarning ? "destructive" : "secondary"}
-                        className="text-xs"
-                        title={`WIP Limit: ${column.wipLimit}`}
-                      >
-                        {wipWarning && <AlertTriangle className="w-3 h-3 mr-1" />}
-                        {columnTasks.length}/{column.wipLimit}
+                    <div className="ml-auto flex items-center gap-1.5">
+                      <Badge variant="outline" className="text-[10px] font-bold bg-slate-900/50 border-slate-700/50">
+                        {columnTasks.length}
                       </Badge>
-                    )}
+                      {column.wipLimit && (
+                        <Badge
+                          variant={wipWarning ? "destructive" : "secondary"}
+                          className="text-[10px] font-bold"
+                          title={`WIP Limit: ${column.wipLimit}`}
+                        >
+                          {wipWarning && <AlertTriangle className="w-3 h-3 mr-1" />}
+                          {columnTasks.length}/{column.wipLimit}
+                        </Badge>
+                      )}
+                    </div>
                   </CardTitle>
                 </CardHeader>
 
@@ -620,33 +634,33 @@ export function KanbanBoard() {
                   strategy={verticalListSortingStrategy}
                 >
                   <DroppableColumn columnId={columnId}>
-                    <CardContent className="space-y-2 min-h-60">
-                      <div
-                        className="h-2 w-full"
-                        style={{
-                          backgroundColor: "transparent",
-                        }}
-                      />
-                      {columnTasks.map((task) => (
-                        <SortableTaskItem
-                          key={task.id}
-                          task={task}
-                          isDragging={activeTask?.id === task.id}
-                          onView={handleTaskView}
-                          onDelete={handleTaskDelete}
-                          onSelect={handleTaskSelect}
-                          isSelected={selectedTaskIds.has(task.id)}
-                        />
-                      ))}
+                    <CardContent className="p-2 space-y-3 min-h-60">
+                      <div className="h-1 w-full" />
+                      <AnimatePresence mode="popLayout">
+                        {columnTasks.map((task) => (
+                          <SortableTaskItem
+                            key={task.id}
+                            task={task}
+                            isDragging={activeTask?.id === task.id}
+                            onView={handleTaskView}
+                            onDelete={handleTaskDelete}
+                            onSelect={handleTaskSelect}
+                            isSelected={selectedTaskIds.has(task.id)}
+                          />
+                        ))}
+                      </AnimatePresence>
 
                       <button
-                        className="w-full p-2 border-2 border-dashed border-muted rounded hover:border-primary hover:bg-primary/5 transition-colors text-muted-foreground hover:text-primary text-xs"
+                        className="w-full py-4 border-2 border-dashed border-slate-700/50 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 text-slate-500 hover:text-primary group/add"
                         onClick={() => {
                           setAddTaskColumnId(columnId);
                           setShowAddTaskModal(true);
                         }}
                       >
-                        <Plus className="w-3 h-3 mx-auto" />
+                        <div className="flex items-center justify-center gap-2">
+                          <Plus className="w-4 h-4 transition-transform group-hover/add:scale-125 group-hover/add:rotate-90" />
+                          <span className="text-xs font-bold uppercase tracking-wider opacity-0 group-hover/column:opacity-100 transition-opacity">Add Task</span>
+                        </div>
                       </button>
                     </CardContent>
                   </DroppableColumn>
@@ -658,28 +672,28 @@ export function KanbanBoard() {
 
         <DragOverlay>
           {activeTask ? (
-            <div className="p-2 border rounded bg-background shadow-lg rotate-2 w-60">
-              <div className="flex items-start justify-between mb-1">
-                <div className="flex items-start gap-1 flex-1 min-w-0">
-                  <GripVertical className="w-3 h-3 text-muted-foreground" />
-                  <h4 className="text-xs font-medium leading-tight flex-1 truncate">
+            <div className="p-3 border border-primary/30 rounded-xl bg-slate-800 shadow-2xl rotate-2 w-60 backdrop-blur-xl">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start gap-2 flex-1 min-w-0">
+                  <GripVertical className="w-3.5 h-3.5 text-primary" />
+                  <h4 className="text-sm font-semibold leading-tight flex-1 truncate text-white">
                     {sanitizeText(activeTask.title)}
                   </h4>
                 </div>
                 {activeTask.githubUrl && (
-                  <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                  <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                 )}
               </div>
               {activeTask.description && (
-                <p className="text-xs text-muted-foreground mb-1 ml-4 line-clamp-1">
+                <p className="text-xs text-slate-400 mb-2 ml-6 line-clamp-1">
                   {sanitizeText(activeTask.description)}
                 </p>
               )}
-              <div className="flex items-center justify-between ml-4">
-                <Badge variant="outline" className="text-xs px-1 py-0">
+              <div className="flex items-center justify-between ml-6">
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-slate-700 text-slate-400">
                   {activeTask.priority}
                 </Badge>
-                <Badge variant="outline" className="text-xs px-1 py-0">
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-slate-900/50 border-slate-800 text-slate-400">
                   {activeTask.type.replace("github-", "")}
                 </Badge>
               </div>
@@ -704,10 +718,10 @@ export function KanbanBoard() {
       />
 
       <Dialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
-        <DialogContent>
+        <DialogContent className="bg-slate-900 border-slate-800 text-slate-100">
           <DialogHeader>
             <DialogTitle>Move to Done</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-400">
               This task is from GitHub. Would you like to close it on GitHub as
               well?
             </DialogDescription>
@@ -719,19 +733,20 @@ export function KanbanBoard() {
               onCheckedChange={(checked) =>
                 setCloseOnGitHub(checked === true)
               }
+              className="border-slate-700 data-[state=checked]:bg-primary"
             />
             <Label
               htmlFor="close-github"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-300"
             >
               Close this {pendingMove && tasks[pendingMove.taskId]?.type === "github-issue" ? "issue" : "PR"} on GitHub
             </Label>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCancelClose}>
+            <Button variant="outline" onClick={handleCancelClose} className="border-slate-700 hover:bg-slate-800">
               Cancel
             </Button>
-            <Button onClick={handleConfirmClose} disabled={isClosing}>
+            <Button onClick={handleConfirmClose} disabled={isClosing} className="bg-primary hover:bg-primary/90">
               {isClosing ? "Closing..." : "Confirm"}
             </Button>
           </DialogFooter>

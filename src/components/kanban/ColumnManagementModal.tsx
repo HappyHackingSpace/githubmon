@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, GripVertical, Plus } from "lucide-react";
+import { Trash2, GripVertical, Plus, Settings2, Palette, ShieldAlert } from "lucide-react";
 import { useKanbanStore } from "@/stores/kanban";
+import { cn } from "@/lib/utils";
 import {
   DndContext,
   DragEndEvent,
@@ -91,7 +92,7 @@ function EditableColumn({
     <div
       ref={setNodeRef}
       style={style}
-      className="p-3 border rounded bg-background hover:bg-muted/30 transition-colors"
+      className="p-4 bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl hover:border-primary/30 transition-all group shadow-lg"
     >
       {isEditing ? (
         <div className="space-y-3">
@@ -173,11 +174,12 @@ function EditableColumn({
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <Button
               size="sm"
               variant="ghost"
               onClick={() => setIsEditing(true)}
+              className="text-slate-400 hover:text-white rounded-lg h-8 px-3"
             >
               Edit
             </Button>
@@ -185,7 +187,7 @@ function EditableColumn({
               size="sm"
               variant="ghost"
               onClick={() => onDelete(columnId)}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg h-8 w-8 p-0"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -268,12 +270,17 @@ export function ColumnManagementModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Manage Columns</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col p-0 bg-slate-900/90 backdrop-blur-xl border-slate-800 shadow-2xl">
+        <DialogHeader className="p-6 pb-4 border-b border-slate-800 bg-slate-800/20">
+          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+              <Settings2 className="w-5 h-5 text-primary" />
+            </div>
+            Manage Columns
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -304,81 +311,80 @@ export function ColumnManagementModal({
           </DndContext>
 
           {showAddColumn ? (
-            <div className="p-3 border-2 border-dashed rounded space-y-3">
-              <div>
-                <Label htmlFor="new-column-title" className="text-xs">
-                  Title
+            <div className="p-6 bg-slate-800/20 border-2 border-dashed border-slate-700 rounded-2xl space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-column-title" className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                  New Title
                 </Label>
                 <Input
                   id="new-column-title"
                   value={newColumnTitle}
                   onChange={(e) => setNewColumnTitle(e.target.value)}
-                  placeholder="Column title..."
-                  className="mt-1"
+                  placeholder="e.g. In Review, Testing..."
+                  className="bg-slate-800/50 border-slate-700 text-white rounded-xl"
                 />
               </div>
-              <div>
-                <Label htmlFor="new-column-color" className="text-xs">
-                  Color
-                </Label>
-                <div className="flex gap-2 mt-1">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-column-color" className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <Palette className="w-3 h-3" /> Color
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="new-column-color"
+                      type="color"
+                      value={newColumnColor}
+                      onChange={(e) => setNewColumnColor(e.target.value)}
+                      className="w-12 h-10 p-1 bg-slate-800/50 border-slate-700 rounded-xl cursor-pointer"
+                    />
+                    <Input
+                      value={newColumnColor}
+                      onChange={(e) => setNewColumnColor(e.target.value)}
+                      placeholder="#6366f1"
+                      className="flex-1 bg-slate-800/50 border-slate-700 text-white rounded-xl h-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-column-wip" className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <ShieldAlert className="w-3 h-3" /> WIP Limit
+                  </Label>
                   <Input
-                    id="new-column-color"
-                    type="color"
-                    value={newColumnColor}
-                    onChange={(e) => setNewColumnColor(e.target.value)}
-                    className="w-20 h-9"
-                  />
-                  <Input
-                    value={newColumnColor}
-                    onChange={(e) => setNewColumnColor(e.target.value)}
-                    placeholder="#000000"
-                    className="flex-1"
+                    id="new-column-wip"
+                    type="number"
+                    min="0"
+                    value={newColumnWipLimit}
+                    onChange={(e) => setNewColumnWipLimit(e.target.value)}
+                    placeholder="Unlimited"
+                    className="bg-slate-800/50 border-slate-700 text-white rounded-xl h-10"
                   />
                 </div>
               </div>
-              <div>
-                <Label htmlFor="new-column-wip" className="text-xs">
-                  WIP Limit (optional)
-                </Label>
-                <Input
-                  id="new-column-wip"
-                  type="number"
-                  min="0"
-                  value={newColumnWipLimit}
-                  onChange={(e) => setNewColumnWipLimit(e.target.value)}
-                  placeholder="No limit"
-                  className="mt-1"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleAddColumn}>
-                  Add
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setShowAddColumn(false);
-                    setNewColumnTitle("");
-                    setNewColumnColor("#6366f1");
-                    setNewColumnWipLimit("");
-                  }}
-                >
+              <div className="flex gap-2 justify-end pt-2">
+                <Button variant="ghost" size="sm" onClick={() => setShowAddColumn(false)} className="text-slate-400 hover:text-white rounded-xl">
                   Cancel
+                </Button>
+                <Button size="sm" onClick={handleAddColumn} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl px-6">
+                  Add Column
                 </Button>
               </div>
             </div>
           ) : (
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full h-12 bg-slate-800/30 border-dashed border-2 border-slate-700 hover:bg-slate-800 hover:border-primary/50 text-slate-400 hover:text-white rounded-2xl transition-all"
               onClick={() => setShowAddColumn(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Column
+              Create New Column
             </Button>
           )}
+        </div>
+
+        <div className="p-4 px-6 border-t border-slate-800 bg-slate-800/10 flex justify-end">
+          <Button onClick={handleClose} className="rounded-xl px-8 font-bold">
+            Done
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

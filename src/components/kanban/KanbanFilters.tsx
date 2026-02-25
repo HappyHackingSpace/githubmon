@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Archive, X } from "lucide-react";
 import { useKanbanStore } from "@/stores/kanban";
+import { cn } from "@/lib/utils";
 
 export function KanbanFilters() {
   const {
@@ -38,77 +39,82 @@ export function KanbanFilters() {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <Input
-            placeholder="Search tasks..."
+            placeholder="Search tasks, tags, or descriptions..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-10 bg-slate-900/50 border-slate-800 focus:border-primary/50 transition-all placeholder:text-slate-600"
           />
         </div>
 
-        <Select value={filterPriority} onValueChange={setFilterPriority}>
-          <SelectTrigger className="w-[140px]">
-            <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Priority" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Priorities</SelectItem>
-            <SelectItem value="urgent">🔴 Urgent</SelectItem>
-            <SelectItem value="high">🟠 High</SelectItem>
-            <SelectItem value="medium">🟡 Medium</SelectItem>
-            <SelectItem value="low">🟢 Low</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={filterPriority} onValueChange={setFilterPriority}>
+            <SelectTrigger className="w-[140px] bg-slate-900/50 border-slate-800 text-slate-300">
+              <Filter className="w-3.5 h-3.5 mr-2 text-slate-500" />
+              <SelectValue placeholder="Priority" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
+              <SelectItem value="all">All Priorities</SelectItem>
+              <SelectItem value="urgent">🔴 Urgent</SelectItem>
+              <SelectItem value="high">🟠 High</SelectItem>
+              <SelectItem value="medium">🟡 Medium</SelectItem>
+              <SelectItem value="low">🟢 Low</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="github-issue">🐛 Issues</SelectItem>
-            <SelectItem value="github-pr">🔄 PRs</SelectItem>
-            <SelectItem value="personal">👤 Personal</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-[140px] bg-slate-900/50 border-slate-800 text-slate-300">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="github-issue">🐛 Issues</SelectItem>
+              <SelectItem value="github-pr">🔄 PRs</SelectItem>
+              <SelectItem value="personal">👤 Personal</SelectItem>
+            </SelectContent>
+          </Select>
 
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearFilters}
-            className="gap-2"
-          >
-            <X className="w-4 h-4" />
-            Clear
-          </Button>
-        )}
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="gap-2 text-slate-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+              Clear
+            </Button>
+          )}
+        </div>
 
         {archivedTaskCount > 0 && (
           <Button
             variant={showArchived ? "default" : "outline"}
             size="sm"
             onClick={toggleShowArchived}
-            className="gap-2 ml-auto"
+            className={cn(
+              "gap-2 ml-auto",
+              showArchived ? "bg-primary" : "bg-slate-900/50 border-slate-800 text-slate-400"
+            )}
           >
             <Archive className="w-4 h-4" />
             Archive
-            <Badge variant="secondary" className="ml-1">
+            <Badge variant="secondary" className="ml-1 bg-slate-800 border-slate-700">
               {archivedTaskCount}
             </Badge>
           </Button>
         )}
       </div>
 
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
         <span>{activeTaskCount} active tasks</span>
         {archivedTaskCount > 0 && (
           <>
-            <span>•</span>
+            <span className="text-slate-700">•</span>
             <span>{archivedTaskCount} archived</span>
           </>
         )}

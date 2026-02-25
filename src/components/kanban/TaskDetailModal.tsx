@@ -256,9 +256,9 @@ export function TaskDetailModal({
         if (!open) handleClose();
       }}
     >
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col p-0 bg-slate-900/90 backdrop-blur-xl border-slate-800 shadow-2xl">
         {/* Header */}
-        <DialogHeader className={cn("p-6 pb-4 border-b", priorityConfig.bg, priorityConfig.border)}>
+        <DialogHeader className={cn("p-6 pb-4 border-b border-slate-800", isEditing ? "bg-slate-800/20" : priorityConfig.bg)}>
           <div className="flex items-start gap-4">
             <div className="flex-1 space-y-3">
               {isEditing ? (
@@ -276,24 +276,24 @@ export function TaskDetailModal({
               )}
 
               <div className="flex items-center gap-2 flex-wrap">
-                <div className={cn("flex items-center gap-1.5 px-3 py-1 rounded-md", priorityConfig.bg, priorityConfig.border, "border")}>
-                  <PriorityIcon className={cn("w-4 h-4", priorityConfig.color)} />
-                  <span className={cn("text-sm font-medium", priorityConfig.color)}>
+                <div className={cn("flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm", priorityConfig.bg, priorityConfig.border)}>
+                  <PriorityIcon className={cn("w-3.5 h-3.5", priorityConfig.color)} />
+                  <span className={cn("text-[10px] font-bold uppercase tracking-widest", priorityConfig.color)}>
                     {priorityConfig.label}
                   </span>
                 </div>
 
-                <Badge variant="secondary" className="gap-1.5">
+                <Badge variant="secondary" className="gap-1.5 bg-slate-800 border-slate-700 text-slate-300">
                   {task.type === "personal" ? "👤" : task.type === "github-pr" ? "🔄" : "🐛"}
-                  <span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">
                     {task.type === "personal" ? "Personal" : task.type === "github-pr" ? "Pull Request" : "Issue"}
                   </span>
                 </Badge>
 
                 {dueDateStatus && (
-                  <Badge variant="outline" className={cn("gap-1.5", dueDateStatus.color)}>
-                    <dueDateStatus.icon className="w-3 h-3" />
-                    {dueDateStatus.text}
+                  <Badge variant="outline" className={cn("gap-1.5 border-[1px] shadow-sm", dueDateStatus.color)}>
+                    <dueDateStatus.icon className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">{dueDateStatus.text}</span>
                   </Badge>
                 )}
               </div>
@@ -314,11 +314,12 @@ export function TaskDetailModal({
               )}
               {!isEditing ? (
                 <Button
-                  variant="default"
+                  variant="outline"
                   size="sm"
                   onClick={() => setIsEditing(true)}
+                  className="bg-slate-800/50 border-slate-700 hover:bg-slate-800 rounded-xl"
                 >
-                  <Edit className="w-4 h-4 mr-2" />
+                  <Edit className="w-4 h-4 mr-2 text-slate-400" />
                   Edit
                 </Button>
               ) : (
@@ -339,16 +340,16 @@ export function TaskDetailModal({
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start rounded-none border-b px-6 h-12 bg-muted/30">
-              <TabsTrigger value="details" className="gap-2">
-                <LinkIcon className="w-4 h-4" />
+            <TabsList className="w-full justify-start rounded-none border-b border-slate-800 px-6 h-12 bg-slate-900/50 backdrop-blur-sm">
+              <TabsTrigger value="details" className="gap-2 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+                <LinkIcon className="w-3.5 h-3.5" />
                 Details
               </TabsTrigger>
-              <TabsTrigger value="activity" className="gap-2">
-                <Activity className="w-4 h-4" />
+              <TabsTrigger value="activity" className="gap-2 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+                <Activity className="w-3.5 h-3.5" />
                 Activity
                 {task.activities && task.activities.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  <Badge variant="secondary" className="ml-1 h-4 px-1 text-[8px] bg-slate-800 border-slate-700">
                     {task.activities.length}
                   </Badge>
                 )}
@@ -655,10 +656,10 @@ export function TaskDetailModal({
               )}
 
               {!task.timeEstimate && !isEditing && (
-                <div className="text-center py-12 text-muted-foreground">
+                <div className="text-center py-16 text-slate-500 bg-slate-800/10 rounded-2xl border border-dashed border-slate-800">
                   <Timer className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No time tracking data</p>
-                  <p className="text-sm mt-2">Click Edit to add time estimates</p>
+                  <p className="text-lg font-bold text-slate-300">No time tracking data</p>
+                  <p className="text-sm mt-2">Click Edit to add time estimates and track progress</p>
                 </div>
               )}
             </TabsContent>
@@ -666,12 +667,12 @@ export function TaskDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t p-4 bg-muted/30 flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">
-            Task ID: {task.id}
+        <div className="border-t border-slate-800 p-4 px-6 bg-slate-800/10 flex justify-between items-center">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            Internal ID: {task.id.slice(0, 8)}...
           </span>
-          <Button variant="destructive" size="sm" onClick={handleDelete}>
-            <Trash2 className="w-4 h-4 mr-2" />
+          <Button variant="ghost" size="sm" onClick={handleDelete} className="text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl gap-2 font-bold uppercase tracking-widest text-[10px]">
+            <Trash2 className="w-4 h-4" />
             Delete Task
           </Button>
         </div>

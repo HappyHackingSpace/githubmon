@@ -1,6 +1,7 @@
 "use client";
 
 import { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SidebarGroupProps {
   icon?: LucideIcon;
@@ -16,14 +17,17 @@ export function SidebarGroup({
   className = "",
 }: SidebarGroupProps) {
   if (isCollapsed) {
-    return null;
+    return <div className="h-px bg-slate-800 my-4 mx-4" />;
   }
 
   return (
     <div
-      className={`px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2 ${className}`}
+      className={cn(
+        "px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] flex items-center gap-2 mt-4",
+        className
+      )}
     >
-      {Icon && <Icon className="w-3 h-3" />}
+      {Icon && <Icon className="w-3 h-3 opacity-70" />}
       <span>{title}</span>
     </div>
   );
