@@ -180,7 +180,9 @@ export function Sidebar() {
                   className="hidden lg:flex h-8 w-8 p-0 text-slate-500 hover:text-slate-100 hover:bg-slate-800/50 rounded-lg"
                   title="Collapse sidebar"
                 >
-                  <PanelLeftClose className="h-4 w-4" />
+                  <div className="flex items-center gap-1">
+                    <PanelLeftClose className="h-4 w-4" />
+                  </div>
                 </Button>
                 <button
                   onClick={() => setOpen(false)}

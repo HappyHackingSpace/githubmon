@@ -28,9 +28,11 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Plus, ExternalLink, GripVertical, Trash2, Eye, RefreshCw, Settings, AlertTriangle, Keyboard, Archive } from "lucide-react";
+import { Plus, ExternalLink, GripVertical, Trash2, Eye, RefreshCw, Settings, AlertTriangle, Keyboard, Archive, X, Folder } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -258,6 +260,10 @@ export function KanbanBoard() {
     filterType,
     autoArchiveOldTasks,
     deduplicateAllColumns,
+    customCategories,
+    addCustomCategory,
+    removeCustomCategory,
+    updateTask,
   } = useKanbanStore();
   const { orgData } = useAuthStore();
   const [activeTask, setActiveTask] = useState<KanbanTask | null>(null);
@@ -277,6 +283,32 @@ export function KanbanBoard() {
   const [isClosing, setIsClosing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+
+  const categories = useMemo(() => {
+    const cats = new Set<string>(["all"]);
+
+    // Add custom categories from store
+    (customCategories || []).forEach(cat => cats.add(cat));
+
+    Object.values(tasks).forEach((task) => {
+      if (task.category) {
+        cats.add(task.category);
+      } else if (task.type === "personal") {
+        cats.add("Personal");
+      } else if (task.githubUrl) {
+        // Extract repo name from https://github.com/owner/repo/issues/1
+        const parts = task.githubUrl.split("/");
+        if (parts.length >= 5) {
+          cats.add(parts[4]); // repo name
+        }
+      }
+    });
+
+    return Array.from(cats);
+  }, [tasks, customCategories]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -328,9 +360,25 @@ export function KanbanBoard() {
         return false;
       }
 
+      if (activeCategory !== "all") {
+        if (task.category === activeCategory) {
+          // Explicitly matched custom category
+        } else if (task.category) {
+          // Assigned to a DIFFERENT category
+          return false;
+        } else if (activeCategory === "Personal") {
+          if (task.type !== "personal") return false;
+        } else {
+          // Repository-based check only if no manual category is set
+          const parts = task.githubUrl?.split("/");
+          const repoName = parts && parts.length >= 5 ? parts[4] : null;
+          if (repoName !== activeCategory) return false;
+        }
+      }
+
       return true;
     });
-  }, [tasks, searchQuery, filterPriority, filterType]);
+  }, [tasks, searchQuery, filterPriority, filterType, activeCategory]);
 
   const filteredTaskIds = useMemo(
     () => new Set(filteredTasks.map((t) => t.id)),
@@ -586,13 +634,101 @@ export function KanbanBoard() {
         onClearSelection={() => setSelectedTaskIds(new Set())}
       />
 
+      <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
+        <TabsList className="bg-slate-900/50 border border-slate-800 p-1 h-auto flex flex-row flex-nowrap overflow-x-auto justify-start gap-1 scrollbar-hide">
+          {categories.slice().sort((a, b) => a === 'all' ? -1 : b === 'all' ? 1 : a.localeCompare(b)).map((cat) => (
+            <div key={cat} className="relative group/tab">
+              <TabsTrigger
+                value={cat}
+                className="px-4 py-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap"
+              >
+                {cat === "all" ? "All Tasks" : cat}
+              </TabsTrigger>
+              {cat !== 'all' && cat !== 'Personal' && customCategories.includes(cat) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Remove category "${cat}"? tasks will be moved to default.`)) {
+                      removeCustomCategory(cat);
+                      if (activeCategory === cat) setActiveCategory('all');
+                    }
+                  }}
+                  className="absolute -top-1 -right-1 opacity-0 group-hover/tab:opacity-100 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center hover:bg-red-600 transition-all z-20"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              )}
+            </div>
+          ))}
+
+          <div className="flex items-center gap-1 ml-2">
+            {isAddingCategory ? (
+              <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700 animate-in fade-in slide-in-from-left-2">
+                <Input
+                  autoFocus
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newCategoryName.trim()) {
+                      addCustomCategory(newCategoryName.trim());
+                      setNewCategoryName("");
+                      setIsAddingCategory(false);
+                    } else if (e.key === 'Escape') {
+                      setIsAddingCategory(false);
+                      setNewCategoryName("");
+                    }
+                  }}
+                  placeholder="Category name..."
+                  className="h-7 w-32 bg-transparent border-none text-[10px] font-bold uppercase tracking-widest focus-visible:ring-0 px-2"
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6 text-green-400 hover:text-green-300 hover:bg-green-400/10"
+                  onClick={() => {
+                    if (newCategoryName.trim()) {
+                      addCustomCategory(newCategoryName.trim());
+                      setNewCategoryName("");
+                      setIsAddingCategory(false);
+                    }
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6 text-slate-400 hover:text-white"
+                  onClick={() => {
+                    setIsAddingCategory(false);
+                    setNewCategoryName("");
+                  }}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 rounded-lg border border-dashed border-slate-700 hover:border-primary/50 text-slate-500 hover:text-white transition-all gap-2"
+                onClick={() => setIsAddingCategory(true)}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-bold uppercase tracking-widest">New Tab</span>
+              </Button>
+            )}
+          </div>
+        </TabsList>
+      </Tabs>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-20rem)] scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
           {columnOrder.map((columnId) => {
             const column = columns[columnId];
             const columnTasks = column.taskIds
@@ -603,7 +739,7 @@ export function KanbanBoard() {
             const wipWarning = column.wipLimit && columnTasks.length >= column.wipLimit;
 
             return (
-              <Card key={columnId} className="w-full bg-slate-900/40 backdrop-blur-md border-slate-800/50 shadow-xl overflow-hidden group/column">
+              <Card key={columnId} className="flex-shrink-0 w-80 bg-slate-900/40 backdrop-blur-md border-slate-800/50 shadow-xl overflow-hidden group/column">
                 <CardHeader className="pb-3 pt-4 px-4 bg-slate-800/30">
                   <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-tight text-slate-100">
                     <div

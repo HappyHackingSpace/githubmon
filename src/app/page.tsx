@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Separator } from "@/components/ui/separator";
 import { useAuthStore, useStoreHydration } from "@/stores";
 import { SearchModal } from "@/components/search/SearchModal";
 import { CallToActionSection } from "@/components/CallToActionSection";
@@ -67,7 +66,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        <Separator />
       </main>
 
       <BentoGrid />

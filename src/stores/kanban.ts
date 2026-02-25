@@ -39,6 +39,7 @@ export interface KanbanTask {
   timeEstimate?: number;
   timeSpent?: number;
   lastViewedAt?: Date;
+  category?: string;
 }
 
 type SerializedKanbanTask = Omit<
@@ -144,6 +145,9 @@ interface KanbanState {
   bulkUpdatePriority: (taskIds: string[], priority: KanbanTask["priority"]) => void;
   autoArchiveOldTasks: () => number;
   deduplicateAllColumns: () => Record<string, KanbanColumn>;
+  customCategories: string[];
+  addCustomCategory: (name: string) => void;
+  removeCustomCategory: (name: string) => void;
 }
 
 const defaultColumns: Record<string, KanbanColumn> = {
@@ -271,7 +275,7 @@ const analyzeContext = (context: GitHubDataContext): ColumnSuggestion[] => {
   return suggestions.sort((a, b) => a.priority - b.priority);
 };
 
-const MAX_COLUMNS = 8;
+const MAX_COLUMNS = 15;
 const MAX_TASKS_PER_BOARD = 500;
 const AUTO_ARCHIVE_DAYS = 30;
 
@@ -1032,6 +1036,29 @@ export const useKanbanStore = create<KanbanState>()(
 
         return get().columns;
       },
+
+      customCategories: [],
+
+      addCustomCategory: (name) => {
+        set((state) => {
+          if (state.customCategories.includes(name)) return state;
+          return {
+            customCategories: [...state.customCategories, name],
+          };
+        });
+      },
+
+      removeCustomCategory: (name) => {
+        set((state) => ({
+          customCategories: state.customCategories.filter((c) => c !== name),
+          tasks: Object.fromEntries(
+            Object.entries(state.tasks).map(([id, task]) => [
+              id,
+              task.category === name ? { ...task, category: undefined } : task,
+            ])
+          ),
+        }));
+      },
     }),
     {
       name: "githubmon-kanban",
@@ -1039,8 +1066,8 @@ export const useKanbanStore = create<KanbanState>()(
         if (typeof window === "undefined") {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           };
         }
         return {
@@ -1076,6 +1103,7 @@ export const useKanbanStore = create<KanbanState>()(
         addedActionItemIds: Array.from(state.addedActionItemIds),
         archivedTasks: state.archivedTasks,
         columnSuggestions: state.columnSuggestions,
+        customCategories: state.customCategories,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

@@ -3,7 +3,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRequireAuth } from "@/hooks/useAuth";
 import { ThemeSelector } from "@/components/theme/ThemeToggle";
@@ -93,7 +92,6 @@ export default function SettingsPage() {
                   </p>
                 </div>
 
-                <Separator />
               </CardContent>
             </Card>
           </TabsContent>

@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -13,7 +12,6 @@ import {
   Archive,
   Trash2,
   MoveRight,
-  AlertTriangle,
   X,
   Layers,
 } from "lucide-react";
@@ -21,7 +19,6 @@ import { useKanbanStore } from "@/stores/kanban";
 import { toast } from "sonner";
 import type { KanbanTask } from "@/stores/kanban";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 interface BulkActionsToolbarProps {
   selectedTaskIds: Set<string>;

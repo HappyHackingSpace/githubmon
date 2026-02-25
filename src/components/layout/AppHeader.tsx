@@ -35,7 +35,7 @@ export function AppHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-background border-b border-border">
+    <header className="sticky top-0 z-40 bg-background">
       <div className="flex items-center justify-between px-6 py-3">
         <nav className="flex items-center space-x-2 text-sm">
           {breadcrumbs.map((crumb, index) => (

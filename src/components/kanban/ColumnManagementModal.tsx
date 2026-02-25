@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, GripVertical, Plus, Settings2, Palette, ShieldAlert } from "lucide-react";
 import { useKanbanStore } from "@/stores/kanban";
-import { cn } from "@/lib/utils";
 import {
   DndContext,
   DragEndEvent,
@@ -370,14 +369,22 @@ export function ColumnManagementModal({
               </div>
             </div>
           ) : (
-            <Button
-              variant="outline"
-              className="w-full h-12 bg-slate-800/30 border-dashed border-2 border-slate-700 hover:bg-slate-800 hover:border-primary/50 text-slate-400 hover:text-white rounded-2xl transition-all"
-              onClick={() => setShowAddColumn(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Column
-            </Button>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                disabled={columnOrder.length >= 15}
+                className="w-full h-12 bg-slate-800/30 border-dashed border-2 border-slate-700 hover:bg-slate-800 hover:border-primary/50 text-slate-400 hover:text-white rounded-2xl transition-all"
+                onClick={() => setShowAddColumn(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {columnOrder.length >= 15 ? "Maximum 15 columns reached" : "Create New Column"}
+              </Button>
+              {columnOrder.length >= 15 && (
+                <p className="text-[10px] text-center text-slate-500 uppercase tracking-widest font-bold">
+                  Delete existing columns to add more
+                </p>
+              )}
+            </div>
           )}
         </div>
 

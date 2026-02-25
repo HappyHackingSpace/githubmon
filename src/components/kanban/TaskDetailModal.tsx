@@ -42,6 +42,7 @@ import { useCallback, useState, useEffect } from "react";
 import { sanitizeText } from "@/lib/sanitize";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Folder } from "lucide-react";
 
 interface TaskDetailModalProps {
   task: KanbanTask | null;
@@ -65,6 +66,7 @@ export function TaskDetailModal({
     tags: [] as string[],
     timeEstimate: "",
     timeSpent: "",
+    category: "",
   });
   const [tagInput, setTagInput] = useState("");
   const [activeTab, setActiveTab] = useState("details");
@@ -89,6 +91,7 @@ export function TaskDetailModal({
         tags: task.tags || [],
         timeEstimate: task.timeEstimate?.toString() || "",
         timeSpent: task.timeSpent?.toString() || "",
+        category: task.category || "",
       });
       setIsEditing(false);
       setTagInput("");
@@ -121,6 +124,7 @@ export function TaskDetailModal({
         tags: editData.tags.length > 0 ? editData.tags : undefined,
         timeEstimate: editData.timeEstimate ? parseFloat(editData.timeEstimate) : undefined,
         timeSpent: editData.timeSpent ? parseFloat(editData.timeSpent) : undefined,
+        category: editData.category || undefined,
       });
       toast.success("Task updated successfully");
       setIsEditing(false);
@@ -140,6 +144,7 @@ export function TaskDetailModal({
         tags: task.tags || [],
         timeEstimate: task.timeEstimate?.toString() || "",
         timeSpent: task.timeSpent?.toString() || "",
+        category: task.category || "",
       });
       setTagInput("");
     }
@@ -530,6 +535,36 @@ export function TaskDetailModal({
                   </div>
 
                   <Separator />
+
+                  {/* Category Selection */}
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Folder className="w-4 h-4" />
+                      Tab / Category
+                    </Label>
+                    {isEditing ? (
+                      <Select
+                        value={editData.category}
+                        onValueChange={(value) => setEditData({ ...editData, category: value })}
+                      >
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Auto-categorized" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value=" ">Auto / Default</SelectItem>
+                          {useKanbanStore.getState().customCategories.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-sm mt-2 px-3 py-2 bg-muted/30 rounded-md">
+                        {task.category || "Auto-categorized"}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Metadata */}
                   <div className="space-y-3 text-sm">
