@@ -32,7 +32,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Plus, ExternalLink, GripVertical, Trash2, Eye, RefreshCw, Settings, AlertTriangle, Keyboard, Archive, X, Folder } from "lucide-react";
+import { Plus, ExternalLink, GripVertical, Trash2, Eye, RefreshCw, Settings, AlertTriangle, Keyboard, Archive, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -263,7 +263,6 @@ export function KanbanBoard() {
     customCategories,
     addCustomCategory,
     removeCustomCategory,
-    updateTask,
   } = useKanbanStore();
   const { orgData } = useAuthStore();
   const [activeTask, setActiveTask] = useState<KanbanTask | null>(null);
@@ -286,29 +285,6 @@ export function KanbanBoard() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
-
-  const categories = useMemo(() => {
-    const cats = new Set<string>(["all"]);
-
-    // Add custom categories from store
-    (customCategories || []).forEach(cat => cats.add(cat));
-
-    Object.values(tasks).forEach((task) => {
-      if (task.category) {
-        cats.add(task.category);
-      } else if (task.type === "personal") {
-        cats.add("Personal");
-      } else if (task.githubUrl) {
-        // Extract repo name from https://github.com/owner/repo/issues/1
-        const parts = task.githubUrl.split("/");
-        if (parts.length >= 5) {
-          cats.add(parts[4]); // repo name
-        }
-      }
-    });
-
-    return Array.from(cats);
-  }, [tasks, customCategories]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -338,15 +314,16 @@ export function KanbanBoard() {
     deduplicateAllColumns();
   }, [deduplicateAllColumns]);
 
-  const filteredTasks = useMemo(() => {
+  // First, filter by all criteria EXCEPT category to calculate counts
+  const tasksFilteredByCriteria = useMemo(() => {
     const taskList = Object.values(tasks);
     return taskList.filter((task) => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchesTitle = task.title.toLowerCase().includes(query);
-        const matchesDescription = task.description?.toLowerCase().includes(query);
+        const matchesTitle = (task.title || "").toLowerCase().includes(query);
+        const matchesDescription = (task.description || "").toLowerCase().includes(query);
         const matchesTags = task.tags?.some((tag) => tag.toLowerCase().includes(query));
-        const matchesLabels = task.labels.some((label) => label.toLowerCase().includes(query));
+        const matchesLabels = task.labels?.some((label) => label.toLowerCase().includes(query));
         if (!matchesTitle && !matchesDescription && !matchesTags && !matchesLabels) {
           return false;
         }
@@ -360,25 +337,64 @@ export function KanbanBoard() {
         return false;
       }
 
-      if (activeCategory !== "all") {
-        if (task.category === activeCategory) {
-          // Explicitly matched custom category
-        } else if (task.category) {
-          // Assigned to a DIFFERENT category
-          return false;
-        } else if (activeCategory === "Personal") {
-          if (task.type !== "personal") return false;
-        } else {
-          // Repository-based check only if no manual category is set
-          const parts = task.githubUrl?.split("/");
-          const repoName = parts && parts.length >= 5 ? parts[4] : null;
-          if (repoName !== activeCategory) return false;
+      return true;
+    });
+  }, [tasks, searchQuery, filterPriority, filterType]);
+
+  const categoryStats = useMemo(() => {
+    const categoriesSet = new Set<string>(["all"]);
+    const counts: Record<string, number> = { all: tasksFilteredByCriteria.length };
+
+    // Add custom categories
+    (customCategories || []).forEach(cat => {
+      categoriesSet.add(cat);
+      counts[cat] = 0;
+    });
+
+    tasksFilteredByCriteria.forEach((task) => {
+      let taskCategory = "";
+      if (task.category) {
+        taskCategory = task.category;
+      } else if (task.type === "personal") {
+        taskCategory = "Personal";
+      } else if (task.githubUrl) {
+        const parts = task.githubUrl.split("/");
+        if (parts.length >= 5) {
+          taskCategory = parts[4];
         }
       }
 
-      return true;
+      if (taskCategory) {
+        categoriesSet.add(taskCategory);
+        counts[taskCategory] = (counts[taskCategory] || 0) + 1;
+      }
     });
-  }, [tasks, searchQuery, filterPriority, filterType, activeCategory]);
+
+    return {
+      categories: Array.from(categoriesSet).sort((a, b) =>
+        a === 'all' ? -1 : b === 'all' ? 1 : a.localeCompare(b)
+      ),
+      counts
+    };
+  }, [tasksFilteredByCriteria, customCategories]);
+
+  const filteredTasks = useMemo(() => {
+    if (activeCategory === "all") return tasksFilteredByCriteria;
+
+    return tasksFilteredByCriteria.filter((task) => {
+      if (task.category === activeCategory) {
+        return true;
+      } else if (task.category) {
+        return false;
+      } else if (activeCategory === "Personal") {
+        return task.type === "personal";
+      } else {
+        const parts = task.githubUrl?.split("/");
+        const repoName = parts && parts.length >= 5 ? parts[4] : null;
+        return repoName === activeCategory;
+      }
+    });
+  }, [tasksFilteredByCriteria, activeCategory]);
 
   const filteredTaskIds = useMemo(
     () => new Set(filteredTasks.map((t) => t.id)),
@@ -636,13 +652,22 @@ export function KanbanBoard() {
 
       <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
         <TabsList className="bg-slate-900/50 border border-slate-800 p-1 h-auto flex flex-row flex-nowrap overflow-x-auto justify-start gap-1 scrollbar-hide">
-          {categories.slice().sort((a, b) => a === 'all' ? -1 : b === 'all' ? 1 : a.localeCompare(b)).map((cat) => (
+          {categoryStats.categories.map((cat) => (
             <div key={cat} className="relative group/tab">
               <TabsTrigger
                 value={cat}
-                className="px-4 py-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap"
+                className="px-4 py-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2"
               >
                 {cat === "all" ? "All Tasks" : cat}
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-[10px] px-1.5 h-4 min-w-[20px] flex items-center justify-center font-bold border-slate-700/50",
+                    activeCategory === cat ? "bg-white/20 text-white border-white/30" : "bg-slate-800/50 text-slate-400"
+                  )}
+                >
+                  {categoryStats.counts[cat] || 0}
+                </Badge>
               </TabsTrigger>
               {cat !== 'all' && cat !== 'Personal' && customCategories.includes(cat) && (
                 <button

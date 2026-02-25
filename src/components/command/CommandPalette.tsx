@@ -12,7 +12,9 @@ import {
   CommandSeparator,
 } from "@/components/ui/command"
 import { useNavigationStore, useSearchStore, usePreferencesStore, useAuthStore } from "@/stores"
+import { QuickTaskCommand } from "./QuickTaskCommand"
 import { menuItems } from "@/config/menu"
+import { Button } from "@/components/ui/button"
 import {
   Search,
   Settings,
@@ -22,8 +24,12 @@ import {
   Monitor,
   Clock,
   GitBranch,
+  Star,
+  Users,
+  Loader2,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
+import { githubAPIClient } from "@/lib/api/github-api-client"
 
 export function CommandPalette() {
   const router = useRouter()
@@ -31,14 +37,30 @@ export function CommandPalette() {
 
   const isCommandPaletteOpen = useNavigationStore((state) => state.isCommandPaletteOpen)
   const setCommandPaletteOpen = useNavigationStore((state) => state.setCommandPaletteOpen)
+  const isQuickTaskOpen = useNavigationStore((state) => state.isQuickTaskOpen)
+  const setQuickTaskOpen = useNavigationStore((state) => state.setQuickTaskOpen)
   const recentPages = useNavigationStore((state) => state.recentPages)
 
-  const setSearchModalOpen = useSearchStore((state) => state.setSearchModalOpen)
-  const recentSearches = useSearchStore((state) => state.recentSearches)
+  const {
+    isSearchModalOpen,
+    setSearchModalOpen,
+    recentSearches,
+    isUnifiedSearchLoading,
+    unifiedResults,
+    setUnifiedSearchLoading,
+    setUnifiedResults
+  } = useSearchStore()
 
-  const theme = usePreferencesStore((state) => state.theme)
-  const setTheme = usePreferencesStore((state) => state.setTheme)
-  const pinnedRepos = usePreferencesStore((state) => state.pinnedRepos)
+  const [inputValue, setInputValue] = React.useState("")
+
+  const {
+    theme,
+    setTheme,
+    pinnedRepos,
+    favoriteUsers,
+    togglePinnedRepo,
+    toggleFavoriteUser
+  } = usePreferencesStore()
 
   const isConnected = useAuthStore((state) => state.isConnected)
 
@@ -50,15 +72,49 @@ export function CommandPalette() {
     if (!mounted) return
 
     const down = (e: KeyboardEvent) => {
+      // General Command Palette (Ctrl+K)
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
+        setQuickTaskOpen(false)
         setCommandPaletteOpen(!isCommandPaletteOpen)
+      }
+
+      // Quick Task (Alt+N)
+      if (e.key.toLowerCase() === "n" && e.altKey) {
+        e.preventDefault()
+        setQuickTaskOpen(true)
+        setCommandPaletteOpen(true)
       }
     }
 
     document.addEventListener("keydown", down)
     return () => document.removeEventListener("keydown", down)
   }, [mounted, isCommandPaletteOpen, setCommandPaletteOpen])
+
+  React.useEffect(() => {
+    if (!inputValue.trim() || !isCommandPaletteOpen) {
+      setUnifiedResults({ repos: [], users: [] })
+      setUnifiedSearchLoading(false)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      setUnifiedSearchLoading(true)
+      try {
+        const [repos, users] = await Promise.all([
+          githubAPIClient.searchRepositories(inputValue, "stars", 5),
+          githubAPIClient.searchUsers(inputValue, "all", 5)
+        ])
+        setUnifiedResults({ repos, users })
+      } catch (error) {
+        console.error("Search failed:", error)
+      } finally {
+        setUnifiedSearchLoading(false)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [inputValue, isCommandPaletteOpen, setUnifiedResults, setUnifiedSearchLoading])
 
   const handleSelect = React.useCallback((callback: () => void) => {
     setCommandPaletteOpen(false)
@@ -95,9 +151,13 @@ export function CommandPalette() {
   const actionItems = [
     {
       id: "search",
-      label: "Search Repositories & Users",
+      label: "Search GitHub",
       icon: Search,
-      onSelect: () => setSearchModalOpen(true),
+      onSelect: () => {
+        // Just focus the input if already open
+        const input = document.querySelector('[cmdk-input]') as HTMLInputElement;
+        if (input) input.focus();
+      },
     },
     {
       id: "theme-light",
@@ -134,90 +194,166 @@ export function CommandPalette() {
   }
 
   return (
-    <CommandDialog open={isCommandPaletteOpen} onOpenChange={setCommandPaletteOpen}>
-      <CommandInput placeholder="Type a command or search..." />
-      <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+    <CommandDialog open={isCommandPaletteOpen} onOpenChange={(open) => {
+      setCommandPaletteOpen(open)
+      if (!open) setQuickTaskOpen(false)
+    }}>
+      {isQuickTaskOpen ? (
+        <QuickTaskCommand onClose={() => setCommandPaletteOpen(false)} />
+      ) : (
+        <>
+          <CommandInput
+            placeholder="Type a command or search GitHub..."
+            value={inputValue}
+            onValueChange={setInputValue}
+          />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
 
-        {recentPages.length > 0 && (
-          <>
-            <CommandGroup heading="Recent Pages">
-              {recentPages.map((page) => (
+            {recentPages.length > 0 && (
+              <>
+                <CommandGroup heading="Recent Pages">
+                  {recentPages.map((page) => (
+                    <CommandItem
+                      key={page.path}
+                      onSelect={() => handleSelect(() => router.push(page.path))}
+                    >
+                      <Clock className="mr-2 h-4 w-4" />
+                      <span>{page.title}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+                <CommandSeparator />
+              </>
+            )}
+
+            <CommandGroup heading="Navigation">
+              {navigationItems.map((item) => (
                 <CommandItem
-                  key={page.path}
-                  onSelect={() => handleSelect(() => router.push(page.path))}
+                  key={item.id}
+                  onSelect={() => handleSelect(item.onSelect)}
                 >
-                  <Clock className="mr-2 h-4 w-4" />
-                  <span>{page.title}</span>
+                  <item.icon className="mr-2 h-4 w-4" />
+                  <span>{item.label}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
+
             <CommandSeparator />
-          </>
-        )}
 
-        <CommandGroup heading="Navigation">
-          {navigationItems.map((item) => (
-            <CommandItem
-              key={item.id}
-              onSelect={() => handleSelect(item.onSelect)}
-            >
-              <item.icon className="mr-2 h-4 w-4" />
-              <span>{item.label}</span>
-            </CommandItem>
-          ))}
-        </CommandGroup>
-
-        <CommandSeparator />
-
-        <CommandGroup heading="Actions">
-          {actionItems.map((item) => (
-            <CommandItem
-              key={item.id}
-              onSelect={() => handleSelect(item.onSelect)}
-            >
-              <item.icon className="mr-2 h-4 w-4" />
-              <span>{item.label}</span>
-            </CommandItem>
-          ))}
-        </CommandGroup>
-
-        {pinnedRepos.length > 0 && (
-          <>
-            <CommandSeparator />
-            <CommandGroup heading="Pinned Repositories">
-              {pinnedRepos.slice(0, 5).map((repo) => (
+            <CommandGroup heading="Actions">
+              {actionItems.map((item) => (
                 <CommandItem
-                  key={repo}
-                  onSelect={() => handleSelect(() => window.open(`https://github.com/${repo}`, "_blank"))}
+                  key={item.id}
+                  onSelect={() => handleSelect(item.onSelect)}
                 >
-                  <GitBranch className="mr-2 h-4 w-4" />
-                  <span>{repo}</span>
+                  <item.icon className="mr-2 h-4 w-4" />
+                  <span>{item.label}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
-          </>
-        )}
 
-        {recentSearches.length > 0 && (
-          <>
-            <CommandSeparator />
-            <CommandGroup heading="Recent Searches">
-              {recentSearches.slice(0, 5).map((search) => (
-                <CommandItem
-                  key={search}
-                  onSelect={() => handleSelect(() => {
-                    setSearchModalOpen(true)
-                  })}
-                >
-                  <Search className="mr-2 h-4 w-4" />
-                  <span>{search}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </>
-        )}
-      </CommandList>
+            {isUnifiedSearchLoading && (
+              <div className="flex items-center justify-center p-4">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Searching GitHub...</span>
+              </div>
+            )}
+
+            {unifiedResults.repos.length > 0 && (
+              <CommandGroup heading="GitHub Repositories">
+                {unifiedResults.repos.map((repo) => (
+                  <CommandItem
+                    key={repo.id}
+                    onSelect={() => handleSelect(() => router.push(`/search?repo=${repo.full_name}`))}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center flex-1 min-w-0">
+                      <GitBranch className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{repo.full_name}</span>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 ml-2"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation()
+                        togglePinnedRepo(repo.full_name)
+                      }}
+                    >
+                      <Star className={`h-3 w-3 ${pinnedRepos.includes(repo.full_name) ? "fill-yellow-500 text-yellow-500" : ""}`} />
+                    </Button>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {unifiedResults.users.length > 0 && (
+              <CommandGroup heading="GitHub Users">
+                {unifiedResults.users.map((user) => (
+                  <CommandItem
+                    key={user.login}
+                    onSelect={() => handleSelect(() => router.push(`/search?user=${user.login}`))}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center flex-1 min-w-0">
+                      <Users className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{user.login}</span>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 ml-2"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation()
+                        toggleFavoriteUser(user.login)
+                      }}
+                    >
+                      <Star className={`h-3 w-3 ${favoriteUsers.includes(user.login) ? "fill-yellow-500 text-yellow-500" : ""}`} />
+                    </Button>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {pinnedRepos.length > 0 && (
+              <>
+                <CommandSeparator />
+                <CommandGroup heading="Pinned Repositories">
+                  {pinnedRepos.slice(0, 5).map((repo) => (
+                    <CommandItem
+                      key={repo}
+                      onSelect={() => handleSelect(() => window.open(`https://github.com/${repo}`, "_blank"))}
+                    >
+                      <GitBranch className="mr-2 h-4 w-4" />
+                      <span>{repo}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </>
+            )}
+
+            {recentSearches.length > 0 && (
+              <>
+                <CommandSeparator />
+                <CommandGroup heading="Recent Searches">
+                  {recentSearches.slice(0, 5).map((search) => (
+                    <CommandItem
+                      key={search}
+                      onSelect={() => handleSelect(() => {
+                        setSearchModalOpen(true)
+                      })}
+                    >
+                      <Search className="mr-2 h-4 w-4" />
+                      <span>{search}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
+        </>
+      )}
     </CommandDialog>
   )
 }

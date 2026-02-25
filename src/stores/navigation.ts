@@ -10,9 +10,11 @@ export interface NavigationHistoryItem {
 interface NavigationState {
   recentPages: NavigationHistoryItem[];
   isCommandPaletteOpen: boolean;
+  isQuickTaskOpen: boolean;
 
   addToHistory: (path: string, title: string) => void;
   setCommandPaletteOpen: (open: boolean) => void;
+  setQuickTaskOpen: (open: boolean) => void;
   clearHistory: () => void;
 }
 
@@ -21,6 +23,7 @@ export const useNavigationStore = create<NavigationState>()(
     (set) => ({
       recentPages: [],
       isCommandPaletteOpen: false,
+      isQuickTaskOpen: false,
 
       addToHistory: (path, title) => {
         set((state) => {
@@ -43,6 +46,9 @@ export const useNavigationStore = create<NavigationState>()(
       setCommandPaletteOpen: (isCommandPaletteOpen) =>
         set({ isCommandPaletteOpen }),
 
+      setQuickTaskOpen: (isQuickTaskOpen) =>
+        set({ isQuickTaskOpen }),
+
       clearHistory: () => set({ recentPages: [] }),
     }),
     {
@@ -51,8 +57,8 @@ export const useNavigationStore = create<NavigationState>()(
         if (typeof window === "undefined") {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           };
         }
         return localStorage;

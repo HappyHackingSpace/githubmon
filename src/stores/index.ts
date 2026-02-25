@@ -84,26 +84,26 @@ export const usePreferences = () => {
   if (!hasHydrated) {
     return {
       ...defaultPreferences,
-      setTheme: () => {},
-      setDefaultSearchType: () => {},
-      setDefaultPeriod: () => {},
-      toggleFavoriteLanguage: () => {},
-      togglePinnedRepo: () => {},
-      toggleFavoriteUser: () => {},
+      setTheme: () => { },
+      setDefaultSearchType: () => { },
+      setDefaultPeriod: () => { },
+      toggleFavoriteLanguage: () => { },
+      togglePinnedRepo: () => { },
+      toggleFavoriteUser: () => { },
       addCategory: () => "",
-      updateCategory: () => {},
-      deleteCategory: () => {},
-      setRepoCategory: () => {},
-      setUserCategory: () => {},
-      setRepoNotes: () => {},
-      setUserNotes: () => {},
-      setSidebarCollapsed: () => {},
-      setCompactMode: () => {},
-      setShowTutorials: () => {},
-      setNotifications: () => {},
-      setSearchResultsPerPage: () => {},
-      setNotifyOnTrends: () => {},
-      resetPreferences: () => {},
+      updateCategory: () => { },
+      deleteCategory: () => { },
+      setRepoCategory: () => { },
+      setUserCategory: () => { },
+      setRepoNotes: () => { },
+      setUserNotes: () => { },
+      setSidebarCollapsed: () => { },
+      setCompactMode: () => { },
+      setShowTutorials: () => { },
+      setNotifications: () => { },
+      setSearchResultsPerPage: () => { },
+      setNotifyOnTrends: () => { },
+      resetPreferences: () => { },
     };
   }
 
@@ -122,13 +122,17 @@ export const useSearch = () => {
       currentResults: { repos: [], users: [], loading: false, error: null },
       searchHistory: [],
       recentSearches: [],
-      setSearchModalOpen: () => {},
-      setCurrentQuery: () => {},
-      setCurrentSearchType: () => {},
-      setSearchResults: () => {},
-      addToHistory: () => {},
-      clearHistory: () => {},
-      clearRecentSearches: () => {},
+      isUnifiedSearchLoading: false,
+      unifiedResults: { repos: [], users: [] },
+      setSearchModalOpen: () => { },
+      setUnifiedSearchLoading: () => { },
+      setUnifiedResults: () => { },
+      setCurrentQuery: () => { },
+      setCurrentSearchType: () => { },
+      setSearchResults: () => { },
+      addToHistory: () => { },
+      clearHistory: () => { },
+      clearRecentSearches: () => { },
     };
   }
 
@@ -142,7 +146,7 @@ export const useDataCache = () => {
   if (!hasHydrated) {
     return {
       rateLimitInfo: null,
-      setRateLimit: () => {},
+      setRateLimit: () => { },
     };
   }
 
@@ -157,10 +161,10 @@ export const useApp = () => {
     return {
       sidebarOpen: false,
       notifications: [],
-      setSidebarOpen: () => {},
-      addNotification: () => {},
-      removeNotification: () => {},
-      clearNotifications: () => {},
+      setSidebarOpen: () => { },
+      addNotification: () => { },
+      removeNotification: () => { },
+      clearNotifications: () => { },
     };
   }
 

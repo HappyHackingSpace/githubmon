@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore, useStoreHydration } from "@/stores";
-import { SearchModal } from "@/components/search/SearchModal";
 import { CallToActionSection } from "@/components/CallToActionSection";
 import { Header } from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -71,7 +70,6 @@ export default function HomePage() {
       <BentoGrid />
       <CodeDemo />
       <CallToActionSection />
-      <SearchModal />
       <Footer />
     </>
   );

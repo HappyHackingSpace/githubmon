@@ -2,22 +2,34 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { usePreferencesStore } from "@/stores/preferences";
+import { usePreferencesStore, type FavoriteCategory } from "@/stores/preferences";
 import { useFavoritesStore } from "@/stores/favorites";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, ChevronRight, Star, GitPullRequest, User, TrendingUp, TrendingDown, Code, Filter, SortAsc, ExternalLink, Copy, GitBranch, BarChart3 } from "lucide-react";
+import { ChevronDown, ChevronRight, Star, GitPullRequest, User, TrendingUp, TrendingDown, Code, Filter, SortAsc, ExternalLink, Copy, GitBranch, BarChart3, Plus, Settings, X, Tag, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import Image from "next/image";
 
 export function FavoritesList() {
   const router = useRouter();
-  const pinnedRepos = usePreferencesStore((state) => state.pinnedRepos);
-  const favoriteUsers = usePreferencesStore((state) => state.favoriteUsers);
-  const categories = usePreferencesStore((state) => state.categories);
-  const repoMetadata = usePreferencesStore((state) => state.repoMetadata);
-  const userMetadata = usePreferencesStore((state) => state.userMetadata);
+  const {
+    pinnedRepos,
+    favoriteUsers,
+    categories,
+    repoMetadata,
+    userMetadata,
+    togglePinnedRepo,
+    toggleFavoriteUser,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    setRepoCategory,
+    setUserCategory
+  } = usePreferencesStore();
   const { repoMetrics, userMetrics, loading, error, fetchAllFavorites, isHydrated } = useFavoritesStore();
 
   const [reposExpanded, setReposExpanded] = useState(true);
@@ -28,6 +40,17 @@ export function FavoritesList() {
   const [userFilter, setUserFilter] = useState<string>("all");
   const [userSort, setUserSort] = useState<string>("activity");
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+
+  const [newRepoName, setNewRepoName] = useState("");
+  const [newUsername, setNewUsername] = useState("");
+  const [addRepoDialogOpen, setAddRepoDialogOpen] = useState(false);
+  const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryColor, setNewCategoryColor] = useState("#3b82f6");
+  const [editingCategory, setEditingCategory] = useState<FavoriteCategory | null>(null);
+  const [repoToCategory, setRepoToCategory] = useState<string | null>(null);
+  const [userToCategory, setUserToCategory] = useState<string | null>(null);
 
   useEffect(() => {
     if (isHydrated && (pinnedRepos.length > 0 || favoriteUsers.length > 0)) {
@@ -40,6 +63,51 @@ export function FavoritesList() {
     setCopiedUrl(identifier);
     setTimeout(() => setCopiedUrl(null), 2000);
   };
+  const handleAddRepo = () => {
+    if (newRepoName.trim() && newRepoName.includes("/")) {
+      togglePinnedRepo(newRepoName.trim(), repoToCategory);
+      setNewRepoName("");
+      setRepoToCategory(null);
+      setAddRepoDialogOpen(false);
+    }
+  };
+
+  const handleAddUser = () => {
+    if (newUsername.trim()) {
+      toggleFavoriteUser(newUsername.trim(), userToCategory);
+      setNewUsername("");
+      setUserToCategory(null);
+      setAddUserDialogOpen(false);
+    }
+  };
+
+  const handleAddCategory = () => {
+    if (newCategoryName.trim()) {
+      addCategory(newCategoryName.trim(), newCategoryColor);
+      setNewCategoryName("");
+      setNewCategoryColor("#3b82f6");
+    }
+  };
+
+  const handleUpdateCategory = () => {
+    if (editingCategory && newCategoryName.trim()) {
+      updateCategory(editingCategory.id, newCategoryName.trim(), newCategoryColor);
+      setEditingCategory(null);
+      setNewCategoryName("");
+      setNewCategoryColor("#3b82f6");
+    }
+  };
+
+  const colorOptions = [
+    { name: "Blue", value: "#3b82f6" },
+    { name: "Green", value: "#10b981" },
+    { name: "Yellow", value: "#f59e0b" },
+    { name: "Red", value: "#ef4444" },
+    { name: "Purple", value: "#a855f7" },
+    { name: "Pink", value: "#ec4899" },
+    { name: "Indigo", value: "#6366f1" },
+    { name: "Teal", value: "#14b8a6" },
+  ];
 
   const filteredAndSortedRepos = useMemo(() => {
     const filtered = pinnedRepos.filter((repoName) => {
@@ -133,8 +201,63 @@ export function FavoritesList() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Favorites</CardTitle>
-        <CardDescription>Live metrics from your favorites (updated within 24h)</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">Favorites</CardTitle>
+            <CardDescription>Live metrics from your favorites (updated within 24h)</CardDescription>
+          </div>
+          <Dialog open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 gap-2">
+                <Tag className="h-4 w-4" />
+                Categories
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Manage Categories</DialogTitle>
+                <DialogDescription>Add or edit categories to organize your favorites</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Category name"
+                    value={editingCategory ? "" : newCategoryName}
+                    onChange={(e) => !editingCategory && setNewCategoryName(e.target.value)}
+                    className="h-8"
+                  />
+                  <div className="flex gap-1">
+                    {colorOptions.slice(0, 4).map(c => (
+                      <button
+                        key={c.value}
+                        onClick={() => setNewCategoryColor(c.value)}
+                        className={`w-6 h-6 rounded-full border ${newCategoryColor === c.value ? 'ring-2 ring-indigo-500' : ''}`}
+                        style={{ backgroundColor: c.value }}
+                      />
+                    ))}
+                  </div>
+                  <Button size="sm" onClick={handleAddCategory} className="h-8">Add</Button>
+                </div>
+
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                  {categories.map(cat => (
+                    <div key={cat.id} className="flex items-center justify-between p-2 border rounded-md">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
+                        <span className="text-sm font-medium">{cat.name}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => deleteCategory(cat.id)}>
+                          <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {pinnedRepos.length > 0 && (
@@ -149,7 +272,56 @@ export function FavoritesList() {
                 ) : (
                   <ChevronRight className="h-4 w-4" />
                 )}
-                <span className="font-semibold">Pinned Repositories ({filteredAndSortedRepos.length})</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-md text-sm">
+                    {filteredAndSortedRepos.length} Repos
+                  </span>
+                  <Dialog open={addRepoDialogOpen} onOpenChange={setAddRepoDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-indigo-600 dark:text-indigo-400">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Repository</DialogTitle>
+                        <DialogDescription>
+                          Enter the full repository name (owner/repo)
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <Label>Repository Name</Label>
+                          <Input
+                            placeholder="e.g., facebook/react"
+                            value={newRepoName}
+                            onChange={(e) => setNewRepoName(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleAddRepo()}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Category (Optional)</Label>
+                          <Select value={repoToCategory || "none"} onValueChange={(v) => setRepoToCategory(v === "none" ? null : v)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No category</SelectItem>
+                              {categories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button onClick={handleAddRepo} className="w-full">
+                          Add Repository
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </button>
 
               {reposExpanded && (
@@ -235,11 +407,10 @@ export function FavoritesList() {
                               <span className="font-medium">{metrics.stars.toLocaleString()}</span>
                               {metrics.starChange !== 0 && (
                                 <span
-                                  className={`flex items-center gap-0.5 ${
-                                    metrics.starChange > 0
-                                      ? "text-green-600 dark:text-green-400"
-                                      : "text-red-600 dark:text-red-400"
-                                  }`}
+                                  className={`flex items-center gap-0.5 ${metrics.starChange > 0
+                                    ? "text-green-600 dark:text-green-400"
+                                    : "text-red-600 dark:text-red-400"
+                                    }`}
                                 >
                                   {metrics.starChange > 0 ? (
                                     <TrendingUp className="h-3 w-3" />
@@ -318,6 +489,15 @@ export function FavoritesList() {
                                   <Copy className="h-3 w-3" />
                                 )}
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                onClick={() => togglePinnedRepo(metrics.fullName)}
+                                title="Remove from favorites"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -344,7 +524,56 @@ export function FavoritesList() {
                 ) : (
                   <ChevronRight className="h-4 w-4" />
                 )}
-                <span className="font-semibold">Favorite Developers ({filteredAndSortedUsers.length})</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold px-2 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-md text-sm">
+                    {filteredAndSortedUsers.length} Users
+                  </span>
+                  <Dialog open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600 dark:text-emerald-400">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add User</DialogTitle>
+                        <DialogDescription>
+                          Enter the GitHub username
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <Label>Username</Label>
+                          <Input
+                            placeholder="e.g., torvalds"
+                            value={newUsername}
+                            onChange={(e) => setNewUsername(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleAddUser()}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Category (Optional)</Label>
+                          <Select value={userToCategory || "none"} onValueChange={(v) => setUserToCategory(v === "none" ? null : v)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No category</SelectItem>
+                              {categories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button onClick={handleAddUser} className="w-full">
+                          Add User
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </button>
 
               {usersExpanded && (
@@ -495,6 +724,15 @@ export function FavoritesList() {
                               ) : (
                                 <Copy className="h-3 w-3" />
                               )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              onClick={() => toggleFavoriteUser(metrics.username)}
+                              title="Remove from favorites"
+                            >
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>

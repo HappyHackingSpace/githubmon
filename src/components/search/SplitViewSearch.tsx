@@ -20,6 +20,7 @@ import type { TrendingRepo, TopContributor } from "@/types/oss-insight"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { RepoDeepDive } from "./RepoDeepDive"
+import { usePreferencesStore } from "@/stores/preferences"
 
 interface SplitViewSearchProps {
   repos: TrendingRepo[]
@@ -44,6 +45,7 @@ export function SplitViewSearch({
     repos.length > 0 ? "repos" : "users"
   )
   const [showDeepDive, setShowDeepDive] = useState(false)
+  const { pinnedRepos, favoriteUsers, togglePinnedRepo, toggleFavoriteUser } = usePreferencesStore()
 
   const handleRepoClick = useCallback((repo: TrendingRepo) => {
     setSelectedRepo(repo)
@@ -114,7 +116,7 @@ export function SplitViewSearch({
                       className={cn(
                         "cursor-pointer transition-all hover:shadow-md",
                         selectedRepo?.id === repo.id &&
-                          "ring-2 ring-blue-500 dark:ring-blue-400"
+                        "ring-2 ring-blue-500 dark:ring-blue-400"
                       )}
                       onClick={() => handleRepoClick(repo)}
                     >
@@ -165,7 +167,7 @@ export function SplitViewSearch({
                       className={cn(
                         "cursor-pointer transition-all hover:shadow-md",
                         selectedUser?.login === user.login &&
-                          "ring-2 ring-blue-500 dark:ring-blue-400"
+                        "ring-2 ring-blue-500 dark:ring-blue-400"
                       )}
                       onClick={() => handleUserClick(user)}
                     >
@@ -277,6 +279,14 @@ export function SplitViewSearch({
                             Deep Dive
                           </Button>
                           <Button
+                            variant={pinnedRepos.includes(selectedRepo.full_name) ? "default" : "outline"}
+                            size="icon"
+                            onClick={() => togglePinnedRepo(selectedRepo.full_name)}
+                            title={pinnedRepos.includes(selectedRepo.full_name) ? "Remove from Favorites" : "Add to Favorites"}
+                          >
+                            <Star className={`w-4 h-4 ${pinnedRepos.includes(selectedRepo.full_name) ? "fill-current" : ""}`} />
+                          </Button>
+                          <Button
                             variant="outline"
                             onClick={() =>
                               handleNavigateToRepo(selectedRepo.full_name)
@@ -355,6 +365,14 @@ export function SplitViewSearch({
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />
                         View Full Profile
+                      </Button>
+                      <Button
+                        variant={favoriteUsers.includes(selectedUser.login) ? "default" : "outline"}
+                        size="icon"
+                        onClick={() => toggleFavoriteUser(selectedUser.login)}
+                        title={favoriteUsers.includes(selectedUser.login) ? "Remove from Favorites" : "Add to Favorites"}
+                      >
+                        <Star className={`w-4 h-4 ${favoriteUsers.includes(selectedUser.login) ? "fill-current" : ""}`} />
                       </Button>
                       <Button
                         variant="outline"

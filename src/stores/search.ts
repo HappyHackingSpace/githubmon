@@ -27,8 +27,17 @@ interface SearchState {
   // Recent searches (for quick access)
   recentSearches: string[];
 
+  // Unified command palette search
+  isUnifiedSearchLoading: boolean;
+  unifiedResults: {
+    repos: TrendingRepo[];
+    users: TopContributor[];
+  };
+
   // Actions
   setSearchModalOpen: (open: boolean) => void;
+  setUnifiedSearchLoading: (loading: boolean) => void;
+  setUnifiedResults: (results: { repos: TrendingRepo[]; users: TopContributor[] }) => void;
   setCurrentQuery: (query: string) => void;
   setCurrentSearchType: (type: "all" | "repos" | "users") => void;
   setSearchResults: (results: SearchState["currentResults"]) => void;
@@ -51,8 +60,15 @@ export const useSearchStore = create<SearchState>()(
       },
       searchHistory: [],
       recentSearches: [],
+      isUnifiedSearchLoading: false,
+      unifiedResults: {
+        repos: [],
+        users: [],
+      },
 
       setSearchModalOpen: (isSearchModalOpen) => set({ isSearchModalOpen }),
+      setUnifiedSearchLoading: (isUnifiedSearchLoading) => set({ isUnifiedSearchLoading }),
+      setUnifiedResults: (unifiedResults) => set({ unifiedResults }),
       setCurrentQuery: (currentQuery) => set({ currentQuery }),
       setCurrentSearchType: (currentSearchType) => set({ currentSearchType }),
       setSearchResults: (currentResults) => set({ currentResults }),
@@ -88,8 +104,8 @@ export const useSearchStore = create<SearchState>()(
         if (typeof window === "undefined") {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           };
         }
         return localStorage;

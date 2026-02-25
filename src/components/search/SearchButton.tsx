@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useSearchStore } from "@/stores";
+import { useNavigationStore } from "@/stores";
 import { Search } from "lucide-react";
 
 interface SearchButtonProps {
@@ -15,13 +15,13 @@ export function SearchButton({
   showShortcut = true,
   className = "",
 }: SearchButtonProps) {
-  const { setSearchModalOpen } = useSearchStore();
+  const { setCommandPaletteOpen } = useNavigationStore();
 
   return (
     <Button
       variant={variant}
       size={size}
-      onClick={() => setSearchModalOpen(true)}
+      onClick={() => setCommandPaletteOpen(true)}
       className={`group ${className}`}
     >
       <Search className="h-4 w-4" />

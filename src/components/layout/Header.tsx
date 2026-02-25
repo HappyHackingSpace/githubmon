@@ -3,13 +3,13 @@
 import { useRouter } from "next/navigation";
 import { RateLimitWarning } from "@/components/common/RateLimitWarning";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import { useSearchStore } from "@/stores";
+import { useNavigationStore } from "@/stores";
 import { Button } from "../ui/button";
 import { Search, User } from "lucide-react";
 import { AnimatedLogo } from "../ui/animated-logo";
 
 export function Header() {
-  const { setSearchModalOpen } = useSearchStore();
+  const { setCommandPaletteOpen } = useNavigationStore();
 
   const router = useRouter();
   return (
@@ -22,7 +22,7 @@ export function Header() {
           <div className="flex-1 max-w-2xl mx-8">
             <Button
               variant="outline"
-              onClick={() => setSearchModalOpen(true)}
+              onClick={() => setCommandPaletteOpen(true)}
               className="w-full flex justify-start backdrop-blur-sm"
             >
               <Search className="w-4 h-4 mr-2" />

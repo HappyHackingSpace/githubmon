@@ -6,12 +6,12 @@ import { useFavoritesStore } from "@/stores/favorites";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, AlertCircle, GitPullRequest, Sparkles, ExternalLink, X } from "lucide-react";
+import { Activity, AlertCircle, GitPullRequest, Sparkles, ExternalLink, X, Star } from "lucide-react";
 import Link from "next/link";
 
 interface OpportunityItem {
   id: string;
-  type: "good-first-issue" | "stale-pr" | "new-repo";
+  type: "good-first-issue" | "stale-pr" | "new-repo" | "favorite-activity";
   title: string;
   repo: string;
   description: string;
@@ -24,7 +24,7 @@ interface OpportunityItem {
 }
 
 export function ActivityFeed() {
-  const pinnedRepos = usePreferencesStore((state) => state.pinnedRepos);
+  const { pinnedRepos, favoriteUsers } = usePreferencesStore();
   const { repoMetrics } = useFavoritesStore();
   const [opportunities, setOpportunities] = useState<OpportunityItem[]>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
@@ -118,6 +118,38 @@ export function ActivityFeed() {
       } catch (error) {
         console.error("Failed to fetch new repos:", error);
       }
+      try {
+        if (pinnedRepos.length > 0 || favoriteUsers.length > 0) {
+          const favoriteActivityResponse = await fetch("/api/favorites/activity", {
+            method: "POST",
+            body: JSON.stringify({
+              repos: pinnedRepos,
+              users: favoriteUsers,
+              limit: 5
+            })
+          });
+          if (favoriteActivityResponse.ok) {
+            const activities = await favoriteActivityResponse.json();
+            activities.forEach((activity: any) => {
+              items.push({
+                id: `favorite-${activity.id}`,
+                type: "favorite-activity",
+                title: activity.title,
+                repo: activity.repo,
+                description: activity.type === "pullRequest" ? `New PR in favorite repo` : `New issue in favorite repo`,
+                url: activity.url,
+                timestamp: new Date(activity.updatedAt),
+                language: activity.language,
+                stars: activity.stars,
+                priority: "high",
+                actionText: "Check it out",
+              });
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch favorite activity:", error);
+      }
 
       items.sort((a, b) => {
         const priorityOrder = { high: 0, medium: 1, low: 2 };
@@ -131,12 +163,12 @@ export function ActivityFeed() {
       setLoading(false);
     };
 
-    if (pinnedRepos.length > 0 || Object.keys(repoMetrics).length > 0) {
+    if (pinnedRepos.length > 0 || favoriteUsers.length > 0 || Object.keys(repoMetrics).length > 0) {
       fetchOpportunities();
     } else {
       setLoading(false);
     }
-  }, [pinnedRepos, repoMetrics]);
+  }, [pinnedRepos, favoriteUsers, repoMetrics]);
 
   const getIcon = (type: OpportunityItem["type"]) => {
     switch (type) {
@@ -146,6 +178,8 @@ export function ActivityFeed() {
         return <AlertCircle className="h-4 w-4" />;
       case "new-repo":
         return <GitPullRequest className="h-4 w-4" />;
+      case "favorite-activity":
+        return <Star className="h-4 w-4" />;
       default:
         return <Activity className="h-4 w-4" />;
     }
@@ -159,6 +193,8 @@ export function ActivityFeed() {
         return "text-orange-600 dark:text-orange-400";
       case "new-repo":
         return "text-blue-600 dark:text-blue-400";
+      case "favorite-activity":
+        return "text-purple-600 dark:text-purple-400";
       default:
         return "text-gray-600 dark:text-gray-400";
     }

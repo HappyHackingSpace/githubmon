@@ -20,9 +20,8 @@ import {
   SidebarSearch,
   SidebarToggle,
 } from "@/components/layout/SidebarSearch";
-import { useSearchStore, useSidebarState } from "@/stores";
+import { useSearchStore, useSidebarState, useNavigationStore } from "@/stores";
 import { usePreferencesStore } from "@/stores/preferences";
-import { SearchModal } from "@/components/search/SearchModal";
 import { githubAPIClient } from "@/lib/api/github-api-client";
 import {
   Star,
@@ -97,8 +96,9 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const userParam = searchParams?.get("user");
   const repoParam = searchParams?.get("repo");
-  const { setCurrentQuery, setCurrentSearchType, setSearchModalOpen } =
+  const { setCurrentQuery, setCurrentSearchType } =
     useSearchStore();
+  const { setCommandPaletteOpen } = useNavigationStore();
   const { pinnedRepos, favoriteUsers, togglePinnedRepo, toggleFavoriteUser } =
     usePreferencesStore();
 
@@ -133,17 +133,17 @@ function SearchContent() {
         const convertedAnalytics: UserAnalytics = {
           profile: analytics.profile
             ? {
-                avatar_url: analytics.profile.avatar_url,
-                login: analytics.profile.login,
-                type: analytics.profile.type,
-                bio: analytics.profile.bio ?? null,
-                public_repos: analytics.profile.public_repos,
-                followers: analytics.profile.followers,
-                following: analytics.profile.following,
-                location: analytics.profile.location ?? null,
-                company: analytics.profile.company ?? null,
-                html_url: analytics.profile.html_url,
-              }
+              avatar_url: analytics.profile.avatar_url,
+              login: analytics.profile.login,
+              type: analytics.profile.type,
+              bio: analytics.profile.bio ?? null,
+              public_repos: analytics.profile.public_repos,
+              followers: analytics.profile.followers,
+              following: analytics.profile.following,
+              location: analytics.profile.location ?? null,
+              company: analytics.profile.company ?? null,
+              html_url: analytics.profile.html_url,
+            }
             : undefined,
           overview: analytics.overview,
           languages: analytics.languages,
@@ -351,7 +351,7 @@ function SearchContent() {
             </div>
 
             <Button
-              onClick={() => setSearchModalOpen(true)}
+              onClick={() => setCommandPaletteOpen(true)}
               className="px-6 py-3"
             >
               <Search className="w-5 h-5 mr-2" />
@@ -459,11 +459,10 @@ function SearchContent() {
                             }
                           >
                             <Star
-                              className={`w-4 h-4 mr-2 ${
-                                favoriteUsers.includes(userAnalytics.profile!.login)
-                                  ? "fill-current"
-                                  : ""
-                              }`}
+                              className={`w-4 h-4 mr-2 ${favoriteUsers.includes(userAnalytics.profile!.login)
+                                ? "fill-current"
+                                : ""
+                                }`}
                             />
                             {favoriteUsers.includes(userAnalytics.profile!.login)
                               ? "Favorited"
@@ -527,11 +526,10 @@ function SearchContent() {
                               onClick={() => toggleFavoriteUser(user.login)}
                             >
                               <Star
-                                className={`w-4 h-4 mr-2 ${
-                                  favoriteUsers.includes(user.login)
-                                    ? "fill-current"
-                                    : ""
-                                }`}
+                                className={`w-4 h-4 mr-2 ${favoriteUsers.includes(user.login)
+                                  ? "fill-current"
+                                  : ""
+                                  }`}
                               />
                               {favoriteUsers.includes(user.login)
                                 ? "Favorited"
@@ -734,15 +732,15 @@ function SearchContent() {
                                 {/* Most Active Day calculation */}
                                 {userAnalytics.behavior?.length > 0
                                   ? userAnalytics.behavior.reduce(
-                                      (
-                                        max: UserBehaviorData,
-                                        day: UserBehaviorData
-                                      ) =>
-                                        day.commits + day.prs + day.issues >
+                                    (
+                                      max: UserBehaviorData,
+                                      day: UserBehaviorData
+                                    ) =>
+                                      day.commits + day.prs + day.issues >
                                         max.commits + max.prs + max.issues
-                                          ? day
-                                          : max
-                                    ).day
+                                        ? day
+                                        : max
+                                  ).day
                                   : "N/A"}
                               </td>
                             </tr>
@@ -980,7 +978,7 @@ function SearchContent() {
               <p className="text-gray-600 mb-4">
                 No user data available for &quot;{userParam}&quot;
               </p>
-              <Button onClick={() => setSearchModalOpen(true)}>
+              <Button onClick={() => setCommandPaletteOpen(true)}>
                 Try Different Search
               </Button>
             </div>
@@ -1053,11 +1051,10 @@ function SearchContent() {
                             onClick={() => togglePinnedRepo(repo.full_name)}
                           >
                             <Star
-                              className={`w-4 h-4 mr-2 ${
-                                pinnedRepos.includes(repo.full_name)
-                                  ? "fill-current"
-                                  : ""
-                              }`}
+                              className={`w-4 h-4 mr-2 ${pinnedRepos.includes(repo.full_name)
+                                ? "fill-current"
+                                : ""
+                                }`}
                             />
                             {pinnedRepos.includes(repo.full_name)
                               ? "Pinned"
@@ -1095,7 +1092,7 @@ function SearchContent() {
                 No {userParam ? "users" : "repositories"} found for &quot;
                 {userParam || repoParam}&quot;
               </p>
-              <Button onClick={() => setSearchModalOpen(true)}>
+              <Button onClick={() => setCommandPaletteOpen(true)}>
                 Try Different Search
               </Button>
             </div>
@@ -1109,7 +1106,7 @@ function SearchContent() {
               Search Error
             </h2>
             <p className="text-gray-600 mb-4">{searchResults.error}</p>
-            <Button onClick={() => setSearchModalOpen(true)}>Try Again</Button>
+            <Button onClick={() => setCommandPaletteOpen(true)}>Try Again</Button>
           </div>
         )}
 
@@ -1172,7 +1169,6 @@ export default function SearchPage() {
           <SearchContent />
         </Suspense>
       </div>
-      <SearchModal />
     </div>
   );
 }

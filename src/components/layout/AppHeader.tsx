@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
-import { useSearchStore } from "@/stores";
+import { useNavigationStore } from "@/stores";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -18,7 +18,7 @@ const routeLabels: Record<string, string> = {
 
 export function AppHeader() {
   const pathname = usePathname();
-  const { setSearchModalOpen } = useSearchStore();
+  const { setCommandPaletteOpen } = useNavigationStore();
 
   const pathSegments = pathname
     .split("/")
@@ -61,7 +61,7 @@ export function AppHeader() {
 
         <Button
           variant="outline"
-          onClick={() => setSearchModalOpen(true)}
+          onClick={() => setCommandPaletteOpen(true)}
           className="w-80 flex justify-between items-center px-4"
         >
           <div className="flex items-center text-muted-foreground">

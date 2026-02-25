@@ -43,7 +43,6 @@ import {
 import { useActionItemsStore, useKanbanStore, useDetailPanelStore } from "@/stores";
 import type { ActionItem as StoreActionItem } from "@/stores/actionItems";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SearchModal } from "@/components/search/SearchModal";
 import { QuickActionsMenu } from "@/components/action-required/QuickActionsMenu";
 import { DetailPanel } from "@/components/ui/detail-panel";
 import { NewIssueDialog } from "@/components/action-required/NewIssueDialog";
@@ -501,166 +500,166 @@ function ActionRequiredContent() {
             </TableHeader>
             <TableBody>
               {filteredItems.map((item: ActionItem) => (
-              <TableRow
-                key={item.id}
-                className={`${getStaleRowClassName(item.daysOld)} cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50`}
-                onClick={(e) => {
-                  if (!(e.target as HTMLElement).closest('button, a, input')) {
-                    openPanel(item as unknown as import("@/components/ui/detail-panel").DetailPanelIssue);
-                  }
-                }}
-              >
-                <TableCell>
-                  <Checkbox
-                    checked={selectedItems.has(item.id.toString())}
-                    onCheckedChange={() => toggleSelectItem(item.id.toString())}
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        {extractIssueNumber(item.url) && (
-                          <span className="text-sm text-gray-500 dark:text-gray-400 font-mono flex-shrink-0">
-                            #{extractIssueNumber(item.url)}
+                <TableRow
+                  key={item.id}
+                  className={`${getStaleRowClassName(item.daysOld)} cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50`}
+                  onClick={(e) => {
+                    if (!(e.target as HTMLElement).closest('button, a, input')) {
+                      openPanel(item as unknown as import("@/components/ui/detail-panel").DetailPanelIssue);
+                    }
+                  }}
+                >
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedItems.has(item.id.toString())}
+                      onCheckedChange={() => toggleSelectItem(item.id.toString())}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          {extractIssueNumber(item.url) && (
+                            <span className="text-sm text-gray-500 dark:text-gray-400 font-mono flex-shrink-0">
+                              #{extractIssueNumber(item.url)}
+                            </span>
+                          )}
+                          <span className="font-medium truncate cursor-pointer hover:text-blue-600 dark:hover:text-blue-400">
+                            {item.title}
                           </span>
-                        )}
-                        <span className="font-medium truncate cursor-pointer hover:text-blue-600 dark:hover:text-blue-400">
-                          {item.title}
-                        </span>
-                        {item.url && isValidUrl(item.url) && (
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex-shrink-0 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-                            title="Open in GitHub"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        )}
-                        {item.type === "pullRequest" && item.mergeable === "CONFLICTING" && (
-                          <span title="Has merge conflicts">
-                            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                          </span>
-                        )}
-                        {item.type === "pullRequest" && item.statusCheckRollup?.state === "SUCCESS" && (
-                          <span title="All checks passed">
-                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          </span>
-                        )}
-                        {item.type === "pullRequest" && item.statusCheckRollup?.state === "FAILURE" && (
-                          <span title="Checks failed">
-                            <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                          </span>
-                        )}
-                        {item.type === "pullRequest" && item.statusCheckRollup?.state === "PENDING" && (
-                          <span title="Checks pending">
-                            <Loader2 className="w-4 h-4 text-yellow-500 flex-shrink-0 animate-spin" />
-                          </span>
-                        )}
+                          {item.url && isValidUrl(item.url) && (
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex-shrink-0 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                              title="Open in GitHub"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          )}
+                          {item.type === "pullRequest" && item.mergeable === "CONFLICTING" && (
+                            <span title="Has merge conflicts">
+                              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                            </span>
+                          )}
+                          {item.type === "pullRequest" && item.statusCheckRollup?.state === "SUCCESS" && (
+                            <span title="All checks passed">
+                              <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </span>
+                          )}
+                          {item.type === "pullRequest" && item.statusCheckRollup?.state === "FAILURE" && (
+                            <span title="Checks failed">
+                              <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                            </span>
+                          )}
+                          {item.type === "pullRequest" && item.statusCheckRollup?.state === "PENDING" && (
+                            <span title="Checks pending">
+                              <Loader2 className="w-4 h-4 text-yellow-500 flex-shrink-0 animate-spin" />
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {item.repo}
+                        </p>
                       </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                        {item.repo}
-                      </p>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <UserHoverCard username={item.author.login} showScore={true}>
-                    <div className="flex items-center gap-2 cursor-pointer">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={item.author.avatarUrl} alt={item.author.login} />
-                        <AvatarFallback>
-                          {item.author.login.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors truncate max-w-20">
-                        {item.author.login}
-                      </span>
-                    </div>
-                  </UserHoverCard>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {item.labels.slice(0, 3).map((label, idx) => (
-                      <Badge
-                        key={idx}
-                        variant="outline"
-                        className="text-xs"
-                        style={
-                          label.color
-                            ? {
+                  </TableCell>
+                  <TableCell>
+                    <UserHoverCard username={item.author.login} showScore={true}>
+                      <div className="flex items-center gap-2 cursor-pointer">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={item.author.avatarUrl} alt={item.author.login} />
+                          <AvatarFallback>
+                            {item.author.login.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors truncate max-w-20">
+                          {item.author.login}
+                        </span>
+                      </div>
+                    </UserHoverCard>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {item.labels.slice(0, 3).map((label, idx) => (
+                        <Badge
+                          key={idx}
+                          variant="outline"
+                          className="text-xs"
+                          style={
+                            label.color
+                              ? {
                                 borderColor: `#${label.color}`,
                                 backgroundColor: `#${label.color}20`,
                                 color: `#${label.color}`,
                               }
-                            : undefined
-                        }
-                      >
-                        {label.name}
-                      </Badge>
-                    ))}
-                    {item.labels.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{item.labels.length - 3}
-                      </Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      item.priority === "urgent"
-                        ? "destructive"
-                        : item.priority === "high"
-                        ? "destructive"
-                        : item.priority === "medium"
-                        ? "default"
-                        : "secondary"
-                    }
-                    className="capitalize"
-                  >
-                    {item.priority}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {item.type === "pullRequest" && (item.additions !== undefined || item.deletions !== undefined) ? (
-                    <div className="flex flex-col text-xs">
-                      <span className="text-green-600 dark:text-green-400">+{item.additions || 0}</span>
-                      <span className="text-red-600 dark:text-red-400">-{item.deletions || 0}</span>
+                              : undefined
+                          }
+                        >
+                          {label.name}
+                        </Badge>
+                      ))}
+                      {item.labels.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{item.labels.length - 3}
+                        </Badge>
+                      )}
                     </div>
-                  ) : (
-                    <span className="text-gray-400 text-xs">N/A</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{item.comments || 0}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {formatTimeAgo(item.updatedAt)}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <QuickActionsMenu
-                    item={item as StoreActionItem}
-                    itemType={
-                      type === "all"
-                        ? ("mentionType" in item || "mentionedAt" in item)
-                          ? "mentions"
-                          : ("daysStale" in item || "lastActivity" in item)
-                          ? "stale"
-                          : "assigned"
-                        : type
-                    }
-                  />
-                </TableCell>
-              </TableRow>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        item.priority === "urgent"
+                          ? "destructive"
+                          : item.priority === "high"
+                            ? "destructive"
+                            : item.priority === "medium"
+                              ? "default"
+                              : "secondary"
+                      }
+                      className="capitalize"
+                    >
+                      {item.priority}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {item.type === "pullRequest" && (item.additions !== undefined || item.deletions !== undefined) ? (
+                      <div className="flex flex-col text-xs">
+                        <span className="text-green-600 dark:text-green-400">+{item.additions || 0}</span>
+                        <span className="text-red-600 dark:text-red-400">-{item.deletions || 0}</span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-xs">N/A</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                      <MessageSquare className="w-4 h-4" />
+                      <span>{item.comments || 0}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {formatTimeAgo(item.updatedAt)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <QuickActionsMenu
+                      item={item as StoreActionItem}
+                      itemType={
+                        type === "all"
+                          ? ("mentionType" in item || "mentionedAt" in item)
+                            ? "mentions"
+                            : ("daysStale" in item || "lastActivity" in item)
+                              ? "stale"
+                              : "assigned"
+                          : type
+                      }
+                    />
+                  </TableCell>
+                </TableRow>
               ))}
             </TableBody>
           </Table>
@@ -712,13 +711,12 @@ function ActionRequiredContent() {
               className="flex items-center gap-2"
             >
               <RefreshCw
-                className={`w-4 h-4 ${
-                  (currentTab === "all"
+                className={`w-4 h-4 ${(currentTab === "all"
                     ? loading.assigned || loading.mentions || loading.stale
                     : loading[currentTab])
                     ? "animate-spin"
                     : ""
-                }`}
+                  }`}
               />
               Refresh
             </Button>
@@ -906,7 +904,6 @@ export default function ActionRequiredPage() {
       >
         <ActionRequiredContent />
       </Suspense>
-      <SearchModal />
     </Layout>
   );
 }

@@ -118,7 +118,7 @@ interface GitHubActionItem {
   daysOld: number;
   createdAt: string;
   updatedAt: string;
-  mentionType?: "mention" | "review_request" | "comment";
+  mentionType?: "mention" | "review_request" | "comment" | "favorite";
   comments?: number;
   stars?: number;
   additions?: number;
@@ -1496,6 +1496,107 @@ class GitHubGraphQLClient {
     }
   }
 
+  async getFavoriteActivity(
+    repos: string[],
+    users: string[],
+    limit = 10
+  ): Promise<GitHubActionItem[]> {
+    if (repos.length === 0 && users.length === 0) return [];
+
+    const repoQueries = repos.map((r) => `repo:${r}`).join(" ");
+    const userQueries = users.map((u) => `author:${u}`).join(" ");
+    const searchQuery = `${repoQueries} ${userQueries} is:open sort:updated-desc`;
+
+    const query = `
+      query GetFavoriteActivity($searchQuery: String!, $limit: Int!) {
+        search(query: $searchQuery, type: ISSUE, first: $limit) {
+          nodes {
+            ... on Issue {
+              __typename
+              id
+              title
+              url
+              createdAt
+              updatedAt
+              repository {
+                nameWithOwner
+                stargazerCount
+                primaryLanguage {
+                  name
+                }
+              }
+              author {
+                login
+                avatarUrl
+              }
+              labels(first: 5) {
+                nodes {
+                  name
+                  color
+                }
+              }
+              comments {
+                totalCount
+              }
+            }
+            ... on PullRequest {
+              __typename
+              id
+              title
+              url
+              createdAt
+              updatedAt
+              repository {
+                nameWithOwner
+                stargazerCount
+                primaryLanguage {
+                  name
+                }
+              }
+              author {
+                login
+                avatarUrl
+              }
+              labels(first: 5) {
+                nodes {
+                  name
+                  color
+                }
+              }
+              comments {
+                totalCount
+              }
+              additions
+              deletions
+            }
+          }
+        }
+        rateLimit {
+          limit
+          cost
+          remaining
+          resetAt
+        }
+      }
+    `;
+
+    try {
+      const result = await this.query<{
+        search: {
+          nodes: (ActionItem | PullRequest)[];
+        };
+        rateLimit: RateLimit;
+      }>(query, { searchQuery, limit });
+
+      return result.data.search.nodes.map((item) =>
+        this.mapToActionItem(item, "favorite")
+      );
+    } catch (error) {
+      console.error("Failed to fetch favorite activity:", error);
+      return [];
+    }
+  }
+
   async getActionRequiredItems(
     username: string
   ): Promise<ActionRequiredResult> {
@@ -1853,7 +1954,7 @@ class GitHubGraphQLClient {
       const staleAuthoredPRs = data.stalePRs.nodes.map((pr: StalePullRequest) => {
         const daysSinceUpdate = Math.floor(
           (Date.now() - new Date(pr.updatedAt).getTime()) /
-            (1000 * 60 * 60 * 24)
+          (1000 * 60 * 60 * 24)
         );
         return {
           ...this.mapToActionItem(pr),
@@ -1865,7 +1966,7 @@ class GitHubGraphQLClient {
       const staleReviewRequestedPRs = data.staleReviewRequests.nodes.map((pr: StalePullRequest) => {
         const daysSinceUpdate = Math.floor(
           (Date.now() - new Date(pr.updatedAt).getTime()) /
-            (1000 * 60 * 60 * 24)
+          (1000 * 60 * 60 * 24)
         );
         return {
           ...this.mapToActionItem(pr),
@@ -1908,7 +2009,7 @@ class GitHubGraphQLClient {
 
   private mapToActionItem(
     item: ActionItem | PullRequest | StalePullRequest | PullRequestWithReviews,
-    mentionType?: "mention" | "review_request" | "comment"
+    mentionType?: "mention" | "review_request" | "comment" | "favorite"
   ): GitHubActionItem {
     const daysOld = Math.floor(
       (Date.now() - new Date(item.createdAt).getTime()) / (1000 * 60 * 60 * 24)
@@ -1971,7 +2072,7 @@ class GitHubGraphQLClient {
   private calculateActionPriority(
     labels: string[],
     daysOld: number,
-    mentionType?: "mention" | "review_request" | "comment",
+    mentionType?: "mention" | "review_request" | "comment" | "favorite",
     commentCount = 0,
     prSize?: { additions?: number; deletions?: number }
   ): "urgent" | "high" | "medium" | "low" {
@@ -1979,11 +2080,12 @@ class GitHubGraphQLClient {
 
     const statusScores = {
       review_request: 50,
+      favorite: 40,
       mention: 30,
       comment: 25,
     };
-    if (mentionType && statusScores[mentionType]) {
-      score += statusScores[mentionType];
+    if (mentionType && mentionType in statusScores) {
+      score += statusScores[mentionType as keyof typeof statusScores];
     } else {
       score += 20;
     }
