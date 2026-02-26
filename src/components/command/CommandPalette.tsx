@@ -42,7 +42,6 @@ export function CommandPalette() {
   const recentPages = useNavigationStore((state) => state.recentPages)
 
   const {
-    isSearchModalOpen,
     setSearchModalOpen,
     recentSearches,
     isUnifiedSearchLoading,
@@ -72,14 +71,12 @@ export function CommandPalette() {
     if (!mounted) return
 
     const down = (e: KeyboardEvent) => {
-      // General Command Palette (Ctrl+K)
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setQuickTaskOpen(false)
         setCommandPaletteOpen(!isCommandPaletteOpen)
       }
 
-      // Quick Task (Alt+N)
       if (e.key.toLowerCase() === "n" && e.altKey) {
         e.preventDefault()
         setQuickTaskOpen(true)
@@ -89,7 +86,7 @@ export function CommandPalette() {
 
     document.addEventListener("keydown", down)
     return () => document.removeEventListener("keydown", down)
-  }, [mounted, isCommandPaletteOpen, setCommandPaletteOpen])
+  }, [mounted, isCommandPaletteOpen, setCommandPaletteOpen, setQuickTaskOpen])
 
   React.useEffect(() => {
     if (!inputValue.trim() || !isCommandPaletteOpen) {

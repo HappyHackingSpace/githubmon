@@ -8,7 +8,6 @@ import {
     CommandItem,
     CommandList,
     CommandInput,
-    CommandSeparator
 } from "@/components/ui/command"
 import {
     Plus,

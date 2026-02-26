@@ -129,8 +129,18 @@ export function ActivityFeed() {
             })
           });
           if (favoriteActivityResponse.ok) {
+            interface FavoriteActivity {
+              id: string;
+              title: string;
+              repo: string;
+              type: "pullRequest" | "issue";
+              url: string;
+              updatedAt: string;
+              language?: string;
+              stars?: number;
+            }
             const activities = await favoriteActivityResponse.json();
-            activities.forEach((activity: any) => {
+            activities.forEach((activity: FavoriteActivity) => {
               items.push({
                 id: `favorite-${activity.id}`,
                 type: "favorite-activity",

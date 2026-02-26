@@ -36,7 +36,7 @@ export interface AssignedItem extends ActionItem {
 }
 
 export interface MentionItem extends ActionItem {
-  mentionType: "mention" | "review_request" | "comment";
+  mentionType: "mention" | "review_request" | "comment" | "favorite";
   mentionedAt: string;
 }
 
@@ -557,8 +557,8 @@ export const useActionItemsStore = create<ActionItemsState>()(
         if (typeof window === "undefined") {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           };
         }
         return localStorage;

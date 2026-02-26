@@ -2,12 +2,12 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { usePreferencesStore, type FavoriteCategory } from "@/stores/preferences";
+import { usePreferencesStore } from "@/stores/preferences";
 import { useFavoritesStore } from "@/stores/favorites";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, ChevronRight, Star, GitPullRequest, User, TrendingUp, TrendingDown, Code, Filter, SortAsc, ExternalLink, Copy, GitBranch, BarChart3, Plus, Settings, X, Tag, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Star, GitPullRequest, User, TrendingUp, TrendingDown, Code, Filter, SortAsc, ExternalLink, Copy, GitBranch, BarChart3, Plus, Tag, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,10 +25,7 @@ export function FavoritesList() {
     togglePinnedRepo,
     toggleFavoriteUser,
     addCategory,
-    updateCategory,
     deleteCategory,
-    setRepoCategory,
-    setUserCategory
   } = usePreferencesStore();
   const { repoMetrics, userMetrics, loading, error, fetchAllFavorites, isHydrated } = useFavoritesStore();
 
@@ -48,7 +45,6 @@ export function FavoritesList() {
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryColor, setNewCategoryColor] = useState("#3b82f6");
-  const [editingCategory, setEditingCategory] = useState<FavoriteCategory | null>(null);
   const [repoToCategory, setRepoToCategory] = useState<string | null>(null);
   const [userToCategory, setUserToCategory] = useState<string | null>(null);
 
@@ -89,14 +85,6 @@ export function FavoritesList() {
     }
   };
 
-  const handleUpdateCategory = () => {
-    if (editingCategory && newCategoryName.trim()) {
-      updateCategory(editingCategory.id, newCategoryName.trim(), newCategoryColor);
-      setEditingCategory(null);
-      setNewCategoryName("");
-      setNewCategoryColor("#3b82f6");
-    }
-  };
 
   const colorOptions = [
     { name: "Blue", value: "#3b82f6" },
@@ -222,8 +210,8 @@ export function FavoritesList() {
                 <div className="flex gap-2">
                   <Input
                     placeholder="Category name"
-                    value={editingCategory ? "" : newCategoryName}
-                    onChange={(e) => !editingCategory && setNewCategoryName(e.target.value)}
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
                     className="h-8"
                   />
                   <div className="flex gap-1">
