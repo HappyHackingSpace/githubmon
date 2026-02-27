@@ -1,142 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
-import { githubGraphQLClient } from "@/lib/api/github-graphql-client";
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const q = searchParams.get("q");
+
+  if (!q) {
+    return NextResponse.json({ error: "Missing query parameter 'q'" }, { status: 400 });
+  }
+
+  const token = process.env.GITHUB_TOKEN;
+  const headers: HeadersInit = {
+    Accept: "application/vnd.github.v3+json",
+  };
+
+  if (token) {
+    headers.Authorization = `token ${token}`;
+  }
+
   try {
-    const authCookie = request.cookies.get("githubmon-auth")?.value;
+    // Determine if it's a specific user/repo search or a general search
+    const searchUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&per_page=5`;
+    const userSearchUrl = `https://api.github.com/search/users?q=${encodeURIComponent(q)}&per_page=3`;
 
-    if (!authCookie) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
+    const [repoRes, userRes] = await Promise.all([
+      fetch(searchUrl, { headers }),
+      fetch(userSearchUrl, { headers })
+    ]);
+
+    if (!repoRes.ok && repoRes.status === 403) {
+      throw new Error("GitHub API rate limit exceeded");
     }
 
-    let authData;
-    try {
-      authData = JSON.parse(authCookie);
-    } catch {
-      return NextResponse.json(
-        { error: "Invalid authentication data" },
-        { status: 401 }
-      );
-    }
+    const repoData = repoRes.ok ? await repoRes.json() : { items: [] };
+    const userData = userRes.ok ? await userRes.json() : { items: [] };
 
-    if (!authData.isConnected || !authData.orgData?.token) {
-      return NextResponse.json(
-        { error: "Invalid authentication state" },
-        { status: 401 }
-      );
-    }
+    // Combine results and format them
+    const suggestions = [
+      ...(userData.items || []).map((item: any) => ({
+        name: item.login,
+        type: "User",
+        avatar: item.avatar_url
+      })),
+      ...(repoData.items || []).map((item: any) => ({
+        name: item.full_name,
+        type: "Repository"
+      }))
+    ];
 
-    if (authData.tokenExpiry && new Date() >= new Date(authData.tokenExpiry)) {
-      return NextResponse.json(
-        { error: "Authentication token expired" },
-        { status: 401 }
-      );
-    }
-
-    githubGraphQLClient.setToken(authData.orgData.token);
-
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q");
-    const type = searchParams.get("type") || "repos";
-    const limit = parseInt(searchParams.get("limit") || "20");
-
-    if (!query) {
-      return NextResponse.json(
-        { error: 'Query parameter "q" is required' },
-        { status: 400 }
-      );
-    }
-
-    let results;
-    if (type === "users") {
-      results = await githubGraphQLClient.searchUsers(query, "all", limit);
-    } else {
-      results = await githubGraphQLClient.searchRepositories(query, "STARS", limit);
-    }
-
-    return NextResponse.json({
-      query,
-      type,
-      results,
-      total: results.length,
-    });
-  } catch (error) {
-    console.error("Search API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ suggestions });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const authCookie = request.cookies.get("githubmon-auth")?.value;
-
-    if (!authCookie) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
-    }
-
-    let authData;
-    try {
-      authData = JSON.parse(authCookie);
-    } catch {
-      return NextResponse.json(
-        { error: "Invalid authentication data" },
-        { status: 401 }
-      );
-    }
-
-    if (!authData.isConnected || !authData.orgData?.token) {
-      return NextResponse.json(
-        { error: "Invalid authentication state" },
-        { status: 401 }
-      );
-    }
-
-    if (authData.tokenExpiry && new Date() >= new Date(authData.tokenExpiry)) {
-      return NextResponse.json(
-        { error: "Authentication token expired" },
-        { status: 401 }
-      );
-    }
-
-    githubGraphQLClient.setToken(authData.orgData.token);
-
-    const body = await request.json();
-    const { query, type = "repos", limit = 20 } = body;
-
-    if (!query) {
-      return NextResponse.json(
-        { error: "Query is required in request body" },
-        { status: 400 }
-      );
-    }
-
-    let results;
-    if (type === "users") {
-      results = await githubGraphQLClient.searchUsers(query, "all", limit);
-    } else {
-      results = await githubGraphQLClient.searchRepositories(query, "STARS", limit);
-    }
-
-    return NextResponse.json({
-      query,
-      type,
-      results,
-      total: results.length,
-    });
-  } catch (error) {
-    console.error("Search API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
