@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ---------- Base ----------
-FROM node:20-alpine AS base
+FROM node:26-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -24,7 +24,7 @@ COPY . .
 RUN npm run build
 
 # ---------- Runtime ----------
-FROM node:20-alpine AS runner
+FROM node:26-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
 
