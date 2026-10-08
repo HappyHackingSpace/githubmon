@@ -1,6 +1,6 @@
 services:
   web:
-    image: node:20-alpine
+    image: node:26-alpine
     working_dir: /app
     command: sh -c "npm ci && npm run dev"
     ports:
