@@ -10,7 +10,6 @@ import {
     GitCommit,
     GitPullRequest,
     Code,
-    MessageSquare,
     ArrowUpRight,
     Loader2,
     Calendar,
@@ -74,13 +73,13 @@ export default function UserProfilePage() {
                     throw new Error(result.error || "User not found or rate limited");
                 }
 
-                const userData = result.data;
+                const userData = result.data as Omit<UserData, "score">;
 
                 // Calculate User OSS Score
                 // (total_stars * 1) + (total_commits * 2) + (total_prs * 5)
-                const totalCommits = userData.overview.reduce((sum: number, repo: any) => sum + repo.commits, 0);
-                const totalStars = userData.overview.reduce((sum: number, repo: any) => sum + repo.stars, 0);
-                const totalPRs = userData.behavior.reduce((sum: number, day: any) => sum + day.prs, 0);
+                const totalCommits = userData.overview.reduce((sum, repo) => sum + repo.commits, 0);
+                const totalStars = userData.overview.reduce((sum, repo) => sum + repo.stars, 0);
+                const totalPRs = userData.behavior.reduce((sum, day) => sum + day.prs, 0);
 
                 const score = (totalStars * 1) + (totalCommits * 2) + (totalPRs * 5);
 
@@ -89,8 +88,8 @@ export default function UserProfilePage() {
                     score
                 });
 
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Unable to fetch user data");
             } finally {
                 setLoading(false);
             }
@@ -260,10 +259,11 @@ export default function UserProfilePage() {
                                         innerRadius={60}
                                         outerRadius={85}
                                         paddingAngle={8}
+                                        cornerRadius={10}
                                         dataKey="value"
                                     >
                                         {data.languages.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} cornerRadius={10} />
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
                                     <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '12px', color: '#fff' }} />
@@ -297,7 +297,7 @@ export default function UserProfilePage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {data.overview.slice(0, 4).map((repo, i) => (
+                        {data.overview.slice(0, 4).map((repo) => (
                             <div key={repo.name} className="p-6 rounded-[2rem] glass-card border border-border/50 hover:border-primary/40 transition-all group flex items-center justify-between">
                                 <div className="space-y-1">
                                     <h4 className="text-lg font-bold group-hover:text-primary transition-colors">{repo.name}</h4>
