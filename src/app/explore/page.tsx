@@ -5,8 +5,8 @@ import { Header } from "@/components/layout/Header";
 import { AnimatedBackground } from "@/components/landing/AnimatedBackground";
 import { GitFork, Star, Eye, Activity, GitCommit, Users, ArrowUpRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
+import { Suspense, useEffect, useState } from "react";
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 
 interface ExploreData {
     repository: {
@@ -24,7 +24,20 @@ interface ExploreData {
 
 const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
 
-export default function ExplorePage() {
+interface ExploreApiResponse {
+    repoData: {
+        forks_count: number;
+        open_issues_count: number;
+        stargazers_count: number;
+        subscribers_count?: number;
+        watchers_count: number;
+    };
+    langsData: Record<string, number>;
+    commitsData: Array<{ commit: { author: { date: string } } }>;
+    error?: string;
+}
+
+function ExploreContent() {
     const searchParams = useSearchParams();
     const query = searchParams.get("q") || "facebook/react";
     const [data, setData] = useState<ExploreData | null>(null);
@@ -36,45 +49,13 @@ export default function ExplorePage() {
             setLoading(true);
             setError(null);
             try {
-                // Since this can be a user/repo format, we extract owner/name
+                // Since this can be a user/repo format, we validate owner/name
                 const parts = query.split('/');
                 if (parts.length !== 2) throw new Error("Please search in 'owner/repo' format");
-                const [owner, name] = parts;
-
-                const graphqlQuery = `
-            query ($owner: String!, $name: String!) {
-              repository(owner: $owner, name: $name) {
-                stargazerCount
-                forkCount
-                watchers { totalCount }
-                issues(states: OPEN) { totalCount }
-                pullRequests(states: MERGED) { totalCount }
-                commitComments { totalCount }
-                languages(first: 5, orderBy: {field: SIZE, direction: DESC}) {
-                  edges {
-                    size
-                    node { name }
-                  }
-                  totalSize
-                }
-                defaultBranchRef {
-                  target {
-                    ... on Commit {
-                      history(first: 30) {
-                        nodes {
-                          committedDate
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          `;
 
                 // Call our internal proxy route to avoid CORS and inject server-side GITHUB_TOKEN
                 const response = await fetch(`/api/explore?q=${encodeURIComponent(query)}`);
-                const result = await response.json();
+                const result: ExploreApiResponse = await response.json();
 
                 if (!response.ok) {
                     throw new Error(result.error || "Repository not found or rate limited");
@@ -83,15 +64,15 @@ export default function ExplorePage() {
                 const { repoData, langsData, commitsData } = result;
 
                 // Process Languages
-                const totalSize = Object.values(langsData).reduce((a: any, b: any) => a + b, 0) as number || 1;
-                const languages = Object.entries(langsData).map(([name, size]: [string, any]) => ({
+                const totalSize = Object.values(langsData).reduce((a, b) => a + b, 0) || 1;
+                const languages = Object.entries(langsData).map(([name, size]) => ({
                     name,
                     value: Math.round((size / totalSize) * 100)
                 })).slice(0, 5);
 
                 // Process Commits & History Timeline (mocking daily bins from recent 30 commits)
                 const historyMap: Record<string, number> = {};
-                commitsData.forEach((c: any) => {
+                commitsData.forEach((c) => {
                     const date = new Date(c.commit.author.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
                     historyMap[date] = (historyMap[date] || 0) + 1;
                 });
@@ -115,8 +96,8 @@ export default function ExplorePage() {
                     commitHistory
                 });
 
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Unable to fetch data");
             } finally {
                 setLoading(false);
             }
@@ -288,5 +269,22 @@ export default function ExplorePage() {
 
             </main>
         </div>
+    );
+}
+
+export default function ExplorePage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+                    <AnimatedBackground />
+                    <Header />
+                    <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                    <p className="text-muted-foreground font-medium animate-pulse">Analyzing open source data...</p>
+                </div>
+            }
+        >
+            <ExploreContent />
+        </Suspense>
     );
 }

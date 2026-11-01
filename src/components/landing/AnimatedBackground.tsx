@@ -3,10 +3,20 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
+interface Particle {
+    initialX: number;
+    initialY: number;
+    scale: number;
+    animateY: number;
+    duration: number;
+    width: number;
+    height: number;
+}
+
 export function AnimatedBackground() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const [mounted, setMounted] = useState(false);
-    const [particles, setParticles] = useState<any[]>([]);
+    const [particles, setParticles] = useState<Particle[]>([]);
 
     useEffect(() => {
         setMounted(true);
@@ -54,7 +64,7 @@ export function AnimatedBackground() {
 
             {/* Floating particles */}
             <div className="absolute inset-0 opacity-50 dark:opacity-30">
-                {mounted && particles.map((particle: any, i: number) => (
+                {mounted && particles.map((particle, i) => (
                     <motion.div
                         key={i}
                         className="absolute rounded-full bg-primary/40"
