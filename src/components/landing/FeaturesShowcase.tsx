@@ -1,8 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { GitPullRequest, Activity, LayoutDashboard, Search, Settings } from "lucide-react";
-import { useState } from "react";
+import { GitPullRequest, Activity, LayoutDashboard, Search } from "lucide-react";
 
 const features = [
     {

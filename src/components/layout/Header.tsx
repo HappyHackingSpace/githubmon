@@ -17,7 +17,7 @@ export function Header() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
-  const [suggestions, setSuggestions] = useState<Array<{ name: string; type: string }>>([]);
+  const [suggestions, setSuggestions] = useState<Array<{ name: string; type: string; avatar?: string }>>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -138,7 +138,7 @@ export function Header() {
                     className="absolute top-12 left-1/2 -translate-x-1/2 w-full max-w-md bg-background border border-border rounded-2xl shadow-xl overflow-hidden z-50 py-2 origin-top"
                   >
                     <ul>
-                      {suggestions.map((suggestion: any, idx) => (
+                      {suggestions.map((suggestion, idx) => (
                         <li key={idx}>
                           <button
                             type="button"
