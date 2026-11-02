@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
+interface GitHubUserSearchItem {
+  login: string;
+  avatar_url: string;
+}
+
+interface GitHubRepoSearchItem {
+  full_name: string;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q");
@@ -36,20 +45,21 @@ export async function GET(request: NextRequest) {
 
     // Combine results and format them
     const suggestions = [
-      ...(userData.items || []).map((item: any) => ({
+      ...(userData.items || []).map((item: GitHubUserSearchItem) => ({
         name: item.login,
         type: "User",
         avatar: item.avatar_url
       })),
-      ...(repoData.items || []).map((item: any) => ({
+      ...(repoData.items || []).map((item: GitHubRepoSearchItem) => ({
         name: item.full_name,
         type: "Repository"
       }))
     ];
 
     return NextResponse.json({ suggestions });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
